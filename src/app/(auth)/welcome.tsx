@@ -22,7 +22,10 @@ export default function Welcome() {
         <AppText variant="label" muted>Pick a look (you can change it any time)</AppText>
         <ThemePicker />
       </View>
-      <Button title="Get started" onPress={() => router.push('/(auth)/email')} />
+      <View style={{ gap: spacing.sm }}>
+        <Button title="Create account" onPress={() => router.push('/(auth)/signup')} />
+        <Button title="Sign in" variant="secondary" onPress={() => router.push('/(auth)/signin')} />
+      </View>
       <AppText variant="caption" muted style={{ textAlign: 'center' }}>{DISCLAIMER}</AppText>
     </Screen>
   );
