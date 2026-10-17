@@ -3,6 +3,7 @@ import {
   AuthResponseSchema,
   OtpChallengeSchema,
   HabitSchema,
+  PeriodSchema,
   DailyLogSchema,
   PullResponseSchema,
   PushResponseSchema,
@@ -11,7 +12,9 @@ import {
   UserSchema,
   WorkoutSchema,
   type AuthResponse,
+  type Gender,
   type Habit,
+  type Period,
   type OtpChallenge,
   type SignUpRequest,
   type PullResponse,
@@ -51,6 +54,7 @@ const TIMEOUT_MS = 15000;
 const HabitItems = z.object({ items: z.array(HabitSchema) });
 const LogItems = z.object({ items: z.array(DailyLogSchema) });
 const WorkoutItems = z.object({ items: z.array(WorkoutSchema) });
+const PeriodItems = z.object({ items: z.array(PeriodSchema) });
 
 export class ApiClient {
   private refreshing: Promise<boolean> | null = null;
@@ -216,7 +220,8 @@ export class ApiClient {
   getMe(): Promise<User> {
     return this.request('GET', '/me', { schema: UserSchema });
   }
-  patchMe(body: { displayName?: string; avatar?: string | null; timezone?: string; theme?: ThemeName }): Promise<User> {
+  /** `gender` null clears it; `periodTrackerEnabled` null resets to the gender default (on for female). */
+  patchMe(body: { displayName?: string; avatar?: string | null; timezone?: string; theme?: ThemeName; gender?: Gender | null; periodTrackerEnabled?: boolean | null }): Promise<User> {
     return this.request('PATCH', '/me', { body, schema: UserSchema });
   }
   getSettings(): Promise<Settings> {
@@ -233,6 +238,10 @@ export class ApiClient {
   }
   async listWorkouts(from?: string, to?: string) {
     return (await this.request('GET', '/workouts', { query: { from, to }, schema: WorkoutItems })).items;
+  }
+  /** Owner only (403 for viewers and when the owner's tracker is disabled). The app normally uses sync/pull. */
+  async listPeriods(): Promise<Period[]> {
+    return (await this.request('GET', '/periods', { schema: PeriodItems })).items;
   }
   getStats(from: string, to: string): Promise<StatsSummary> {
     return this.request('GET', '/stats/summary', { query: { from, to }, schema: StatsSummarySchema });

@@ -2,13 +2,17 @@
 // Exposes a fetch-compatible function so the real ApiClient (refresh-on-401, zod parsing) is exercised too.
 // Demo accounts: anu@example.com / +919876543210 (owner), aman@example.com / +919876543211 (viewer). OTP is always 123456.
 // Users get an `ownerAvatar` on every response (the space owner's avatar); avatars are validated against the allowlist.
+// Gender + private period tracker: periods are owner-only (viewers get no period rows in /sync/pull, 403 on /periods) while
+// /stats/summary counts the owner's period days as neutral days for everyone (days[].restDay never says why).
 // Sign-up creates a new owner with their own empty space (default habits/settings, no history).
 import { DEFAULT_HABIT_DEFS, defaultSettings } from '@/lib/defaults';
 import { addDays, localDateInTz, weekdayOf } from '@/lib/dates';
-import { evaluateStatus, summarize, type HabitRule } from '@/lib/scoring';
+import { periodNeutralDates } from '@/lib/cycle';
+import { isValidLocalDate, validatePeriod, type PeriodRange } from '@/lib/periodRules';
+import { effectiveRestDays, evaluateStatus, summarize, type HabitRule } from '@/lib/scoring';
 import { uuid } from '@/lib/ids';
 import { isAvatarId } from '@/avatars/avatarCatalog';
-import type { DailyLog, Habit, Settings, ThemeName, User, Workout } from '@/types/api';
+import { GenderSchema, type DailyLog, type Gender, type Habit, type Period, type Settings, type ThemeName, type User, type Workout } from '@/types/api';
 
 export const MOCK_OTP = '123456';
 const MAX_OTP_ATTEMPTS = 5;
@@ -27,7 +31,7 @@ export function normalizeMockPhone(raw: string): string | null {
 interface Challenge {
   /** undefined user + no pending => decoy that can never verify */
   userId?: string;
-  pending?: { name: string; phone: string; email: string; avatar?: string | null };
+  pending?: { name: string; phone: string; email: string; avatar?: string | null; gender?: Gender | null };
   attempts: number;
 }
 const ACCESS_TTL_S = 900;
@@ -39,9 +43,11 @@ type Rec = { id: string; version: number; createdAt: string; updatedAt: string; 
 
 class MockDb {
   users: MockUser[] = [
-    { id: 'u-anu', email: 'anu@example.com', phone: '+919876543210', displayName: 'Anu', avatar: 'bubu-02', timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
-    { id: 'u-aman', email: 'aman@example.com', phone: '+919876543211', displayName: 'Aman', avatar: 'bubu-04', timezone: 'Asia/Kolkata', theme: 'lavenderDream', role: 'viewer', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
+    { id: 'u-anu', email: 'anu@example.com', phone: '+919876543210', displayName: 'Anu', avatar: 'bubu-02', timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: SPACE, ownerDisplayName: 'Anu', gender: 'female' },
+    { id: 'u-aman', email: 'aman@example.com', phone: '+919876543211', displayName: 'Aman', avatar: 'bubu-04', timezone: 'Asia/Kolkata', theme: 'lavenderDream', role: 'viewer', sharedSpaceId: SPACE, ownerDisplayName: 'Anu', gender: 'male' },
   ];
+  /** explicit `periodTrackerEnabled` per user id; absent = gender default (on for female) */
+  trackerOverride = new Map<string, boolean>();
   seq = 0;
   /** Entities are scoped per shared space; `space` is the space of the request being handled. */
   spaces = new Map<string, Map<string, { type: string; seq: number; rec: Rec }>>();
@@ -62,12 +68,13 @@ class MockDb {
     this.space = SPACE;
     this.seedDefaults();
     this.seedHistory();
+    this.seedPeriods();
   }
 
   /** Creates a fresh owner account with its own empty space. */
-  createOwner(p: { name: string; phone: string; email: string; avatar?: string | null }): MockUser {
+  createOwner(p: { name: string; phone: string; email: string; avatar?: string | null; gender?: Gender | null }): MockUser {
     const id = `u-${uuid()}`;
-    const user: MockUser = { id, email: p.email, phone: p.phone, displayName: p.name, avatar: p.avatar ?? null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: `space-${id}`, ownerDisplayName: p.name };
+    const user: MockUser = { id, email: p.email, phone: p.phone, displayName: p.name, avatar: p.avatar ?? null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: `space-${id}`, ownerDisplayName: p.name, gender: p.gender ?? null };
     this.users.push(user);
     this.space = user.sharedSpaceId;
     this.seedDefaults();
@@ -106,6 +113,28 @@ class MockDb {
     });
     const s = defaultSettings(created);
     this.save('settings', { ...s, createdAt: created, deletedAt: null } as unknown as Rec);
+  }
+
+  /** Demo cycle data for Anu: three finished periods about 29 days apart and the latest one a week ago. */
+  private seedPeriods() {
+    const today = localDateInTz(new Date(), 'Asia/Kolkata');
+    const starts = [addDays(today, -65), addDays(today, -36), addDays(today, -7)];
+    starts.forEach((start, i) => {
+      const ts = `${start}T08:00:00Z`;
+      this.save('period', {
+        id: `p-seed-${i}`,
+        startDate: start,
+        endDate: addDays(start, 4),
+        flow: i === 1 ? 'heavy' : 'medium',
+        symptoms: i === 2 ? ['cramps', 'fatigue'] : ['cramps'],
+        mood: i === 2 ? 'calm' : null,
+        note: null,
+        version: 1,
+        createdAt: ts,
+        updatedAt: ts,
+        deletedAt: null,
+      } as unknown as Rec);
+    });
   }
 
   private seedHistory() {
@@ -179,10 +208,22 @@ function err(status: number, code: string, message: string, details?: Record<str
   return json(status, { error: { code, message, ...(details ? { details } : {}) } });
 }
 
+/** explicit setting if present, else gender === 'female' */
+function trackerEnabled(user: MockUser): boolean {
+  return db.trackerOverride.get(user.id) ?? user.gender === 'female';
+}
+function spaceOwner(): MockUser | undefined {
+  return db.users.find((x) => x.sharedSpaceId === db.space && x.role === 'owner');
+}
+function ownerTrackerOn(): boolean {
+  const o = spaceOwner();
+  return !!o && trackerEnabled(o);
+}
+
 /** The user as the API returns it: stored fields plus `ownerAvatar` (the space owner's avatar; own avatar for owners). */
 function view(user: MockUser): User {
   const owner = user.role === 'owner' ? user : db.users.find((x) => x.sharedSpaceId === user.sharedSpaceId && x.role === 'owner');
-  return { ...user, ownerAvatar: owner?.avatar ?? null };
+  return { ...user, ownerAvatar: owner?.avatar ?? null, gender: user.gender ?? null, periodTrackerEnabled: trackerEnabled(user) };
 }
 
 function issueTokens(user: MockUser) {
@@ -209,7 +250,8 @@ function authUser(req: { headers: Headers }): MockUser | Response {
 const HABIT_FIELDS = new Set(['title', 'icon', 'category', 'trackingType', 'target', 'targetMax', 'targetComparison', 'unit', 'schedule', 'reminder', 'isActive', 'sortOrder', 'isDefault']);
 const LOG_FIELDS = new Set(['value', 'status', 'note']);
 const WORKOUT_FIELDS = new Set(['type', 'startedAt', 'endedAt', 'durationSeconds', 'pausedSeconds', 'notes', 'localDate']);
-const SETTINGS_FIELDS = new Set(['dailyThreshold', 'restDays', 'reminders', 'stepGoal']);
+const SETTINGS_FIELDS = new Set(['dailyThreshold', 'restDays', 'reminders', 'stepGoal', 'sundayRest']);
+const PERIOD_FIELDS = new Set(['startDate', 'endDate', 'flow', 'symptoms', 'mood', 'note']);
 
 function unknownKeys(payload: Record<string, unknown>, allowed: Set<string>): string[] {
   return Object.keys(payload).filter((k) => !allowed.has(k));
@@ -217,7 +259,7 @@ function unknownKeys(payload: Record<string, unknown>, allowed: Set<string>): st
 
 interface PushOp {
   operationId: string;
-  entityType: 'habit' | 'dailyLog' | 'workout' | 'settings';
+  entityType: 'habit' | 'dailyLog' | 'workout' | 'settings' | 'period';
   entityId: string;
   op: 'upsert' | 'delete';
   baseVersion: number;
@@ -236,10 +278,13 @@ function applyOp(user: MockUser, op: PushOp): Record<string, unknown> {
 
 function applyOpInner(user: MockUser, op: PushOp): Record<string, unknown> {
   const base = { operationId: op.operationId };
-  const allowed = { habit: HABIT_FIELDS, dailyLog: LOG_FIELDS, workout: WORKOUT_FIELDS, settings: SETTINGS_FIELDS }[op.entityType];
+  const allowed = { habit: HABIT_FIELDS, dailyLog: LOG_FIELDS, workout: WORKOUT_FIELDS, settings: SETTINGS_FIELDS, period: PERIOD_FIELDS }[op.entityType];
   if (!allowed) return { ...base, status: 'rejected', reason: 'validation_failed' };
   const bad = unknownKeys(op.payload ?? {}, allowed);
   if (bad.length) return { ...base, status: 'rejected', reason: `validation_failed:unknown_fields:${bad.join(',')}` };
+
+  if (op.entityType === 'settings' && op.payload?.sundayRest !== undefined && typeof op.payload.sundayRest !== 'boolean') return { ...base, status: 'rejected', reason: 'validation_failed' };
+  if (op.entityType === 'period' && !ownerTrackerOn()) return { ...base, status: 'rejected', reason: 'tracker_disabled' };
 
   const nowIso = new Date().toISOString();
   const existing = db.get(op.entityType, op.entityId);
@@ -263,6 +308,12 @@ function applyOpInner(user: MockUser, op: PushOp): Record<string, unknown> {
   }
   if (!existing && op.op === 'delete') return { ...base, status: 'rejected', reason: 'not_found' };
 
+  if (op.entityType === 'period' && op.op === 'upsert') {
+    const merged = periodFields({ ...(existing ?? { endDate: null, flow: 'medium', symptoms: [], mood: null, note: null }), ...op.payload });
+    const bad = validatePeriod(merged, periodRanges(), localDateInTz(new Date(), user.timezone), op.entityId);
+    if (bad) return { ...base, status: 'rejected', reason: `validation_failed:${bad}` };
+  }
+
   let rec: Rec;
   if (op.op === 'delete') {
     if (op.entityType === 'habit') rec = { ...existing!, isActive: false, version: existing!.version + 1, updatedAt: nowIso };
@@ -277,6 +328,8 @@ function applyOpInner(user: MockUser, op: PushOp): Record<string, unknown> {
       rec = { ...common, habitId, localDate, value: null, status: 'incomplete', note: null, ...op.payload } as Rec;
     } else if (op.entityType === 'habit') {
       rec = { ...common, schedule: { days: [] }, reminder: null, isActive: true, sortOrder: 99, isDefault: false, targetMax: null, unit: null, ...op.payload } as Rec;
+    } else if (op.entityType === 'period') {
+      rec = { ...common, endDate: null, flow: 'medium', symptoms: [], mood: null, note: null, ...op.payload } as Rec;
     } else if (op.entityType === 'workout') {
       rec = { ...common, endedAt: null, durationSeconds: 0, pausedSeconds: 0, notes: null, ...op.payload } as Rec;
     } else {
@@ -287,6 +340,20 @@ function applyOpInner(user: MockUser, op: PushOp): Record<string, unknown> {
   return { ...base, status: 'applied', entity: rec, ...(resolved ? { resolved } : {}) };
 }
 
+function periodFields(r: Record<string, unknown>) {
+  return {
+    startDate: r.startDate as string,
+    endDate: (r.endDate ?? null) as string | null,
+    flow: r.flow as string,
+    symptoms: (Array.isArray(r.symptoms) ? r.symptoms : []) as string[],
+    mood: (r.mood ?? null) as string | null,
+    note: (r.note ?? null) as string | null,
+  };
+}
+function periodRanges(): PeriodRange[] {
+  return db.all<Period>('period').map((p) => ({ id: p.id, startDate: p.startDate, endDate: p.endDate, deletedAt: p.deletedAt }));
+}
+
 function inRange(date: string, from: string | null, to: string | null) {
   return (!from || date >= from) && (!to || date <= to);
 }
@@ -295,18 +362,19 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
   // ---- public ----
   if (method === 'GET' && path === '/health') return json(200, { status: 'ok', time: new Date().toISOString(), version: 'mock' });
   if (method === 'POST' && path === '/auth/signup/request') {
-    const bad = Object.keys(body).filter((k) => !['name', 'phone', 'email', 'avatar'].includes(k));
+    const bad = Object.keys(body).filter((k) => !['name', 'phone', 'email', 'avatar', 'gender'].includes(k));
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const phone = typeof body.phone === 'string' ? normalizeMockPhone(body.phone) : null;
     if (bad.length) return err(400, 'validation_failed', `unknown fields: ${bad.join(',')}`);
     if (body.avatar !== undefined && body.avatar !== null && !isAvatarId(body.avatar)) return err(400, 'validation_failed', 'avatar must be null or one of bubu-01..bubu-09');
+    if (body.gender !== undefined && !GenderSchema.safeParse(body.gender).success) return err(400, 'validation_failed', 'gender must be female, male, other or prefer_not_to_say');
     if (name.length < 1 || name.length > 40) return err(400, 'validation_failed', 'name must be 1-40 characters');
     if (!phone) return err(400, 'validation_failed', 'phone must have 8-15 digits');
     if (email.length > 254 || !EMAIL_RE.test(email)) return err(400, 'validation_failed', 'email is not valid');
     if (db.users.some((u) => u.email === email || u.phone === phone)) return err(409, 'already_registered', 'an account with this email or phone already exists');
     const challengeId = uuid();
-    db.challenges.set(challengeId, { pending: { name, phone, email, avatar: (body.avatar as string | null | undefined) ?? null }, attempts: 0 });
+    db.challenges.set(challengeId, { pending: { name, phone, email, avatar: (body.avatar as string | null | undefined) ?? null, gender: (body.gender as Gender | undefined) ?? null }, attempts: 0 });
     return json(202, { status: 'sent', challengeId });
   }
   if (method === 'POST' && path === '/auth/signin/request') {
@@ -362,9 +430,16 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
 
   if (path === '/me' && method === 'GET') return json(200, view(user));
   if (path === '/me' && method === 'PATCH') {
-    const bad = Object.keys(body).filter((k) => !['displayName', 'avatar', 'timezone', 'theme'].includes(k));
+    const bad = Object.keys(body).filter((k) => !['displayName', 'avatar', 'timezone', 'theme', 'gender', 'periodTrackerEnabled'].includes(k));
     if (bad.length) return err(400, 'validation_failed', `unknown fields: ${bad.join(',')}`);
     if (body.avatar !== undefined && body.avatar !== null && !isAvatarId(body.avatar)) return err(400, 'validation_failed', 'avatar must be null or one of bubu-01..bubu-09');
+    if (body.gender !== undefined && body.gender !== null && !GenderSchema.safeParse(body.gender).success) return err(400, 'validation_failed', 'gender must be null or one of female, male, other, prefer_not_to_say');
+    if (body.periodTrackerEnabled !== undefined && body.periodTrackerEnabled !== null && typeof body.periodTrackerEnabled !== 'boolean') return err(400, 'validation_failed', 'periodTrackerEnabled must be a boolean or null');
+    if (body.gender !== undefined) user.gender = body.gender as Gender | null;
+    if (body.periodTrackerEnabled !== undefined) {
+      if (body.periodTrackerEnabled === null) db.trackerOverride.delete(user.id);
+      else db.trackerOverride.set(user.id, body.periodTrackerEnabled);
+    }
     if (body.displayName !== undefined) user.displayName = String(body.displayName);
     if (body.timezone !== undefined) user.timezone = String(body.timezone);
     if (body.avatar !== undefined) user.avatar = body.avatar as string | null;
@@ -394,25 +469,30 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
     const to = query.get('to') ?? '';
     const today = localDateInTz(new Date(), user.timezone);
     const s = db.all<Settings>('settings')[0];
+    // neutral days = effective rest weekdays + the owner's period days (only with the owner's tracker on); viewers get the same numbers
+    const neutralDates = periodNeutralDates(db.all<Period>('period'), today, ownerTrackerOn());
     const sum = summarize(from, to, today, {
       habits: db.all<Habit>('habit'),
       logs: db.all<DailyLog>('dailyLog'),
       threshold: s.dailyThreshold,
-      restDays: s.restDays,
+      restDays: effectiveRestDays(s),
       restDayMode: s.restDayMode,
+      neutralDates,
       timezone: user.timezone,
     });
     const ws = db.all<Workout>('workout').filter((w) => !w.deletedAt && inRange(w.localDate, from, to));
     return json(200, { ...sum, workoutCount: ws.length, workoutSeconds: ws.reduce((a, w) => a + w.durationSeconds, 0) });
   }
+  if (path === '/periods' || path.startsWith('/periods/')) return periodsRoute(method, path, body, user);
   if (path === '/sync/pull' && method === 'GET') {
     const cursor = Number(query.get('cursor') || 0);
     const limit = Math.min(500, Number(query.get('limit') || 500));
-    const newer = [...db.entities.values()].filter((e) => e.seq > cursor).sort((a, b) => a.seq - b.seq);
+    // period rows are filtered out of the cursor stream for anyone but the owner
+    const newer = [...db.entities.values()].filter((e) => e.seq > cursor && (e.type !== 'period' || user.role === 'owner')).sort((a, b) => a.seq - b.seq);
     const page = newer.slice(0, limit);
-    const changes = { habits: [] as unknown[], dailyLogs: [] as unknown[], workouts: [] as unknown[], settings: [] as unknown[] };
+    const changes = { habits: [] as unknown[], dailyLogs: [] as unknown[], workouts: [] as unknown[], settings: [] as unknown[], periods: [] as unknown[] };
     for (const e of page) {
-      const k = { habit: 'habits', dailyLog: 'dailyLogs', workout: 'workouts', settings: 'settings' }[e.type] as keyof typeof changes;
+      const k = { habit: 'habits', dailyLog: 'dailyLogs', workout: 'workouts', settings: 'settings', period: 'periods' }[e.type] as keyof typeof changes;
       changes[k].push(e.rec);
     }
     const last = page.length ? page[page.length - 1].seq : cursor;
@@ -425,6 +505,41 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
     if (!Array.isArray(ops) || typeof body.deviceId !== 'string' || bad.length) return err(400, 'validation_failed', 'bad push body');
     if (ops.length > 100) return err(400, 'validation_failed', 'max 100 operations');
     return json(200, { results: ops.map((op) => applyOp(user, op)) });
+  }
+  return err(404, 'not_found', `no route ${method} ${path}`);
+}
+
+/** REST periods (owner only; 403 for viewers and when the owner's tracker is disabled). Same rules as the sync path. */
+function periodsRoute(method: string, path: string, body: Record<string, unknown>, user: MockUser): Response {
+  if (user.role !== 'owner') return err(403, 'forbidden', 'period data is private to the owner');
+  if (!trackerEnabled(user)) return err(403, 'forbidden', 'the period tracker is not enabled');
+  if (path === '/periods' && method === 'GET') return json(200, { items: db.all<Period>('period').filter((p) => !p.deletedAt) });
+  const id = path === '/periods' ? undefined : path.slice('/periods/'.length);
+  const nowIso = new Date().toISOString();
+  const today = localDateInTz(new Date(), user.timezone);
+  if (method === 'DELETE' && id) {
+    const ex = db.get('period', id);
+    if (!ex || ex.deletedAt) return err(404, 'not_found', 'period not found');
+    db.save('period', { ...ex, deletedAt: nowIso, version: ex.version + 1, updatedAt: nowIso });
+    return json(204, null);
+  }
+  if ((method === 'POST' && !id) || (method === 'PATCH' && id)) {
+    const bad = Object.keys(body).filter((k) => !PERIOD_FIELDS.has(k) && !(method === 'POST' && k === 'id') && !(method === 'PATCH' && k === 'version'));
+    if (bad.length) return err(400, 'validation_failed', `unknown fields: ${bad.join(',')}`);
+    const ex = id ? db.get('period', id) : undefined;
+    if (id && (!ex || ex.deletedAt)) return err(404, 'not_found', 'period not found');
+    const pid = id ?? (typeof body.id === 'string' && body.id ? body.id : uuid());
+    const { id: _i, version: _v, ...fields } = body;
+    const merged = periodFields({ ...(ex ?? { endDate: null, flow: 'medium', symptoms: [], mood: null, note: null }), ...fields });
+    if (!isValidLocalDate(merged.startDate)) return err(400, 'validation_failed', 'startDate must be YYYY-MM-DD');
+    const reason = validatePeriod(merged, periodRanges(), today, pid);
+    if (reason) return err(400, 'validation_failed', reason);
+    if (ex && body.version !== undefined && body.version !== ex.version) return err(409, 'conflict', 'stale version', { server: ex });
+    const rec = ex
+      ? ({ ...ex, ...merged, version: ex.version + 1, updatedAt: nowIso } as Rec)
+      : ({ id: pid, ...merged, version: 1, createdAt: nowIso, updatedAt: nowIso, deletedAt: null } as Rec);
+    db.save('period', rec);
+    return json(method === 'POST' ? 201 : 200, rec);
   }
   return err(404, 'not_found', `no route ${method} ${path}`);
 }

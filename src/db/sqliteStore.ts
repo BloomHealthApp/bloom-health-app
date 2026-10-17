@@ -2,7 +2,10 @@ import * as SQLite from 'expo-sqlite';
 import type { EntityType } from '@/types/api';
 import { BaseStore, type NewOp, type QueuedOp, type Store } from './store';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
+
+/** Period entities live in their own table (private owner data, indexed by start date); everything else is in `entities`. */
+const isPeriod = (type: EntityType) => type === 'period';
 
 /** SQLite-backed cache + sync queue. Entities are stored as JSON blobs keyed by (type,id). */
 export class SqliteStore extends BaseStore implements Store {
@@ -34,27 +37,55 @@ export class SqliteStore extends BaseStore implements Store {
         CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
       `);
     }
+    if (v < 2) {
+      // v2: private period tracker rows (owner only)
+      await this.db.execAsync(`
+        CREATE TABLE IF NOT EXISTS periods (
+          id TEXT PRIMARY KEY, start_date TEXT NOT NULL, json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_periods_start ON periods(start_date);
+      `);
+    }
     if (v < SCHEMA_VERSION) await this.db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   }
 
   async clearAll() {
-    await this.db.execAsync('DELETE FROM entities; DELETE FROM sync_ops; DELETE FROM meta;');
+    await this.db.execAsync('DELETE FROM entities; DELETE FROM periods; DELETE FROM sync_ops; DELETE FROM meta;');
     this.emit();
   }
 
   async getAll<T>(type: EntityType): Promise<T[]> {
+    if (isPeriod(type)) {
+      const rows = await this.db.getAllAsync<{ json: string }>('SELECT json FROM periods ORDER BY start_date ASC');
+      return rows.map((r) => JSON.parse(r.json) as T);
+    }
     const rows = await this.db.getAllAsync<{ json: string }>('SELECT json FROM entities WHERE type = ?', type);
     return rows.map((r) => JSON.parse(r.json) as T);
   }
   async get<T>(type: EntityType, id: string): Promise<T | null> {
+    if (isPeriod(type)) {
+      const r = await this.db.getFirstAsync<{ json: string }>('SELECT json FROM periods WHERE id = ?', id);
+      return r ? (JSON.parse(r.json) as T) : null;
+    }
     const r = await this.db.getFirstAsync<{ json: string }>('SELECT json FROM entities WHERE type = ? AND id = ?', type, id);
     return r ? (JSON.parse(r.json) as T) : null;
   }
   async put(type: EntityType, id: string, entity: unknown) {
+    if (isPeriod(type)) {
+      const startDate = (entity as { startDate?: string }).startDate ?? '';
+      await this.db.runAsync('INSERT OR REPLACE INTO periods (id, start_date, json) VALUES (?, ?, ?)', id, startDate, JSON.stringify(entity));
+      this.emit();
+      return;
+    }
     await this.db.runAsync('INSERT OR REPLACE INTO entities (type, id, json) VALUES (?, ?, ?)', type, id, JSON.stringify(entity));
     this.emit();
   }
   async remove(type: EntityType, id: string) {
+    if (isPeriod(type)) {
+      await this.db.runAsync('DELETE FROM periods WHERE id = ?', id);
+      this.emit();
+      return;
+    }
     await this.db.runAsync('DELETE FROM entities WHERE type = ? AND id = ?', type, id);
     this.emit();
   }

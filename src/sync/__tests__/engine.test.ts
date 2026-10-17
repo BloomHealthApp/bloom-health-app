@@ -2,8 +2,8 @@ import { ApiClient, type TokenState } from '@/api/client';
 import { ApiError, NetworkError } from '@/api/errors';
 import { mockFetch, resetMockServer, MOCK_OTP } from '@/api/mock/mockServer';
 import { MemoryStore } from '@/db/memoryStore';
-import { localDateInTz } from '@/lib/dates';
-import type { DailyLog, Habit, PullResponse, PushOperation, PushResult, Role } from '@/types/api';
+import { addDays, localDateInTz } from '@/lib/dates';
+import type { DailyLog, Habit, Period, PullResponse, PushOperation, PushResult, Role } from '@/types/api';
 import { BACKOFF_MAX_MS, MAX_ATTEMPTS, backoffMs } from '../backoff';
 import { CURSOR_KEY, SyncEngine, type SyncApi } from '../engine';
 
@@ -187,10 +187,67 @@ describe('against the mock service', () => {
   });
 });
 
+describe('period entities (owner only)', () => {
+  const period = (id: string, start: string, end: string | null): Period => ({
+    id, startDate: start, endDate: end, flow: 'medium', symptoms: [], mood: null, note: null, version: 0, updatedAt: new Date().toISOString(), deletedAt: null,
+  });
+  const payloadOf = (p: Period) => ({ startDate: p.startDate, endDate: p.endDate, flow: p.flow, symptoms: p.symptoms, mood: p.mood, note: p.note });
+
+  it('owner: pull caches the seeded periods; a local period is queued, pushed and replaced by the server record', async () => {
+    const { client } = await login('anu@example.com');
+    const { store, engine } = engineFor(client);
+    await engine.sync();
+    expect((await store.getAll<Period>('period')).length).toBe(3);
+    const p = period('p-local', addDays(TODAY, -1), null);
+    await engine.mutate({ entityType: 'period', entityId: p.id, op: 'upsert', payload: payloadOf(p), entity: p as never });
+    expect((await store.listOps())[0]).toMatchObject({ entityType: 'period', op: 'upsert', baseVersion: 0 });
+    await engine.sync();
+    expect(await store.listOps()).toEqual([]);
+    expect(await store.get<Period>('period', 'p-local')).toMatchObject({ version: 1, endDate: null });
+  });
+
+  it('owner: an overlapping period is rejected by the server and listed as an issue, not retried', async () => {
+    const { client } = await login('anu@example.com');
+    const { store, engine } = engineFor(client);
+    await engine.sync();
+    const seeded = (await store.getAll<Period>('period')).sort((a, b) => a.startDate.localeCompare(b.startDate))[2];
+    const dup = period('p-dup', seeded.startDate, seeded.startDate);
+    await engine.mutate({ entityType: 'period', entityId: dup.id, op: 'upsert', payload: payloadOf(dup), entity: dup as never });
+    await engine.sync();
+    const issues = await engine.listIssues();
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ status: 'rejected', entityType: 'period' });
+    expect(issues[0].lastError).toContain('overlap');
+  });
+
+  it('viewer: periods are never cached, queued or pushed', async () => {
+    const { client } = await login('aman@example.com');
+    const push = jest.spyOn(client, 'syncPush');
+    const { store, engine } = engineFor(client, 'viewer');
+    await engine.sync();
+    expect(await store.getAll('period')).toEqual([]);
+    const p = period('p-v', addDays(TODAY, -1), null);
+    await expect(engine.mutate({ entityType: 'period', entityId: p.id, op: 'upsert', payload: payloadOf(p), entity: p as never })).rejects.toThrow(/owner/);
+    expect(await store.listOps()).toEqual([]);
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('viewer: even if a server sent period rows, they are ignored and stale cached ones are dropped', async () => {
+    const leaky: SyncApi = {
+      syncPush: async () => [],
+      syncPull: async (): Promise<PullResponse> => ({ cursor: '1', hasMore: false, changes: { habits: [], dailyLogs: [], workouts: [], settings: [], periods: [period('p-leak', '2026-10-01', null)] } }),
+    };
+    const { store, engine } = engineFor(leaky, 'viewer');
+    await store.put('period', 'old', period('old', '2026-09-01', '2026-09-04'));
+    await engine.sync();
+    expect(await store.getAll('period')).toEqual([]);
+  });
+});
+
 describe('retry behaviour (scripted api)', () => {
   const scripted = (push: () => Promise<PushResult[]>): SyncApi => ({
     syncPush: async () => push(),
-    syncPull: async (): Promise<PullResponse> => ({ cursor: '0', hasMore: false, changes: { habits: [], dailyLogs: [], workouts: [], settings: [] } }),
+    syncPull: async (): Promise<PullResponse> => ({ cursor: '0', hasMore: false, changes: { habits: [], dailyLogs: [], workouts: [], settings: [], periods: [] } }),
   });
 
   it('network failure schedules exponential backoff, marks offline, then fails after 8 attempts; manual retry resets', async () => {

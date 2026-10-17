@@ -96,6 +96,8 @@ export class SyncEngine {
     entity: Record<string, unknown>;
   }): Promise<void> {
     const { entityType, entityId, op, payload, entity } = args;
+    // Period data is private to the owner: never queue or cache it for anyone else.
+    if (entityType === 'period' && this.opts.getRole() !== 'owner') throw new Error('Period data is only available to the owner.');
     await this.store.transaction(async () => {
       const existing = await this.store.get<{ version?: number }>(entityType, entityId);
       const baseVersion = existing?.version ?? 0;
@@ -271,6 +273,12 @@ export class SyncEngine {
         await put('dailyLog', res.changes.dailyLogs);
         await put('workout', res.changes.workouts);
         await put('settings', res.changes.settings);
+        if (this.opts.getRole() === 'owner') {
+          await put('period', res.changes.periods);
+        } else {
+          // Viewers never receive periods; drop anything cached (e.g. from an earlier role) and ignore the field.
+          for (const p of await this.store.getAll<{ id: string }>('period')) await this.store.remove('period', p.id);
+        }
         // cursor persisted only after the whole page has been applied (same transaction)
         await this.store.setMeta(CURSOR_KEY, res.cursor);
       });
