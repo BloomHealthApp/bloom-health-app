@@ -39,6 +39,7 @@ function Shell() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="choose-avatar" />
     </Stack>
   );
   // Data layer (SQLite + sync engine) only exists for a signed-in user.
