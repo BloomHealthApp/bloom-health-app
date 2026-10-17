@@ -42,6 +42,39 @@
         {
           "color": "#D65B98"
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "BubuSmall",
+              "label": "Bubu streak",
+              "description": "Bubu and your current habit streak.",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "none",
+              "previewImage": "./assets/widget/preview-small.png",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "BubuMedium",
+              "label": "Bubu daily progress",
+              "description": "Streaks, today's progress and a little encouragement from Bubu.",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "maxResizeWidth": "400dp",
+              "maxResizeHeight": "220dp",
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/widget/preview-medium.png",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
       ]
     ],
     "scheme": "bububloom"
