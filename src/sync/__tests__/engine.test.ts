@@ -18,7 +18,8 @@ async function login(email: string) {
     },
     onAuthLost: () => {},
   });
-  const user = await client.verifyOtp(email, MOCK_OTP);
+  const { challengeId } = await client.requestSignIn(email);
+  const user = await client.verifyOtp(challengeId, MOCK_OTP);
   return { client, user };
 }
 

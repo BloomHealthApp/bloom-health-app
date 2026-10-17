@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   AuthResponseSchema,
+  OtpChallengeSchema,
   HabitSchema,
   DailyLogSchema,
   PullResponseSchema,
@@ -11,6 +12,8 @@ import {
   WorkoutSchema,
   type AuthResponse,
   type Habit,
+  type OtpChallenge,
+  type SignUpRequest,
   type PullResponse,
   type PushOperation,
   type PushResult,
@@ -185,11 +188,16 @@ export class ApiClient {
   }
 
   // ---------- auth ----------
-  async requestOtp(email: string): Promise<void> {
-    await this.request('POST', '/auth/otp/request', { body: { email }, auth: false });
+  /** Starts sign-up: emails a code to `email`. Throws ApiError 409 `already_registered` if email/phone is taken. */
+  requestSignUp(body: SignUpRequest): Promise<OtpChallenge> {
+    return this.request('POST', '/auth/signup/request', { body, auth: false, schema: OtpChallengeSchema });
   }
-  async verifyOtp(email: string, code: string): Promise<User> {
-    const a = await this.request('POST', '/auth/otp/verify', { body: { email, code }, auth: false, schema: AuthResponseSchema });
+  /** Starts sign-in with an email or phone; always succeeds with a challengeId (no account enumeration). */
+  requestSignIn(identifier: string): Promise<OtpChallenge> {
+    return this.request('POST', '/auth/signin/request', { body: { identifier }, auth: false, schema: OtpChallengeSchema });
+  }
+  async verifyOtp(challengeId: string, code: string): Promise<User> {
+    const a = await this.request('POST', '/auth/otp/verify', { body: { challengeId, code }, auth: false, schema: AuthResponseSchema });
     await this.storeAuth(a);
     return a.user;
   }

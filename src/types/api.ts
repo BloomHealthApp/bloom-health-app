@@ -9,6 +9,7 @@ export type Role = z.infer<typeof RoleSchema>;
 export const UserSchema = z.object({
   id: z.string(),
   email: z.string(),
+  phone: z.string().nullable().optional(),
   displayName: z.string(),
   avatar: z.string().nullable().optional(),
   timezone: z.string(),
@@ -18,6 +19,15 @@ export const UserSchema = z.object({
   ownerDisplayName: z.string(),
 });
 export type User = z.infer<typeof UserSchema>;
+
+export const SignUpRequestSchema = z.object({ name: z.string(), phone: z.string(), email: z.string() });
+export type SignUpRequest = z.infer<typeof SignUpRequestSchema>;
+export const SignInRequestSchema = z.object({ identifier: z.string() });
+export type SignInRequest = z.infer<typeof SignInRequestSchema>;
+export const OtpChallengeSchema = z.object({ status: z.literal('sent'), challengeId: z.string().min(1) });
+export type OtpChallenge = z.infer<typeof OtpChallengeSchema>;
+export const OtpVerifyRequestSchema = z.object({ challengeId: z.string(), code: z.string() });
+export type OtpVerifyRequest = z.infer<typeof OtpVerifyRequestSchema>;
 
 export const AuthResponseSchema = z.object({
   accessToken: z.string(),

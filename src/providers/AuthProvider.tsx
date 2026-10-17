@@ -4,7 +4,7 @@ import { ApiClient } from '@/api/client';
 import { mockFetch } from '@/api/mock/mockServer';
 import { createTokenProvider } from '@/auth/tokenStore';
 import { API_BASE_URL, USE_MOCK_API } from '@/config';
-import type { User } from '@/types/api';
+import type { OtpChallenge, User } from '@/types/api';
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
 const USER_KEY = 'bubu.user';
@@ -14,8 +14,9 @@ interface Ctx {
   user: User | null;
   api: ApiClient;
   isOwner: boolean;
-  requestOtp: (email: string) => Promise<void>;
-  verifyOtp: (email: string, code: string) => Promise<void>;
+  requestSignUp: (input: { name: string; phone: string; email: string }) => Promise<OtpChallenge>;
+  requestSignIn: (identifier: string) => Promise<OtpChallenge>;
+  verifyOtp: (challengeId: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (u: User) => void;
 }
@@ -69,9 +70,10 @@ export function AuthProvider({ children, onSignedOut }: { children: React.ReactN
       user,
       api,
       isOwner: user?.role === 'owner',
-      requestOtp: (email) => api.requestOtp(email.trim().toLowerCase()),
-      verifyOtp: async (email, code) => {
-        const u = await api.verifyOtp(email.trim().toLowerCase(), code.trim());
+      requestSignUp: ({ name, phone, email }) => api.requestSignUp({ name: name.trim(), phone: phone.trim(), email: email.trim().toLowerCase() }),
+      requestSignIn: (identifier) => api.requestSignIn(identifier.trim().toLowerCase()),
+      verifyOtp: async (challengeId, code) => {
+        const u = await api.verifyOtp(challengeId, code.trim());
         persistUser(u);
         setStatus('signedIn');
       },

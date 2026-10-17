@@ -1,6 +1,7 @@
 // In-memory implementation of docs/api-contract.md used when EXPO_PUBLIC_USE_MOCK_API=true.
 // Exposes a fetch-compatible function so the real ApiClient (refresh-on-401, zod parsing) is exercised too.
-// Demo accounts: anu@example.com (owner), aman@example.com (viewer). OTP is always 123456.
+// Demo accounts: anu@example.com / +919876543210 (owner), aman@example.com / +919876543211 (viewer). OTP is always 123456.
+// Sign-up creates a new owner with their own empty space (default habits/settings, no history).
 import { DEFAULT_HABIT_DEFS, defaultSettings } from '@/lib/defaults';
 import { addDays, localDateInTz, weekdayOf } from '@/lib/dates';
 import { evaluateStatus, summarize, type HabitRule } from '@/lib/scoring';
@@ -8,6 +9,25 @@ import { uuid } from '@/lib/ids';
 import type { DailyLog, Habit, Settings, ThemeName, User, Workout } from '@/types/api';
 
 export const MOCK_OTP = '123456';
+const MAX_OTP_ATTEMPTS = 5;
+const DEFAULT_COUNTRY_CODE = '+91';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Mirrors the service: +<country><number> or a bare 10-digit number (default country code); 8-15 digits. */
+export function normalizeMockPhone(raw: string): string | null {
+  const t = raw.trim();
+  if (!/^\+?[\d\s-]+$/.test(t)) return null;
+  const digits = t.replace(/\D/g, '');
+  const full = t.startsWith('+') ? digits : digits.length === 10 ? DEFAULT_COUNTRY_CODE.slice(1) + digits : digits;
+  return full.length >= 8 && full.length <= 15 ? `+${full}` : null;
+}
+
+interface Challenge {
+  /** undefined user + no pending => decoy that can never verify */
+  userId?: string;
+  pending?: { name: string; phone: string; email: string };
+  attempts: number;
+}
 const ACCESS_TTL_S = 900;
 
 type MockUser = User;
@@ -17,17 +37,39 @@ type Rec = { id: string; version: number; createdAt: string; updatedAt: string; 
 
 class MockDb {
   users: MockUser[] = [
-    { id: 'u-anu', email: 'anu@example.com', displayName: 'Anu', avatar: null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
-    { id: 'u-aman', email: 'aman@example.com', displayName: 'Aman', avatar: null, timezone: 'Asia/Kolkata', theme: 'lavenderDream', role: 'viewer', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
+    { id: 'u-anu', email: 'anu@example.com', phone: '+919876543210', displayName: 'Anu', avatar: null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
+    { id: 'u-aman', email: 'aman@example.com', phone: '+919876543211', displayName: 'Aman', avatar: null, timezone: 'Asia/Kolkata', theme: 'lavenderDream', role: 'viewer', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
   ];
   seq = 0;
-  entities = new Map<string, { type: string; seq: number; rec: Rec }>();
+  /** Entities are scoped per shared space; `space` is the space of the request being handled. */
+  spaces = new Map<string, Map<string, { type: string; seq: number; rec: Rec }>>();
+  space = SPACE;
+  get entities() {
+    let m = this.spaces.get(this.space);
+    if (!m) {
+      m = new Map();
+      this.spaces.set(this.space, m);
+    }
+    return m;
+  }
   ops = new Map<string, unknown>();
   refreshTokens = new Set<string>();
-  otpAttempts = new Map<string, number>();
+  challenges = new Map<string, Challenge>();
 
   constructor() {
-    this.seed();
+    this.space = SPACE;
+    this.seedDefaults();
+    this.seedHistory();
+  }
+
+  /** Creates a fresh owner account with its own empty space. */
+  createOwner(p: { name: string; phone: string; email: string }): MockUser {
+    const id = `u-${uuid()}`;
+    const user: MockUser = { id, email: p.email, phone: p.phone, displayName: p.name, avatar: null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: `space-${id}`, ownerDisplayName: p.name };
+    this.users.push(user);
+    this.space = user.sharedSpaceId;
+    this.seedDefaults();
+    return user;
   }
 
   key(type: string, id: string) {
@@ -43,7 +85,7 @@ class MockDb {
     return [...this.entities.values()].filter((e) => e.type === type).map((e) => e.rec as unknown as T);
   }
 
-  private seed() {
+  private seedDefaults() {
     const now = new Date();
     const created = addDays(localDateInTz(now, 'Asia/Kolkata'), -40) + 'T00:00:00Z';
     DEFAULT_HABIT_DEFS.forEach((d, i) => {
@@ -62,7 +104,10 @@ class MockDb {
     });
     const s = defaultSettings(created);
     this.save('settings', { ...s, createdAt: created, deletedAt: null } as unknown as Rec);
+  }
 
+  private seedHistory() {
+    const now = new Date();
     // Demo history for the last 28 days (deterministic pseudo-random).
     const today = localDateInTz(now, 'Asia/Kolkata');
     for (let back = 28; back >= 1; back--) {
@@ -241,16 +286,52 @@ function inRange(date: string, from: string | null, to: string | null) {
 function route(method: string, path: string, query: URLSearchParams, body: Record<string, unknown>, req: { headers: Headers }): Response {
   // ---- public ----
   if (method === 'GET' && path === '/health') return json(200, { status: 'ok', time: new Date().toISOString(), version: 'mock' });
-  if (method === 'POST' && path === '/auth/otp/request') return json(202, { status: 'sent' });
+  if (method === 'POST' && path === '/auth/signup/request') {
+    const bad = Object.keys(body).filter((k) => !['name', 'phone', 'email'].includes(k));
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const phone = typeof body.phone === 'string' ? normalizeMockPhone(body.phone) : null;
+    if (bad.length) return err(400, 'validation_failed', `unknown fields: ${bad.join(',')}`);
+    if (name.length < 1 || name.length > 40) return err(400, 'validation_failed', 'name must be 1-40 characters');
+    if (!phone) return err(400, 'validation_failed', 'phone must have 8-15 digits');
+    if (email.length > 254 || !EMAIL_RE.test(email)) return err(400, 'validation_failed', 'email is not valid');
+    if (db.users.some((u) => u.email === email || u.phone === phone)) return err(409, 'already_registered', 'an account with this email or phone already exists');
+    const challengeId = uuid();
+    db.challenges.set(challengeId, { pending: { name, phone, email }, attempts: 0 });
+    return json(202, { status: 'sent', challengeId });
+  }
+  if (method === 'POST' && path === '/auth/signin/request') {
+    const bad = Object.keys(body).filter((k) => k !== 'identifier');
+    const identifier = typeof body.identifier === 'string' ? body.identifier.trim() : '';
+    if (bad.length || !identifier) return err(400, 'validation_failed', 'identifier is required');
+    const phone = identifier.includes('@') ? null : normalizeMockPhone(identifier);
+    const user = identifier.includes('@')
+      ? db.users.find((u) => u.email === identifier.toLowerCase())
+      : phone
+        ? db.users.find((u) => u.phone === phone)
+        : undefined;
+    const challengeId = uuid();
+    // Unknown identifiers get a decoy challenge (same 202 shape) that can never verify.
+    db.challenges.set(challengeId, { userId: user?.id, attempts: 0 });
+    return json(202, { status: 'sent', challengeId });
+  }
   if (method === 'POST' && path === '/auth/otp/verify') {
-    const email = String(body.email ?? '').trim().toLowerCase();
-    const user = db.users.find((u) => u.email === email);
-    const attempts = (db.otpAttempts.get(email) ?? 0) + 1;
-    db.otpAttempts.set(email, attempts);
-    if (attempts > 5) return err(429, 'rate_limited', 'too many attempts');
-    if (!user || body.code !== MOCK_OTP) return err(401, 'unauthorized', 'invalid code');
-    db.otpAttempts.delete(email);
-    return json(200, issueTokens(user));
+    const challengeId = String(body.challengeId ?? '');
+    const ch = db.challenges.get(challengeId);
+    if (!ch) return err(401, 'unauthorized', 'invalid code');
+    ch.attempts += 1;
+    if (ch.attempts > MAX_OTP_ATTEMPTS) {
+      db.challenges.delete(challengeId);
+      return err(429, 'rate_limited', 'too many attempts');
+    }
+    if (body.code !== MOCK_OTP || (!ch.userId && !ch.pending)) return err(401, 'unauthorized', 'invalid code');
+    db.challenges.delete(challengeId); // single use
+    if (ch.pending) {
+      if (db.users.some((u) => u.email === ch.pending!.email || u.phone === ch.pending!.phone)) return err(409, 'already_registered', 'an account with this email or phone already exists');
+      return json(200, issueTokens(db.createOwner(ch.pending)));
+    }
+    const user = db.users.find((u) => u.id === ch.userId);
+    return user ? json(200, issueTokens(user)) : err(401, 'unauthorized', 'invalid code');
   }
   if (method === 'POST' && path === '/auth/refresh') {
     const rt = String(body.refreshToken ?? '');
@@ -268,6 +349,7 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
   const u = authUser(req);
   if (u instanceof Response) return u;
   const user = u;
+  db.space = user.sharedSpaceId;
 
   if (path === '/me' && method === 'GET') return json(200, user);
   if (path === '/me' && method === 'PATCH') {
