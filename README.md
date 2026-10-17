@@ -28,7 +28,8 @@ npx expo start              # press i / a, or scan the QR code in Expo Go
 EXPO_PUBLIC_USE_MOCK_API=true npx expo start     # or: npm run start:mock
 ```
 
-Sign in with `anu@example.com` (owner) or `aman@example.com` (viewer); the code is always `123456`.
+Sign in with `anu@example.com` / `+919876543210` (owner) or `aman@example.com` / `+919876543211` (viewer), or tap
+"Create account" to register a new owner with an empty space. The code is always `123456`.
 The mock (`src/api/mock/mockServer.ts`) is a fetch-compatible server that implements auth, `/me`, `/settings`, `/habits`,
 `/logs`, `/workouts`, `/stats/summary`, `/sync/push` (idempotent operationIds, versions, conflicts, LWW for daily logs,
 viewer 403) and `/sync/pull` (cursor, tombstones), seeded with the 8 default habits and 4 weeks of demo history.
@@ -37,9 +38,10 @@ refresh and response validation are exercised too.
 
 ### Against the real service
 
-1. Start `bubu-bloom-service` (see its README) and provision the owner/viewer emails.
+1. Start `bubu-bloom-service` (see its README).
 2. Set `EXPO_PUBLIC_API_BASE_URL`, leave `EXPO_PUBLIC_USE_MOCK_API=false`, run `npx expo start`.
-3. Sign in with a provisioned email, enter the emailed 6-digit code.
+3. Create an account (name, phone, email) or sign in with your phone or email, then enter the 6-digit code emailed to the
+   email on your account. There are no passwords.
 
 ## Scripts
 
@@ -67,7 +69,7 @@ eas build -p ios --profile preview-ios           # internal distribution build
 ## Project layout
 
 ```
-src/app/            Expo Router: (auth)/{welcome,email,otp}, (tabs)/{index,progress,calendar,settings},
+src/app/            Expo Router: (auth)/{welcome,signup,signin,otp}, (tabs)/{index,progress,calendar,settings},
                     habit/[id] (log a value), habit/form (create/edit), habits, workout, day/[date], sync-issues
 src/lib/            scoring.ts (daily %, thresholds, rest days, streaks, milestones), dates.ts (tz-aware),
                     workoutTimer.ts (timestamp-derived), format/messages/defaults

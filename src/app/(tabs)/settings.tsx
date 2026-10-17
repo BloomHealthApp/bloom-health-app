@@ -66,7 +66,7 @@ export default function SettingsTab() {
       {msg ? <AppText variant="caption" accent accessibilityLiveRegion="polite">{msg}</AppText> : null}
 
       <Section title="Profile">
-        <AppText muted>{user?.email} · {isOwner ? 'Owner' : `Viewer of ${user?.ownerDisplayName}`}</AppText>
+        <AppText muted>{user?.email}{user?.phone ? ` · ${user.phone}` : ''} · {isOwner ? 'Owner' : `Viewer of ${user?.ownerDisplayName}`}</AppText>
         <Field label="Display name" value={name} onChangeText={setName} maxLength={40} />
         <Button
           title="Save name"
