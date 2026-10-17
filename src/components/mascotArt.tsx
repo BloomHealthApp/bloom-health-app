@@ -10,9 +10,9 @@ import type { MascotMood } from './mascotTypes';
  * Body stays cream-white; cheeks, props and accents follow the active theme.
  */
 export const INK = '#5B3A3A';
-const CREAM = '#FFF7EC';
-const PEACH = '#FFC9B8';
-const GOLD = '#F6C453';
+export const CREAM = '#FFF7EC';
+export const PEACH = '#FFC9B8';
+export const GOLD = '#F6C453';
 const WATER = '#BFE6F5';
 const SW = 4; // outline width
 const BORDER = 7; // white sticker border thickness
@@ -45,15 +45,17 @@ export function mascotPalette(c: ThemeColors): MascotPalette {
 }
 
 /** colour = real artwork; halo/shadow = flat silhouettes behind it that form the white border and drop shadow */
-type Layer = { kind: 'color' } | { kind: 'flat'; color: string; grow: number };
+export type Layer = { kind: 'color' } | { kind: 'flat'; color: string; grow: number };
 type Geom =
   | { t: 'path'; d: string }
   | { t: 'ell'; cx: number; cy: number; rx: number; ry: number }
   | { t: 'rect'; x: number; y: number; w: number; h: number; r: number; rot?: number };
 
+/** the real-artwork layer (outlined, filled); the avatars only ever draw this one */
+export const COLOR_LAYER: Layer = { kind: 'color' };
 const isColor = (L: Layer) => L.kind === 'color';
 
-function shape(L: Layer, key: string, g: Geom, fill: string) {
+export function shape(L: Layer, key: string, g: Geom, fill: string) {
   const common = isColor(L)
     ? { fill, stroke: INK, strokeWidth: SW, strokeLinejoin: 'round' as const }
     : { fill: L.kind === 'flat' ? L.color : fill, stroke: L.kind === 'flat' ? L.color : fill, strokeWidth: SW + 2 * BORDER + (L.kind === 'flat' ? L.grow : 0), strokeLinejoin: 'round' as const };
@@ -64,7 +66,7 @@ function shape(L: Layer, key: string, g: Geom, fill: string) {
 }
 
 /** stubby capsule limb from (x1,y1) to (x2,y2) */
-function limb(L: Layer, key: string, x1: number, y1: number, x2: number, y2: number, w = 14, fill = CREAM) {
+export function limb(L: Layer, key: string, x1: number, y1: number, x2: number, y2: number, w = 14, fill = CREAM) {
   if (isColor(L)) {
     return (
       <G key={key}>
@@ -78,9 +80,9 @@ function limb(L: Layer, key: string, x1: number, y1: number, x2: number, y2: num
   return <Line key={key} x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={w + 2 * SW + 2 * BORDER + grow} strokeLinecap="round" />;
 }
 
-const sparkle = (cx: number, cy: number, s: number) =>
+export const sparkle = (cx: number, cy: number, s: number) =>
   `M${cx} ${cy - s} L${cx + s * 0.28} ${cy - s * 0.28} L${cx + s} ${cy} L${cx + s * 0.28} ${cy + s * 0.28} L${cx} ${cy + s} L${cx - s * 0.28} ${cy + s * 0.28} L${cx - s} ${cy} L${cx - s * 0.28} ${cy - s * 0.28}Z`;
-const heart = (cx: number, cy: number, s: number) =>
+export const heart = (cx: number, cy: number, s: number) =>
   `M${cx} ${cy + s * 0.9} C${cx - s * 1.7} ${cy - s * 0.2} ${cx - s * 0.7} ${cy - s * 1.4} ${cx} ${cy - s * 0.4} C${cx + s * 0.7} ${cy - s * 1.4} ${cx + s * 1.7} ${cy - s * 0.2} ${cx} ${cy + s * 0.9}Z`;
 
 const BODY_D = 'M100 46 C142 46 170 72 171 110 C172 150 150 177 100 177 C50 177 28 150 29 110 C30 72 58 46 100 46Z';
@@ -244,22 +246,32 @@ function face(mood: MascotMood, p: MascotPalette) {
   return out;
 }
 
+/** feet, ears, head sprout and the cream body: the shared Bubu silhouette (everything except face, arms and props) */
+export function bubuBody(L: Layer, p: MascotPalette, opts: { feet?: boolean; sprout?: boolean } = {}) {
+  const color = isColor(L);
+  return (
+    <G>
+      {opts.feet === false ? null : shape(L, 'footL', { t: 'ell', cx: 74, cy: 176, rx: 17, ry: 10 }, CREAM)}
+      {opts.feet === false ? null : shape(L, 'footR', { t: 'ell', cx: 126, cy: 176, rx: 17, ry: 10 }, CREAM)}
+      {shape(L, 'earL', { t: 'path', d: EAR_L }, CREAM)}
+      {shape(L, 'earR', { t: 'path', d: EAR_R }, CREAM)}
+      {color ? <Path d={EAR_IN_L} fill={PEACH} /> : null}
+      {color ? <Path d={EAR_IN_R} fill={PEACH} /> : null}
+      {opts.sprout === false ? null : limb(L, 'stem', 100, 47, 100, 38, 4, p.leaf)}
+      {opts.sprout === false ? null : shape(L, 'leafL', { t: 'path', d: 'M100 40 C94 24 80 26 80 34 C84 42 94 44 100 40Z' }, p.leaf)}
+      {opts.sprout === false ? null : shape(L, 'leafR', { t: 'path', d: 'M100 40 C106 22 122 24 120 34 C116 42 106 44 100 40Z' }, p.leaf)}
+      {shape(L, 'body', { t: 'path', d: BODY_D }, CREAM)}
+    </G>
+  );
+}
+
 function figure(L: Layer, mood: MascotMood, p: MascotPalette) {
   const pose = POSES[mood];
   const color = isColor(L);
   return (
     <G>
       {(pose.back ?? []).map((a, i) => limb(L, `b${i}`, a[0], a[1], a[2], a[3]))}
-      {shape(L, 'footL', { t: 'ell', cx: 74, cy: 176, rx: 17, ry: 10 }, CREAM)}
-      {shape(L, 'footR', { t: 'ell', cx: 126, cy: 176, rx: 17, ry: 10 }, CREAM)}
-      {shape(L, 'earL', { t: 'path', d: EAR_L }, CREAM)}
-      {shape(L, 'earR', { t: 'path', d: EAR_R }, CREAM)}
-      {color ? <Path d={EAR_IN_L} fill={PEACH} /> : null}
-      {color ? <Path d={EAR_IN_R} fill={PEACH} /> : null}
-      {limb(L, 'stem', 100, 47, 100, 38, 4, p.leaf)}
-      {shape(L, 'leafL', { t: 'path', d: 'M100 40 C94 24 80 26 80 34 C84 42 94 44 100 40Z' }, p.leaf)}
-      {shape(L, 'leafR', { t: 'path', d: 'M100 40 C106 22 122 24 120 34 C116 42 106 44 100 40Z' }, p.leaf)}
-      {shape(L, 'body', { t: 'path', d: BODY_D }, CREAM)}
+      {bubuBody(L, p)}
       {color ? face(mood, p) : null}
       {props(L, mood, p)}
       {(pose.front ?? []).map((a, i) => limb(L, `f${i}`, a[0], a[1], a[2], a[3]))}
