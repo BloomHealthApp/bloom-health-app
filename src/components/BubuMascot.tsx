@@ -18,10 +18,16 @@ interface Props {
 }
 
 const LABELS: Record<MascotMood, string> = {
-  happy: 'Bubu the bear, smiling',
-  sleepy: 'Bubu the bear, sleepy',
-  cheer: 'Bubu the bear, cheering',
-  sad: 'Bubu the bear, a little sad',
+  happy: 'Bubu the bunny-bear, smiling',
+  sleepy: 'Bubu the bunny-bear, sleepy',
+  cheer: 'Bubu the bunny-bear, cheering',
+  sad: 'Bubu the bunny-bear, a little sad',
+  eating: 'Bubu the bunny-bear, enjoying a popsicle',
+  loved: 'Bubu the bunny-bear, holding a flower',
+  celebrating: 'Bubu the bunny-bear, celebrating with confetti',
+  hydrate: 'Bubu the bunny-bear, holding a water bottle',
+  workout: 'Bubu the bunny-bear, lifting a tiny dumbbell',
+  thinking: 'Bubu the bunny-bear, looking at a blank notebook',
 };
 
 export function BubuMascot({ mood = 'happy', size = 120, animated = true, accessibilityLabel }: Props) {
@@ -34,8 +40,9 @@ export function BubuMascot({ mood = 'happy', size = 120, animated = true, access
       y.value = 0;
       return;
     }
-    const amp = mood === 'cheer' ? -10 : mood === 'sleepy' ? -3 : -6;
-    const dur = mood === 'sleepy' ? 1800 : 1100;
+    const calm = mood === 'sleepy' || mood === 'thinking';
+    const amp = mood === 'cheer' || mood === 'celebrating' ? -10 : calm ? -3 : -6;
+    const dur = calm ? 1800 : 1100;
     y.value = withRepeat(
       withSequence(withTiming(amp, { duration: dur, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: dur, easing: Easing.inOut(Easing.quad) })),
       -1,
