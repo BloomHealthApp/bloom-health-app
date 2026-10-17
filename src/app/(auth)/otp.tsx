@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { TextInput } from 'react-native';
 import { ApiError, NetworkError } from '@/api/errors';
@@ -35,6 +35,9 @@ export default function OtpScreen() {
       setBusy(false);
     }
   };
+
+  // The code screen only makes sense after an email was entered.
+  if (!email) return <Redirect href="/(auth)/email" />;
 
   return (
     <Screen>
