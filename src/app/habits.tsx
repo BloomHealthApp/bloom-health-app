@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { habitGlyph } from '@/lib/habitIcon';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
@@ -29,7 +30,7 @@ export default function ManageHabits() {
               style={{ minHeight: MIN_TOUCH + 12, padding: spacing.md }}
             >
               <Row style={{ gap: spacing.md }}>
-                <AppText style={{ fontSize: 24 }}>{h.icon}</AppText>
+                <AppText style={{ fontSize: 24 }}>{habitGlyph(h.icon)}</AppText>
                 <View style={{ flex: 1 }}>
                   <AppText variant="bodyStrong">{h.title}</AppText>
                   <AppText variant="caption" muted>{describeTarget(h)}{h.isActive ? '' : ' · archived'}{h.isDefault ? ' · default' : ''}</AppText>

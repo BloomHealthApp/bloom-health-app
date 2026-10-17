@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { describeTarget, formatHabitValue } from '@/lib/format';
+import { habitGlyph } from '@/lib/habitIcon';
 import type { LogStatus } from '@/lib/scoring';
 import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -52,7 +53,7 @@ export function HabitCard({ habit, value, status, readOnly, onToggle, onPress }:
         style={{ flex: 1, minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md }}
       >
         <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.tint, alignItems: 'center', justifyContent: 'center' }}>
-          <AppText style={{ fontSize: 22, lineHeight: 28 }} accessibilityElementsHidden importantForAccessibility="no">{habit.icon}</AppText>
+          <AppText style={{ fontSize: 22, lineHeight: 28 }} accessibilityElementsHidden importantForAccessibility="no">{habitGlyph(habit.icon)}</AppText>
         </View>
         <View style={{ flex: 1 }}>
           <AppText variant="bodyStrong" numberOfLines={2}>{habit.title}</AppText>
