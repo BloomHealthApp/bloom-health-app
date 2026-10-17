@@ -1,42 +1,72 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { NotifApi, PlannedReminder } from './scheduler';
 
+type NotificationsModule = typeof import('expo-notifications');
+
 const CHANNEL_ID = 'reminders';
 
+let cached: NotificationsModule | null | undefined;
+
+/**
+ * expo-notifications needs native code that some runtimes (e.g. an Expo Go build that is older than the
+ * installed package) do not ship. Importing it eagerly would crash the whole app at startup, so it is
+ * loaded lazily and reminders are simply unavailable when the native module is missing.
+ */
+function notifications(): NotificationsModule | null {
+  if (cached !== undefined) return cached;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    cached = require('expo-notifications') as NotificationsModule;
+  } catch (e) {
+    console.warn('[notifications] expo-notifications is unavailable in this runtime; reminders are disabled.', e);
+    cached = null;
+  }
+  return cached;
+}
+
 export function configureNotifications() {
-  Notifications.setNotificationHandler({
+  const N = notifications();
+  if (!N) return;
+  N.setNotificationHandler({
     handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
   });
 }
 
 export const expoNotifApi: NotifApi = {
   async getPermissions() {
-    const p = await Notifications.getPermissionsAsync();
+    const N = notifications();
+    if (!N) return { granted: false, canAskAgain: false };
+    const p = await N.getPermissionsAsync();
     return { granted: p.granted, canAskAgain: p.canAskAgain };
   },
   async requestPermissions() {
+    const N = notifications();
+    if (!N) return { granted: false };
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+      await N.setNotificationChannelAsync(CHANNEL_ID, {
         name: 'Reminders',
-        importance: Notifications.AndroidImportance.DEFAULT,
+        importance: N.AndroidImportance.DEFAULT,
       });
     }
-    const p = await Notifications.requestPermissionsAsync();
+    const p = await N.requestPermissionsAsync();
     return { granted: p.granted };
   },
   async getScheduledIds() {
-    return (await Notifications.getAllScheduledNotificationsAsync()).map((n) => n.identifier);
+    const N = notifications();
+    if (!N) return [];
+    return (await N.getAllScheduledNotificationsAsync()).map((n) => n.identifier);
   },
   async schedule(p: PlannedReminder) {
+    const N = notifications();
+    if (!N) return;
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync(CHANNEL_ID, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT });
+      await N.setNotificationChannelAsync(CHANNEL_ID, { name: 'Reminders', importance: N.AndroidImportance.DEFAULT });
     }
-    await Notifications.scheduleNotificationAsync({
+    await N.scheduleNotificationAsync({
       identifier: p.identifier,
       content: { title: p.title, body: p.body },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        type: N.SchedulableTriggerInputTypes.DAILY,
         hour: p.hour,
         minute: p.minute,
         channelId: CHANNEL_ID,
@@ -44,6 +74,8 @@ export const expoNotifApi: NotifApi = {
     });
   },
   async cancel(identifier: string) {
-    await Notifications.cancelScheduledNotificationAsync(identifier);
+    const N = notifications();
+    if (!N) return;
+    await N.cancelScheduledNotificationAsync(identifier);
   },
 };
