@@ -9,6 +9,7 @@ import { configureNotifications } from '@/notifications/expoAdapter';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { DataProvider } from '@/providers/DataProvider';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { useWidgetSignedOut, WidgetSync } from '@/widgets/WidgetSync';
 import { Loading } from '@/components/ui';
 import { View } from 'react-native';
 
@@ -18,6 +19,8 @@ configureNotifications();
 function Shell() {
   const { status, user } = useAuth();
   const { theme, setThemeName } = useTheme();
+
+  useWidgetSignedOut(status, theme.name);
 
   // Server profile theme is the cross-device preference once signed in.
   useEffect(() => {
@@ -39,7 +42,12 @@ function Shell() {
     </Stack>
   );
   // Data layer (SQLite + sync engine) only exists for a signed-in user.
-  return status === 'signedIn' ? <DataProvider>{stack}</DataProvider> : stack;
+  return status === 'signedIn' ? (
+    <DataProvider>
+      <WidgetSync />
+      {stack}
+    </DataProvider>
+  ) : stack;
 }
 
 export default function RootLayout() {
