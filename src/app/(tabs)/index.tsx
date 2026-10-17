@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
+import { Avatar } from '@/avatars/Avatar';
 import { BubuMascot } from '@/components/BubuMascot';
 import { EmptyState } from '@/components/EmptyState';
 import { HabitCard } from '@/components/HabitCard';
@@ -55,7 +56,8 @@ export default function Home() {
 
   return (
     <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
-      <Row style={{ justifyContent: 'space-between' }}>
+      <Row style={{ justifyContent: 'space-between', gap: spacing.md }}>
+        <Avatar id={isOwner ? user?.avatar : user?.ownerAvatar} size={48} name={name} />
         <View style={{ flex: 1 }}>
           <AppText variant="caption" muted>{prettyDate(d.today)}</AppText>
           <AppText variant="title" accessibilityRole="header">{isOwner ? `Hi, ${name}` : `${name}'s day`}</AppText>

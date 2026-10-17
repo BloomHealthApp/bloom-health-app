@@ -66,11 +66,22 @@ eas build -p ios --profile preview-ios           # internal distribution build
 
 (These builds were not run while developing this repo.)
 
+## Profile avatars
+
+Each user picks one of nine original cotton-candy Bubu avatars (`bubu-01` ... `bubu-09`: Classic, Cloud Hat, Candy Stick, Heart Specs,
+Star Clip, Flower Crown, Dreamy, Sweet Tooth, Balloon). The server stores only the id (`PATCH /me {avatar}`; anything outside the allowlist is
+`400`, `null` clears it); the art is drawn locally with `react-native-svg` from the shared Bubu pieces in `components/mascotArt.tsx`, in a fixed
+palette that does not follow the theme. Avatars appear on Home (next to the greeting), in Settings > Profile (tap to change) and, for viewers,
+in the "Viewing <owner>'s progress" banner (`ownerAvatar`). Right after the first sign-up the one-time "Choose your Bubu" screen offers the grid
+with Continue / Skip (per-account flag in AsyncStorage, so it never reappears after a skip). Accounts that already exist without an avatar see it
+once too. Adding a tenth avatar needs an app release and an allowlist update in the service.
+
 ## Project layout
 
 ```
 src/app/            Expo Router: (auth)/{welcome,signup,signin,otp}, (tabs)/{index,progress,calendar,settings},
-                    habit/[id] (log a value), habit/form (create/edit), habits, workout, day/[date], sync-issues
+                    habit/[id] (log a value), habit/form (create/edit), habits, workout, day/[date], sync-issues,
+                    choose-avatar (shown once after first sign-up)
 src/lib/            scoring.ts (daily %, thresholds, rest days, streaks, milestones), dates.ts (tz-aware),
                     workoutTimer.ts (timestamp-derived), format/messages/defaults
 src/api/            typed client (refresh-on-401, zod-parsed responses) + mock/ in-memory contract server
@@ -80,6 +91,8 @@ src/providers/      AuthProvider (SecureStore tokens), DataProvider (store+engin
 src/notifications/  scheduler.ts (pure, idempotent), expoAdapter.ts
 src/components/     HabitCard, ProgressRing, WaterTracker, StepsCard, WorkoutTimer, StreakCard, WeeklyProgressChart,
                     CalendarDayCell, ThemePicker, BubuMascot(+Static), EmptyState, ConfirmationDialog, SyncStatusChip ...
+src/avatars/        nine cotton-candy Bubu profile avatars: catalog (ids/labels), AvatarArt (react-native-svg), Avatar, AvatarPicker,
+                    avatarPrompt (one-time "Choose your Bubu" flag)
 src/theme/          tokens, three pastel themes, ThemeProvider (persisted locally + saved to profile)
 assets/mascot/      README: how to swap in your own mascot art
 src/widgets/        Android home-screen widget (see "Android home-screen widget"); index.ts is the app entry

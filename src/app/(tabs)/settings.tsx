@@ -1,11 +1,13 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Linking, Pressable, Switch, TextInput, View } from 'react-native';
+import { Linking, Modal, Pressable, Switch, TextInput, View } from 'react-native';
+import { Avatar } from '@/avatars/Avatar';
+import { AvatarPicker } from '@/avatars/AvatarPicker';
+import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { Field } from '@/components/Field';
 import { SyncStatusChip } from '@/components/SyncStatusChip';
-import { BubuMascot } from '@/components/BubuMascot';
 import { ThemePicker } from '@/components/ThemePicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
 import { AppText, Button, Card, ErrorBanner, Row, Screen } from '@/components/ui';
@@ -37,6 +39,8 @@ export default function SettingsTab() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [confirmOut, setConfirmOut] = useState(false);
+  const [pickingAvatar, setPickingAvatar] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
 
   useEffect(() => setName(user?.displayName ?? ''), [user?.displayName]);
 
@@ -67,8 +71,16 @@ export default function SettingsTab() {
       {msg ? <AppText variant="caption" accent accessibilityLiveRegion="polite">{msg}</AppText> : null}
 
       <Section title="Profile">
-        <View style={{ alignItems: 'center' }}>
-          <BubuMascot mood="happy" size={96} />
+        <View style={{ alignItems: 'center', gap: spacing.xs }}>
+          <Pressable
+            onPress={() => setPickingAvatar(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Change avatar. Current: ${isAvatarId(user?.avatar) ? avatarLabel(user?.avatar) : 'none chosen'}`}
+            style={{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Avatar id={user?.avatar} size={96} decorative />
+          </Pressable>
+          <Button title="Change avatar" variant="ghost" onPress={() => setPickingAvatar(true)} />
         </View>
         <AppText muted>{user?.email}{user?.phone ? ` · ${user.phone}` : ''} · {isOwner ? 'Owner' : `Viewer of ${user?.ownerDisplayName}`}</AppText>
         <Field label="Display name" value={name} onChangeText={setName} maxLength={40} />
@@ -144,6 +156,29 @@ export default function SettingsTab() {
       <AppText variant="caption" muted style={{ textAlign: 'center' }}>
         v{Constants.expoConfig?.version ?? '1.0.0'} · {USE_MOCK_API ? 'Demo mode (mock API)' : API_BASE_URL}
       </AppText>
+
+      <Modal visible={pickingAvatar} animationType="slide" transparent onRequestClose={() => setPickingAvatar(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
+          <View accessibilityViewIsModal style={{ backgroundColor: theme.colors.bg, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, gap: spacing.md }}>
+            <AppText variant="heading" accessibilityRole="header">Choose your Bubu</AppText>
+            <AvatarPicker
+              value={user?.avatar}
+              disabled={savingAvatar}
+              onChange={(id) => {
+                if (id === user?.avatar) return setPickingAvatar(false);
+                setSavingAvatar(true);
+                guarded(async () => {
+                  updateUser(await api.patchMe({ avatar: id }));
+                  setMsg('Avatar updated.');
+                  setPickingAvatar(false);
+                }).finally(() => setSavingAvatar(false));
+              }}
+            />
+            {err ? <ErrorBanner message={err} /> : null}
+            <Button title="Close" variant="secondary" onPress={() => setPickingAvatar(false)} />
+          </View>
+        </View>
+      </Modal>
 
       <ConfirmationDialog
         visible={confirmOut}
