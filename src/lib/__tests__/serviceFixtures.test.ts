@@ -25,6 +25,8 @@ describe('service fixtures', () => {
         threshold: c.settings.threshold,
         restDays: c.settings.restDays,
         restDayMode: c.settings.restMode as RestDayMode,
+        // new shared cases carry settings.neutralDates (YYYY-MM-DD); older ones do not
+        neutralDates: (c.settings as { neutralDates?: string[] }).neutralDates,
       });
       expect(s.currentStreak).toBe(c.expect.current);
       expect(s.longestStreak).toBe(c.expect.longest);

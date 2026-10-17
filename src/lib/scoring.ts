@@ -82,6 +82,11 @@ export interface DayContext {
   threshold?: number;
   restDays?: number[];
   restDayMode?: RestDayMode;
+  /**
+   * YYYY-MM-DD dates that behave exactly like a rest day (restDay=true). The lib does not know why a date is
+   * neutral (Sunday default, period days, ...): callers build this list (see effectiveRestDays / periodNeutralDates).
+   */
+  neutralDates?: string[];
   /** timezone used to derive each habit's first eligible date from createdAt */
   timezone?: string;
 }
@@ -95,6 +100,24 @@ export interface DayScore {
   restDay: boolean;
   /** neutral days neither extend nor break a streak */
   neutral: boolean;
+}
+
+const neutralSets = new WeakMap<string[], Set<string>>();
+function neutralSet(dates: string[] | undefined): Set<string> | null {
+  if (!dates || dates.length === 0) return null;
+  let set = neutralSets.get(dates);
+  if (!set) {
+    set = new Set(dates);
+    neutralSets.set(dates, set);
+  }
+  return set;
+}
+
+/** Rest weekdays that apply: the configured ones plus Sunday unless `sundayRest` is explicitly false (absent = on). */
+export function effectiveRestDays(settings: { restDays?: number[] | null; sundayRest?: boolean | null }): number[] {
+  const days = new Set(settings.restDays ?? []);
+  if (settings.sundayRest !== false) days.add(0);
+  return [...days].sort((a, b) => a - b);
 }
 
 export function indexLogs(logs: LogLike[]): Map<string, LogLike> {
@@ -123,7 +146,7 @@ export function eligibleHabits(habits: HabitRule[], localDate: string, tz?: stri
 export function scoreDay(localDate: string, ctx: DayContext, index?: Map<string, LogLike>): DayScore {
   const idx = index ?? indexLogs(ctx.logs);
   const threshold = ctx.threshold ?? DEFAULT_THRESHOLD;
-  const restDay = (ctx.restDays ?? []).includes(weekdayOf(localDate));
+  const restDay = (ctx.restDays ?? []).includes(weekdayOf(localDate)) || (neutralSet(ctx.neutralDates)?.has(localDate) ?? false);
   const mode = ctx.restDayMode ?? 'neutral';
 
   let eligible = 0;
@@ -138,15 +161,17 @@ export function scoreDay(localDate: string, ctx: DayContext, index?: Map<string,
   const meets = eligible > 0 && pct >= threshold;
 
   if (restDay) {
-    // neutral: ignored by streaks. counts: the rest day itself counts as a successful day.
+    // counts: the rest day itself counts as a successful day.
+    // neutral: an unsuccessful rest day neither breaks nor extends the streak; logging enough habits makes it a normal success.
+    const success = mode === 'counts' || meets;
     return {
       localDate,
       eligible,
       completed,
       completionPercent: pct,
-      successful: mode === 'counts',
+      successful: success,
       restDay: true,
-      neutral: mode === 'neutral',
+      neutral: !success,
     };
   }
   return {

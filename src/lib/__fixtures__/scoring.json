@@ -1,138 +1,776 @@
 {
-  "_note": "App-local fixtures in the shared shape (habits/logs/settings -> expected days+streaks). Replace/merge with bubu-bloom-service/testdata/scoring.json when that file is final.",
+  "_note": "App-local fixtures in the shared shape. Optional `sundayRest` (applied via effectiveRestDays; absent here means NOT applied so older cases keep their meaning) and `neutralDates` (YYYY-MM-DD) cover Sunday rest and period-style neutral days. Merge with bubu-bloom-service/testdata/scoring.json once that file is final.",
   "cases": [
     {
       "name": "boolean + quantity, partial does not count",
       "habits": [
-        {"id":"h1","trackingType":"boolean","target":1,"targetComparison":"atLeast"},
-        {"id":"h2","trackingType":"quantity","target":2000,"targetComparison":"atLeast"}
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        },
+        {
+          "id": "h2",
+          "trackingType": "quantity",
+          "target": 2000,
+          "targetComparison": "atLeast"
+        }
       ],
       "logs": [
-        {"habitId":"h1","localDate":"2026-10-01","value":1},{"habitId":"h2","localDate":"2026-10-01","value":2000},
-        {"habitId":"h1","localDate":"2026-10-02","value":1},{"habitId":"h2","localDate":"2026-10-02","value":1000},
-        {"habitId":"h1","localDate":"2026-10-03","value":1},{"habitId":"h2","localDate":"2026-10-03","value":2500}
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-01",
+          "value": 1
+        },
+        {
+          "habitId": "h2",
+          "localDate": "2026-10-01",
+          "value": 2000
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-02",
+          "value": 1
+        },
+        {
+          "habitId": "h2",
+          "localDate": "2026-10-02",
+          "value": 1000
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h2",
+          "localDate": "2026-10-03",
+          "value": 2500
+        }
       ],
-      "threshold": 80, "restDays": [], "restDayMode": "neutral",
-      "from": "2026-10-01", "to": "2026-10-03", "today": "2026-10-03",
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "from": "2026-10-01",
+      "to": "2026-10-03",
+      "today": "2026-10-03",
       "expect": {
-        "currentStreak": 1, "longestStreak": 1,
+        "currentStreak": 1,
+        "longestStreak": 1,
         "days": [
-          {"localDate":"2026-10-01","completionPercent":100,"successful":true},
-          {"localDate":"2026-10-02","completionPercent":50,"successful":false},
-          {"localDate":"2026-10-03","completionPercent":100,"successful":true}
+          {
+            "localDate": "2026-10-01",
+            "completionPercent": 100,
+            "successful": true
+          },
+          {
+            "localDate": "2026-10-02",
+            "completionPercent": 50,
+            "successful": false
+          },
+          {
+            "localDate": "2026-10-03",
+            "completionPercent": 100,
+            "successful": true
+          }
         ]
       }
     },
     {
       "name": "rest day neutral keeps streak alive without incrementing",
-      "habits": [{"id":"h1","trackingType":"boolean","target":1,"targetComparison":"atLeast"}],
-      "logs": [
-        {"habitId":"h1","localDate":"2026-10-03","value":1},
-        {"habitId":"h1","localDate":"2026-10-05","value":1}
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
       ],
-      "threshold": 80, "restDays": [0], "restDayMode": "neutral",
-      "from": "2026-10-03", "to": "2026-10-05", "today": "2026-10-05",
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-05",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [
+        0
+      ],
+      "restDayMode": "neutral",
+      "from": "2026-10-03",
+      "to": "2026-10-05",
+      "today": "2026-10-05",
       "expect": {
-        "currentStreak": 2, "longestStreak": 2,
+        "currentStreak": 2,
+        "longestStreak": 2,
         "days": [
-          {"localDate":"2026-10-03","completionPercent":100,"successful":true},
-          {"localDate":"2026-10-04","completionPercent":0,"successful":false},
-          {"localDate":"2026-10-05","completionPercent":100,"successful":true}
+          {
+            "localDate": "2026-10-03",
+            "completionPercent": 100,
+            "successful": true
+          },
+          {
+            "localDate": "2026-10-04",
+            "completionPercent": 0,
+            "successful": false
+          },
+          {
+            "localDate": "2026-10-05",
+            "completionPercent": 100,
+            "successful": true
+          }
         ]
       }
     },
     {
       "name": "rest day counts mode increments streak",
-      "habits": [{"id":"h1","trackingType":"boolean","target":1,"targetComparison":"atLeast"}],
-      "logs": [
-        {"habitId":"h1","localDate":"2026-10-03","value":1},
-        {"habitId":"h1","localDate":"2026-10-05","value":1}
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
       ],
-      "threshold": 80, "restDays": [0], "restDayMode": "counts",
-      "from": "2026-10-03", "to": "2026-10-05", "today": "2026-10-05",
-      "expect": { "currentStreak": 3, "longestStreak": 3 }
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-05",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [
+        0
+      ],
+      "restDayMode": "counts",
+      "from": "2026-10-03",
+      "to": "2026-10-05",
+      "today": "2026-10-05",
+      "expect": {
+        "currentStreak": 3,
+        "longestStreak": 3
+      }
     },
     {
       "name": "today in progress does not break the streak",
-      "habits": [{"id":"h1","trackingType":"boolean","target":1,"targetComparison":"atLeast"}],
-      "logs": [
-        {"habitId":"h1","localDate":"2026-10-01","value":1},
-        {"habitId":"h1","localDate":"2026-10-02","value":1}
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
       ],
-      "threshold": 80, "restDays": [], "restDayMode": "neutral",
-      "from": "2026-10-01", "to": "2026-10-03", "today": "2026-10-03",
-      "expect": { "currentStreak": 2, "longestStreak": 2 }
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-01",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-02",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "from": "2026-10-01",
+      "to": "2026-10-03",
+      "today": "2026-10-03",
+      "expect": {
+        "currentStreak": 2,
+        "longestStreak": 2
+      }
     },
     {
       "name": "a missed past day breaks current streak but keeps longest",
-      "habits": [{"id":"h1","trackingType":"boolean","target":1,"targetComparison":"atLeast"}],
-      "logs": [
-        {"habitId":"h1","localDate":"2026-10-01","value":1},
-        {"habitId":"h1","localDate":"2026-10-02","value":1},
-        {"habitId":"h1","localDate":"2026-10-03","value":1},
-        {"habitId":"h1","localDate":"2026-10-05","value":1}
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
       ],
-      "threshold": 80, "restDays": [], "restDayMode": "neutral",
-      "from": "2026-10-01", "to": "2026-10-05", "today": "2026-10-05",
-      "expect": { "currentStreak": 1, "longestStreak": 3 }
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-01",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-02",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-05",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "from": "2026-10-01",
+      "to": "2026-10-05",
+      "today": "2026-10-05",
+      "expect": {
+        "currentStreak": 1,
+        "longestStreak": 3
+      }
     },
     {
       "name": "timeOfDay 'by' rule",
-      "habits": [{"id":"wake","trackingType":"timeOfDay","target":300,"targetComparison":"by"}],
-      "logs": [
-        {"habitId":"wake","localDate":"2026-10-01","value":290},
-        {"habitId":"wake","localDate":"2026-10-02","value":301},
-        {"habitId":"wake","localDate":"2026-10-03","value":300}
+      "habits": [
+        {
+          "id": "wake",
+          "trackingType": "timeOfDay",
+          "target": 300,
+          "targetComparison": "by"
+        }
       ],
-      "threshold": 80, "restDays": [], "restDayMode": "neutral",
-      "from": "2026-10-01", "to": "2026-10-03", "today": "2026-10-03",
+      "logs": [
+        {
+          "habitId": "wake",
+          "localDate": "2026-10-01",
+          "value": 290
+        },
+        {
+          "habitId": "wake",
+          "localDate": "2026-10-02",
+          "value": 301
+        },
+        {
+          "habitId": "wake",
+          "localDate": "2026-10-03",
+          "value": 300
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "from": "2026-10-01",
+      "to": "2026-10-03",
+      "today": "2026-10-03",
       "expect": {
-        "currentStreak": 1, "longestStreak": 1,
+        "currentStreak": 1,
+        "longestStreak": 1,
         "days": [
-          {"localDate":"2026-10-01","completionPercent":100,"successful":true},
-          {"localDate":"2026-10-02","completionPercent":0,"successful":false},
-          {"localDate":"2026-10-03","completionPercent":100,"successful":true}
+          {
+            "localDate": "2026-10-01",
+            "completionPercent": 100,
+            "successful": true
+          },
+          {
+            "localDate": "2026-10-02",
+            "completionPercent": 0,
+            "successful": false
+          },
+          {
+            "localDate": "2026-10-03",
+            "completionPercent": 100,
+            "successful": true
+          }
         ]
       }
     },
     {
       "name": "threshold boundary 4/5 = 80% succeeds at 80, fails at 85",
       "habits": [
-        {"id":"a","trackingType":"boolean","target":1,"targetComparison":"atLeast"},
-        {"id":"b","trackingType":"boolean","target":1,"targetComparison":"atLeast"},
-        {"id":"c","trackingType":"boolean","target":1,"targetComparison":"atLeast"},
-        {"id":"d","trackingType":"boolean","target":1,"targetComparison":"atLeast"},
-        {"id":"e","trackingType":"boolean","target":1,"targetComparison":"atLeast"}
+        {
+          "id": "a",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        },
+        {
+          "id": "b",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        },
+        {
+          "id": "c",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        },
+        {
+          "id": "d",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        },
+        {
+          "id": "e",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
       ],
       "logs": [
-        {"habitId":"a","localDate":"2026-10-01","value":1},{"habitId":"b","localDate":"2026-10-01","value":1},
-        {"habitId":"c","localDate":"2026-10-01","value":1},{"habitId":"d","localDate":"2026-10-01","value":1}
+        {
+          "habitId": "a",
+          "localDate": "2026-10-01",
+          "value": 1
+        },
+        {
+          "habitId": "b",
+          "localDate": "2026-10-01",
+          "value": 1
+        },
+        {
+          "habitId": "c",
+          "localDate": "2026-10-01",
+          "value": 1
+        },
+        {
+          "habitId": "d",
+          "localDate": "2026-10-01",
+          "value": 1
+        }
       ],
-      "threshold": 80, "restDays": [], "restDayMode": "neutral",
-      "from": "2026-10-01", "to": "2026-10-01", "today": "2026-10-01",
-      "expect": { "currentStreak": 1, "longestStreak": 1, "days": [{"localDate":"2026-10-01","completionPercent":80,"successful":true}] }
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "from": "2026-10-01",
+      "to": "2026-10-01",
+      "today": "2026-10-01",
+      "expect": {
+        "currentStreak": 1,
+        "longestStreak": 1,
+        "days": [
+          {
+            "localDate": "2026-10-01",
+            "completionPercent": 80,
+            "successful": true
+          }
+        ]
+      }
     },
     {
       "name": "skipped habit is excluded from eligible; weekday schedule respected",
       "habits": [
-        {"id":"a","trackingType":"boolean","target":1,"targetComparison":"atLeast"},
-        {"id":"b","trackingType":"boolean","target":1,"targetComparison":"atLeast"},
-        {"id":"sat","trackingType":"boolean","target":1,"targetComparison":"atLeast","schedule":{"days":[6]}}
+        {
+          "id": "a",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        },
+        {
+          "id": "b",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        },
+        {
+          "id": "sat",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast",
+          "schedule": {
+            "days": [
+              6
+            ]
+          }
+        }
       ],
       "logs": [
-        {"habitId":"a","localDate":"2026-10-02","value":1},
-        {"habitId":"b","localDate":"2026-10-02","value":null,"status":"skipped"},
-        {"habitId":"a","localDate":"2026-10-03","value":1},
-        {"habitId":"b","localDate":"2026-10-03","value":1}
+        {
+          "habitId": "a",
+          "localDate": "2026-10-02",
+          "value": 1
+        },
+        {
+          "habitId": "b",
+          "localDate": "2026-10-02",
+          "value": null,
+          "status": "skipped"
+        },
+        {
+          "habitId": "a",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "b",
+          "localDate": "2026-10-03",
+          "value": 1
+        }
       ],
-      "threshold": 80, "restDays": [], "restDayMode": "neutral",
-      "from": "2026-10-02", "to": "2026-10-03", "today": "2026-10-03",
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "from": "2026-10-02",
+      "to": "2026-10-03",
+      "today": "2026-10-03",
       "expect": {
-        "currentStreak": 1, "longestStreak": 1,
+        "currentStreak": 1,
+        "longestStreak": 1,
         "days": [
-          {"localDate":"2026-10-02","completionPercent":100,"successful":true},
-          {"localDate":"2026-10-03","completionPercent":66.67,"successful":false}
+          {
+            "localDate": "2026-10-02",
+            "completionPercent": 100,
+            "successful": true
+          },
+          {
+            "localDate": "2026-10-03",
+            "completionPercent": 66.67,
+            "successful": false
+          }
         ]
+      }
+    },
+    {
+      "name": "Sunday rest on: an unlogged Sunday neither breaks nor extends the streak",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-05",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "sundayRest": true,
+      "from": "2026-10-03",
+      "to": "2026-10-05",
+      "today": "2026-10-05",
+      "expect": {
+        "currentStreak": 2,
+        "longestStreak": 2
+      }
+    },
+    {
+      "name": "Sunday rest off: an unlogged Sunday breaks the streak",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-05",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "sundayRest": false,
+      "from": "2026-10-03",
+      "to": "2026-10-05",
+      "today": "2026-10-05",
+      "expect": {
+        "currentStreak": 1,
+        "longestStreak": 1
+      }
+    },
+    {
+      "name": "Sunday rest absent defaults to on",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-05",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "from": "2026-10-03",
+      "to": "2026-10-05",
+      "today": "2026-10-05",
+      "expect": {
+        "currentStreak": 2,
+        "longestStreak": 2
+      },
+      "sundayRestAbsent": true
+    },
+    {
+      "name": "Sunday logged successfully counts as a normal success",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-03",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-04",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-05",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "sundayRest": true,
+      "from": "2026-10-03",
+      "to": "2026-10-05",
+      "today": "2026-10-05",
+      "expect": {
+        "currentStreak": 3,
+        "longestStreak": 3
+      }
+    },
+    {
+      "name": "neutral date logged successfully counts",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-06",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-07",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-08",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "sundayRest": false,
+      "neutralDates": [
+        "2026-10-07"
+      ],
+      "from": "2026-10-06",
+      "to": "2026-10-08",
+      "today": "2026-10-08",
+      "expect": {
+        "currentStreak": 3,
+        "longestStreak": 3
+      }
+    },
+    {
+      "name": "unsuccessful neutral date does not break the streak",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-06",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-08",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "sundayRest": false,
+      "neutralDates": [
+        "2026-10-07"
+      ],
+      "from": "2026-10-06",
+      "to": "2026-10-08",
+      "today": "2026-10-08",
+      "expect": {
+        "currentStreak": 2,
+        "longestStreak": 2
+      }
+    },
+    {
+      "name": "same days without the neutral date break the streak",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-06",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-08",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "neutral",
+      "sundayRest": false,
+      "from": "2026-10-06",
+      "to": "2026-10-08",
+      "today": "2026-10-08",
+      "expect": {
+        "currentStreak": 1,
+        "longestStreak": 1
+      }
+    },
+    {
+      "name": "neutral dates plus rest weekdays plus Sunday",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-07",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-12",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [
+        6
+      ],
+      "restDayMode": "neutral",
+      "sundayRest": true,
+      "neutralDates": [
+        "2026-10-08",
+        "2026-10-09"
+      ],
+      "from": "2026-10-07",
+      "to": "2026-10-12",
+      "today": "2026-10-12",
+      "expect": {
+        "currentStreak": 2,
+        "longestStreak": 2
+      }
+    },
+    {
+      "name": "neutral date in counts mode still counts as a success",
+      "habits": [
+        {
+          "id": "h1",
+          "trackingType": "boolean",
+          "target": 1,
+          "targetComparison": "atLeast"
+        }
+      ],
+      "logs": [
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-06",
+          "value": 1
+        },
+        {
+          "habitId": "h1",
+          "localDate": "2026-10-08",
+          "value": 1
+        }
+      ],
+      "threshold": 80,
+      "restDays": [],
+      "restDayMode": "counts",
+      "sundayRest": false,
+      "neutralDates": [
+        "2026-10-07"
+      ],
+      "from": "2026-10-06",
+      "to": "2026-10-08",
+      "today": "2026-10-08",
+      "expect": {
+        "currentStreak": 3,
+        "longestStreak": 3
       }
     }
   ]

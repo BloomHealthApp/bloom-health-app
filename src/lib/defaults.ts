@@ -45,6 +45,7 @@ export function defaultSettings(now = new Date().toISOString()): Settings {
     dailyThreshold: 80,
     restDays: [],
     restDayMode: 'neutral',
+    sundayRest: true,
     reminders: DEFAULT_REMINDERS,
     version: 1,
     updatedAt: now,

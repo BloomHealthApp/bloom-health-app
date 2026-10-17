@@ -1,6 +1,7 @@
 import fixtures from '../__fixtures__/scoring.json';
 import {
   computeStreaks,
+  effectiveRestDays,
   evaluateStatus,
   habitProgress,
   isMilestone,
@@ -16,12 +17,16 @@ import { addDays, localDateInTz, minutesSinceMidnightInTz, startOfWeek, weekdayO
 describe('shared fixtures', () => {
   for (const c of fixtures.cases) {
     it(c.name, () => {
+      const extra = c as { sundayRest?: boolean; sundayRestAbsent?: boolean; neutralDates?: string[] };
+      // Older cases do not mention Sundays and keep the raw restDays; new cases opt in to the Sunday default explicitly.
+      const useSunday = extra.sundayRest !== undefined || extra.sundayRestAbsent;
       const s = summarize(c.from, c.to, c.today, {
         habits: c.habits as HabitRule[],
         logs: c.logs as never,
         threshold: c.threshold,
-        restDays: c.restDays,
+        restDays: useSunday ? effectiveRestDays({ restDays: c.restDays, sundayRest: extra.sundayRest }) : c.restDays,
         restDayMode: c.restDayMode as RestDayMode,
+        neutralDates: extra.neutralDates,
       });
       expect(s.currentStreak).toBe(c.expect.currentStreak);
       expect(s.longestStreak).toBe(c.expect.longestStreak);
@@ -118,5 +123,33 @@ describe('timezone-aware dates', () => {
     expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
     expect(weekdayOf('2026-10-04')).toBe(0);
     expect(startOfWeek('2026-10-04')).toBe('2026-09-28');
+  });
+});
+
+describe('effectiveRestDays', () => {
+  it('adds Sunday when sundayRest is true or absent', () => {
+    expect(effectiveRestDays({ restDays: [], sundayRest: true })).toEqual([0]);
+    expect(effectiveRestDays({ restDays: [] })).toEqual([0]);
+    expect(effectiveRestDays({ restDays: [3, 6], sundayRest: undefined })).toEqual([0, 3, 6]);
+  });
+  it('keeps the configured days only when sundayRest is false, and never duplicates Sunday', () => {
+    expect(effectiveRestDays({ restDays: [3], sundayRest: false })).toEqual([3]);
+    expect(effectiveRestDays({ restDays: [0, 2], sundayRest: true })).toEqual([0, 2]);
+    expect(effectiveRestDays({ restDays: null, sundayRest: false })).toEqual([]);
+  });
+});
+
+describe('neutral dates', () => {
+  const habits: HabitRule[] = [{ id: 'a', trackingType: 'boolean', target: 1, targetComparison: 'atLeast' }];
+  it('behave like rest days: restDay=true, unsuccessful ones are neutral', () => {
+    const d = scoreDay('2026-10-07', { habits, logs: [], neutralDates: ['2026-10-07'] });
+    expect(d).toMatchObject({ restDay: true, neutral: true, successful: false });
+  });
+  it('a successful neutral date is a normal success', () => {
+    const d = scoreDay('2026-10-07', { habits, logs: [{ habitId: 'a', localDate: '2026-10-07', value: 1 }], neutralDates: ['2026-10-07'] });
+    expect(d).toMatchObject({ restDay: true, neutral: false, successful: true });
+  });
+  it('dates not listed are unaffected', () => {
+    expect(scoreDay('2026-10-08', { habits, logs: [], neutralDates: ['2026-10-07'] })).toMatchObject({ restDay: false });
   });
 });

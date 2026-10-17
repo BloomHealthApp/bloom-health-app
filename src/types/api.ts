@@ -6,6 +6,15 @@ export type ThemeName = z.infer<typeof ThemeNameSchema>;
 export const RoleSchema = z.enum(['owner', 'viewer']);
 export type Role = z.infer<typeof RoleSchema>;
 
+export const GenderSchema = z.enum(['female', 'male', 'other', 'prefer_not_to_say']);
+export type Gender = z.infer<typeof GenderSchema>;
+export const GENDER_OPTIONS: { value: Gender; label: string }[] = [
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
+  { value: 'other', label: 'Other' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
+
 export const UserSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -19,10 +28,14 @@ export const UserSchema = z.object({
   ownerDisplayName: z.string(),
   /** the space owner's avatar id (equals `avatar` for owners); absent on older servers */
   ownerAvatar: z.string().nullable().optional(),
+  /** null/absent for legacy accounts */
+  gender: GenderSchema.nullable().optional(),
+  /** explicit setting if present, else gender === 'female'. Absent on older servers (treated as gender === 'female'). */
+  periodTrackerEnabled: z.boolean().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
-export const SignUpRequestSchema = z.object({ name: z.string(), phone: z.string(), email: z.string(), avatar: z.string().nullable().optional() });
+export const SignUpRequestSchema = z.object({ name: z.string(), phone: z.string(), email: z.string(), avatar: z.string().nullable().optional(), gender: GenderSchema.optional() });
 export type SignUpRequest = z.infer<typeof SignUpRequestSchema>;
 export const SignInRequestSchema = z.object({ identifier: z.string() });
 export type SignInRequest = z.infer<typeof SignInRequestSchema>;
@@ -53,6 +66,8 @@ export const SettingsSchema = z.object({
   dailyThreshold: z.number(),
   restDays: z.array(z.number()),
   restDayMode: z.enum(['neutral', 'counts']),
+  /** Sundays are rest days (never break the streak). Absent = true (older servers / accounts). */
+  sundayRest: z.boolean().optional(),
   reminders: z.array(ReminderSchema),
   version: z.number(),
   updatedAt: z.string(),
@@ -141,9 +156,40 @@ export const StatsSummarySchema = z.object({
 });
 export type StatsSummary = z.infer<typeof StatsSummarySchema>;
 
+// ---- Period tracker (private to the owner: never returned to or accepted from viewers) ----
+export const PERIOD_FLOWS = ['light', 'medium', 'heavy'] as const;
+export const PERIOD_SYMPTOMS = ['cramps', 'headache', 'bloating', 'fatigue', 'mood_swings', 'backache', 'acne', 'nausea', 'cravings', 'tender_breasts'] as const;
+export const PERIOD_MOODS = ['happy', 'calm', 'sad', 'irritable', 'anxious'] as const;
+export const PERIOD_MAX_DAYS = 14;
+export const PERIOD_MAX_SYMPTOMS = 10;
+export const PERIOD_MAX_NOTE = 500;
+export const PeriodFlowSchema = z.enum(PERIOD_FLOWS);
+export type PeriodFlow = z.infer<typeof PeriodFlowSchema>;
+export const PeriodSymptomSchema = z.enum(PERIOD_SYMPTOMS);
+export type PeriodSymptom = z.infer<typeof PeriodSymptomSchema>;
+export const PeriodMoodSchema = z.enum(PERIOD_MOODS);
+export type PeriodMood = z.infer<typeof PeriodMoodSchema>;
+
+export const PeriodSchema = z.object({
+  id: z.string(),
+  startDate: z.string(),
+  /** null while the period is ongoing */
+  endDate: z.string().nullable(),
+  flow: PeriodFlowSchema,
+  /** unknown symptoms from a newer server are dropped on read instead of failing the whole sync page */
+  symptoms: z.array(z.string()).transform((a) => a.filter((x): x is PeriodSymptom => (PERIOD_SYMPTOMS as readonly string[]).includes(x)).slice(0, PERIOD_MAX_SYMPTOMS)),
+  mood: PeriodMoodSchema.nullable(),
+  note: z.string().max(PERIOD_MAX_NOTE).nullable(),
+  version: z.number(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
+});
+export type Period = z.infer<typeof PeriodSchema>;
+
 // ---- Sync ----
-export type EntityType = 'habit' | 'dailyLog' | 'workout' | 'settings';
-export type SyncEntity = Habit | DailyLog | Workout | Settings;
+export type EntityType = 'habit' | 'dailyLog' | 'workout' | 'settings' | 'period';
+export type SyncEntity = Habit | DailyLog | Workout | Settings | Period;
 
 export interface PushOperation {
   operationId: string;
@@ -173,6 +219,8 @@ export const PullResponseSchema = z.object({
     dailyLogs: z.array(DailyLogSchema).default([]),
     workouts: z.array(WorkoutSchema).default([]),
     settings: z.array(SettingsSchema).default([]),
+    /** owner only; always [] for viewers (and absent on older servers) */
+    periods: z.array(PeriodSchema).default([]),
   }),
 });
 export type PullResponse = z.infer<typeof PullResponseSchema>;
