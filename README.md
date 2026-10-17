@@ -76,6 +76,24 @@ in the "Viewing <owner>'s progress" banner (`ownerAvatar`). Right after the firs
 with Continue / Skip (per-account flag in AsyncStorage, so it never reappears after a skip). Accounts that already exist without an avatar see it
 once too. Adding a tenth avatar needs an app release and an allowlist update in the service.
 
+## Gender, period tracker and Sunday streaks
+
+- **Gender** is optional (`female`, `male`, `other`, `prefer_not_to_say`): a chip row on sign-up and in Settings > Profile (tap the selected chip to clear).
+- **Period tracker** (private). On by default for `female`; `other` / `prefer not to say` can switch it on in Settings > Profile; hidden for male,
+  unset gender and for viewers. The tracker screen (`src/app/periods.tsx`, reachable from a small Home card and Settings) has a month calendar with period
+  days marked and the estimated window softly shaded, Start/End period, flow (light/medium/heavy), symptom and mood chips, a note, history with edit/delete
+  and a stats card. Estimates only: next start = last start + the average of up to the last 6 start-to-start gaps, shown only with at least 2 cycles; a
+  "may be late" note appears once today is past the +/-2 day window. It is **not medical advice**. An optional local "heads-up" notification two days before the
+  estimate uses neutral text (the word period never appears on the lock screen) and is unavailable in Expo Go.
+- **Privacy.** Period rows sync as entity `period`, owner only: viewers never receive them (the service filters them), never see the tracker UI, and nothing about
+  periods goes into widget snapshots, notification text or logs. Data is stored in the same MongoDB as the rest (not end-to-end encrypted); privacy is enforced
+  by server-side filtering.
+- **Streaks.** Sundays never break a streak (setting `sundayRest`, default on; Settings > Daily goal) and, for owners with the tracker on, neither do period days.
+  Both are neutral days: an unlogged one neither breaks nor extends the streak, one where you reach the goal counts as a normal success. Calendar, week chart
+  and heatmap draw them as soft rest cells without a reason. **Viewers** cannot compute this locally (no period data), so their streaks and day flags come
+  from `GET /stats/summary` (cached for offline); owners compute locally from logs plus their own periods.
+- Mock mode: Anu (female owner) has three demo periods; Aman (male viewer) sees none.
+
 ## Project layout
 
 ```
@@ -91,6 +109,7 @@ src/providers/      AuthProvider (SecureStore tokens), DataProvider (store+engin
 src/notifications/  scheduler.ts (pure, idempotent), expoAdapter.ts
 src/components/     HabitCard, ProgressRing, WaterTracker, StepsCard, WorkoutTimer, StreakCard, WeeklyProgressChart,
                     CalendarDayCell, ThemePicker, BubuMascot(+Static), EmptyState, ConfirmationDialog, SyncStatusChip ...
+src/lib/cycle.ts       pure cycle math (averages, next-start estimate, neutral dates); periodRules/periodsView/profile: tracker rules
 src/avatars/        nine cotton-candy Bubu profile avatars: catalog (ids/labels), AvatarArt (react-native-svg), Avatar, AvatarPicker,
                     avatarPrompt (one-time "Choose your Bubu" flag)
 src/theme/          tokens, three pastel themes, ThemeProvider (persisted locally + saved to profile)
