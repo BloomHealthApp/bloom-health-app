@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureNotifications } from '@/notifications/expoAdapter';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+import { PeriodReminderSync } from '@/features/PeriodReminderSync';
 import { DataProvider } from '@/providers/DataProvider';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { useWidgetSignedOut, WidgetSync } from '@/widgets/WidgetSync';
@@ -40,12 +41,14 @@ function Shell() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="choose-avatar" />
+      <Stack.Screen name="periods" />
     </Stack>
   );
   // Data layer (SQLite + sync engine) only exists for a signed-in user.
   return status === 'signedIn' ? (
     <DataProvider>
       <WidgetSync />
+      <PeriodReminderSync />
       {stack}
     </DataProvider>
   ) : stack;
