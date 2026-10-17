@@ -82,6 +82,7 @@ src/components/     HabitCard, ProgressRing, WaterTracker, StepsCard, WorkoutTim
                     CalendarDayCell, ThemePicker, BubuMascot(+Static), EmptyState, ConfirmationDialog, SyncStatusChip ...
 src/theme/          tokens, three pastel themes, ThemeProvider (persisted locally + saved to profile)
 assets/mascot/      README: how to swap in your own mascot art
+src/widgets/        Android home-screen widget (see "Android home-screen widget"); index.ts is the app entry
 ```
 
 ## How it works
@@ -105,6 +106,45 @@ assets/mascot/      README: how to swap in your own mascot art
   mean re-running never duplicates; a timezone change reschedules; denied permission shows an in-app explanation.
 - **Accessibility.** Labels/roles on interactive elements, 44 pt minimum touch targets, no color-only status,
   reduced-motion support for the mascot animation.
+
+## Android home-screen widget
+
+Two Android widgets, built with [`react-native-android-widget`](https://github.com/sAleksovski/react-native-android-widget)
+(`^0.22.1`; Expo config plugin, New Architecture / TurboModule): **Bubu streak** (2x2: Bubu + current streak) and
+**Bubu daily progress** (4x2: streak, longest streak, today's ring, "X of Y habits done", an encouraging message).
+Both use the active app theme and the original Bubu mascot, and tapping opens the app. iOS is not implemented (the data
+layer is platform-neutral so an iOS widget can reuse it later).
+
+**Build.** The widget is native code, so it does **not** appear in Expo Go (the app still runs there; the widget code is
+skipped). Create a development or preview build:
+
+```bash
+npx eas-cli@latest build -p android --profile preview-android     # installable .apk with the widgets
+npx eas-cli@latest build -p android --profile development         # dev client (then: npx expo start --dev-client)
+```
+
+Locally: `npx expo prebuild --platform android` then `npx expo run:android` (the generated `android/` is not committed).
+
+**Add it to the home screen.** Install the build, open Bubu Bloom once and sign in (this writes the first snapshot), then
+long-press an empty spot on the Android home screen > Widgets > Bubu Bloom > drag *Bubu streak* or *Bubu daily progress*.
+Before the first open it shows "Open Bubu Bloom to get started"; after sign-out, "Open Bubu Bloom to sign in".
+
+**Code.**
+
+```
+index.ts                         app entry (package.json "main"): imports expo-router/entry + registers the widget task
+src/lib/progress.ts              pure today-score + streak derivation, shared by Home (features/derived.ts) and the widget
+src/widgets/widgetData.ts        WidgetSnapshot, buildSnapshot, AsyncStorage persistence, publishSnapshot / publishSignedOut
+src/widgets/WidgetSync.tsx       republishes on log/sync/day/theme change, app foreground and sign-out (mounted in app/_layout)
+src/widgets/widgetAdapter.ts     lazy, guarded access to the native module (no-op in Expo Go / Jest / iOS)
+src/widgets/BubuWidgets.tsx      the two layouts;  widgetTaskHandler.ts  headless renderer used while the app is closed
+src/widgets/svg.ts               mascot / flame / ring as SVG strings (the mascot reuses components/mascotArt.tsx)
+src/widgets/widgetTheme.ts       app theme -> widget colours;  assets/widget/  picker preview images
+```
+
+The widget shows the last snapshot the app wrote; while the app is closed it only redraws that snapshot (a new day shows
+0 % and drops the streak if a day was missed). Open the app to refresh real numbers. Widget names/sizes live in the plugin
+entry in `app.json`.
 
 ## Mascot
 
