@@ -27,7 +27,9 @@ interface Props {
 export function CalendarDayCell({ day, percent, threshold, isToday, isFuture, restDay, label, onPress }: Props) {
   const { theme } = useTheme();
   const lvl = isFuture ? 0 : heatLevel(percent, threshold);
-  const strong = lvl >= 3;
+  // A rest day that did not reach the goal is drawn as a soft rest cell (no heat colour); the reason is never shown.
+  const soft = !isFuture && restDay && !(percent !== null && percent >= threshold);
+  const strong = lvl >= 3 && !soft;
   const a11y = isFuture ? `${label}, upcoming` : `${label}, ${percent === null ? 'no data' : Math.round(percent) + ' percent'}${restDay ? ', rest day' : ''}${percent !== null && percent >= threshold ? ', goal met' : ''}`;
   return (
     <View style={{ width: `${100 / 7}%`, padding: 2 }}>
@@ -41,7 +43,7 @@ export function CalendarDayCell({ day, percent, threshold, isToday, isFuture, re
           borderRadius: 12,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: isFuture ? 'transparent' : theme.colors.heat[lvl],
+          backgroundColor: isFuture ? 'transparent' : soft ? theme.colors.secondary : theme.colors.heat[lvl],
           borderWidth: isToday ? 2 : restDay ? 1 : 0,
           borderStyle: restDay && !isToday ? 'dashed' : 'solid',
           borderColor: isToday ? theme.colors.accent : theme.colors.border,

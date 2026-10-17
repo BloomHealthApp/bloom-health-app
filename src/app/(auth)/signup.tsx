@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { BubuMascot } from '@/components/BubuMascot';
 import { Field } from '@/components/Field';
+import { GenderPicker } from '@/components/GenderPicker';
 import { AppText, Button, ErrorBanner, Screen } from '@/components/ui';
 import { USE_MOCK_API } from '@/config';
 import { authErrorMessage, isAlreadyRegistered, validateEmail, validateName, validatePhone } from '@/lib/authForm';
 import { useAuth } from '@/providers/AuthProvider';
 import { spacing } from '@/theme/tokens';
+import type { Gender } from '@/types/api';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -15,6 +17,7 @@ export default function SignUpScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [gender, setGender] = useState<Gender | null>(null);
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,10 +35,10 @@ export default function SignUpScreen() {
     setError(null);
     setConflict(false);
     try {
-      const { challengeId } = await requestSignUp({ name, phone, email });
+      const { challengeId } = await requestSignUp({ name, phone, email, gender });
       router.push({
         pathname: '/(auth)/otp',
-        params: { challengeId, purpose: 'signup', name: name.trim(), phone: phone.trim(), email: email.trim().toLowerCase() },
+        params: { challengeId, purpose: 'signup', name: name.trim(), phone: phone.trim(), email: email.trim().toLowerCase(), ...(gender ? { gender } : {}) },
       });
     } catch (e) {
       setConflict(isAlreadyRegistered(e));
@@ -70,6 +73,8 @@ export default function SignUpScreen() {
         onSubmitEditing={submit}
         error={touched ? emailErr : null}
       />
+      <GenderPicker value={gender} onChange={setGender} />
+      <AppText variant="caption" muted>Optional. It unlocks features that fit you, and you can change or clear it any time in Settings.</AppText>
       {error ? <ErrorBanner message={error} /> : null}
       {conflict ? (
         <Button title="Sign in instead" variant="secondary" onPress={() => router.replace({ pathname: '/(auth)/signin', params: { identifier: email.trim().toLowerCase() } })} />

@@ -10,6 +10,8 @@ export interface BarDatum {
   successful: boolean;
   /** neutral (rest/no-data) days draw a faint stub */
   muted?: boolean;
+  /** rest day (Sunday, chosen weekday or any other neutral day): drawn as a soft cell, never with a reason */
+  rest?: boolean;
 }
 
 /** Bar chart of daily completion %. Used for the week (7 bars) and month (28-31 thin bars) views. */
@@ -29,6 +31,9 @@ export function WeeklyProgressChart({ data, threshold, height = 180, summaryLabe
       <Svg width={w} height={height}>
         <Line x1={0} x2={w} y1={y(100)} y2={y(100)} stroke={theme.colors.border} strokeWidth={1} />
         <Line x1={0} x2={w} y1={y(0)} y2={y(0)} stroke={theme.colors.border} strokeWidth={1} />
+        {data.map((d, i) =>
+          d.rest ? <Rect key={`r${i}`} x={i * slot + 1} y={padTop} width={Math.max(2, slot - 2)} height={chartH} rx={Math.min(8, slot / 2)} fill={theme.colors.secondary} opacity={0.45} /> : null,
+        )}
         {data.map((d, i) => {
           const x = i * slot + (slot - barW) / 2;
           const top = y(d.percent);

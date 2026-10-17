@@ -7,6 +7,7 @@ import { AvatarPicker } from '@/avatars/AvatarPicker';
 import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { Field } from '@/components/Field';
+import { GenderPicker } from '@/components/GenderPicker';
 import { SyncStatusChip } from '@/components/SyncStatusChip';
 import { ThemePicker } from '@/components/ThemePicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
@@ -17,6 +18,7 @@ import { useSyncOnFocus } from '@/features/useSyncOnFocus';
 import { parseHHmm, WEEKDAY_LABELS } from '@/lib/dates';
 import { REMINDER_LABELS } from '@/lib/defaults';
 import { DISCLAIMER } from '@/lib/messages';
+import { genderPatch, isPeriodTrackerOn, showTrackerSwitch, sundayRestOn } from '@/lib/profile';
 import { cancelAllReminders } from '@/notifications/scheduler';
 import { expoNotifApi } from '@/notifications/expoAdapter';
 import { useAuth } from '@/providers/AuthProvider';
@@ -24,7 +26,7 @@ import { useData, useSettings, useSyncStatus } from '@/providers/DataProvider';
 import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Reminder, ThemeName } from '@/types/api';
+import type { Gender, Reminder, ThemeName } from '@/types/api';
 
 export default function SettingsTab() {
   const router = useRouter();
@@ -90,6 +92,25 @@ export default function SettingsTab() {
           disabled={!name.trim() || name.trim() === user?.displayName}
           onPress={() => guarded(async () => { updateUser(await api.patchMe({ displayName: name.trim() })); setMsg('Name updated.'); })}
         />
+        <GenderPicker value={user?.gender} onChange={(g: Gender | null) => guarded(async () => { updateUser(await api.patchMe(genderPatch(g))); setMsg('Profile updated.'); })} />
+        {showTrackerSwitch(user) ? (
+          <View style={{ gap: spacing.sm }}>
+            <Row style={{ gap: spacing.md }}>
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyStrong">Period tracker</AppText>
+                <AppText variant="caption" muted>Private to you. Period days also won&apos;t break your streak.</AppText>
+              </View>
+              <Switch
+                value={isPeriodTrackerOn(user)}
+                onValueChange={(v) => guarded(async () => { updateUser(await api.patchMe({ periodTrackerEnabled: v })); })}
+                accessibilityLabel="Period tracker"
+                trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+                style={{ minHeight: MIN_TOUCH }}
+              />
+            </Row>
+            {isPeriodTrackerOn(user) ? <Button title="Open period tracker" variant="secondary" onPress={() => router.push('/periods')} /> : null}
+          </View>
+        ) : null}
       </Section>
 
       <Section title="Appearance">
@@ -105,7 +126,21 @@ export default function SettingsTab() {
             <Button title="+" variant="secondary" disabled={!isOwner || settings.dailyThreshold >= 100} onPress={() => guarded(() => actions.saveSettings({ dailyThreshold: Math.min(100, settings.dailyThreshold + 5) }, settings))} accessibilityLabel="Increase goal by 5 percent" style={{ paddingHorizontal: spacing.lg }} />
           </Row>
         </Row>
-        <AppText variant="label" muted>Rest days (do not break your streak)</AppText>
+        <Row style={{ gap: spacing.md }}>
+          <View style={{ flex: 1 }}>
+            <AppText variant="bodyStrong">Sundays don&apos;t break my streak</AppText>
+            <AppText variant="caption" muted>An unlogged Sunday is skipped. Log enough habits and it counts as a normal day.</AppText>
+          </View>
+          <Switch
+            value={sundayRestOn(settings)}
+            disabled={!isOwner}
+            onValueChange={(v) => guarded(() => actions.saveSettings({ sundayRest: v }, settings))}
+            accessibilityLabel="Sundays don't break my streak"
+            trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+            style={{ minHeight: MIN_TOUCH }}
+          />
+        </Row>
+        <AppText variant="label" muted>Other rest days (do not break your streak)</AppText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
           {WEEKDAY_LABELS.map((w, i) => {
             const on = settings.restDays.includes(i);

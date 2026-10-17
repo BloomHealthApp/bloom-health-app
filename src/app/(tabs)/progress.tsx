@@ -12,9 +12,10 @@ import { useDerived } from '@/features/derived';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
 import { addDays, dateRange, monthBounds, monthName, prettyDate, startOfWeek, WEEKDAY_SHORT, weekdayOf } from '@/lib/dates';
 import { formatDuration } from '@/lib/format';
+import { isPeriodTrackerOn, streakRestNote, sundayRestOn } from '@/lib/profile';
 import { effectiveStatus, eligibleHabits } from '@/lib/scoring';
 import { useAuth } from '@/providers/AuthProvider';
-import { useData, useSyncStatus, useWorkouts } from '@/providers/DataProvider';
+import { useData, useSettings, useSyncStatus, useWorkouts } from '@/providers/DataProvider';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useRouter } from 'expo-router';
@@ -26,7 +27,8 @@ export default function Progress() {
   const router = useRouter();
   const { syncNow } = useData();
   const sync = useSyncStatus();
-  const { isOwner } = useAuth();
+  const { isOwner, user } = useAuth();
+  const { settings } = useSettings();
   useSyncOnFocus();
   const [mode, setMode] = useState<'week' | 'month'>('week');
   const [offset, setOffset] = useState(0);
@@ -48,7 +50,7 @@ export default function Progress() {
   const bars: BarDatum[] = days.map((date) => {
     const s = d.scoreFor(date);
     const future = date > d.today;
-    return { label: mode === 'week' ? WEEKDAY_SHORT[weekdayOf(date)] : '', percent: future ? 0 : s.completionPercent, successful: s.successful, muted: future || s.neutral };
+    return { label: mode === 'week' ? WEEKDAY_SHORT[weekdayOf(date)] : '', percent: future ? 0 : s.completionPercent, successful: s.successful, muted: future || s.neutral, rest: !future && s.restDay };
   });
   const past = days.filter((x) => x <= d.today);
   const scored = past.map((x) => d.scoreFor(x)).filter((s) => !s.neutral);
@@ -70,7 +72,7 @@ export default function Progress() {
     return { h, pct: elig ? Math.round((done / elig) * 100) : null };
   });
 
-  const summaryLabel = `${mode === 'week' ? 'Weekly' : 'Monthly'} completion chart for ${range.title}. Average ${avg} percent, ${successDays} days reached the goal.`;
+  const summaryLabel = `${mode === 'week' ? 'Weekly' : 'Monthly'} completion chart for ${range.title}. Average ${avg} percent, ${successDays} days reached the goal.${bars.some((b) => b.rest) ? ' Rest days are softly shaded.' : ''}`;
 
   return (
     <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
@@ -93,6 +95,7 @@ export default function Progress() {
           </Row>
           <Card>
             <WeeklyProgressChart data={bars} threshold={d.threshold} summaryLabel={summaryLabel} showLabels={mode === 'week'} />
+            {bars.some((b) => b.rest) ? <AppText variant="caption" muted style={{ textAlign: 'center' }}>Softly shaded days are rest days</AppText> : null}
             <Row style={{ justifyContent: 'space-around', marginTop: spacing.md }}>
               <Stat label="Average" value={`${avg}%`} />
               <Stat label="Goal days" value={`${successDays}/${scored.length}`} />
@@ -100,7 +103,7 @@ export default function Progress() {
               <Stat label="Active time" value={formatDuration(wSecs)} />
             </Row>
           </Card>
-          <StreakCard current={d.currentStreak} longest={d.longestStreak} />
+          <StreakCard current={d.currentStreak} longest={d.longestStreak} restNote={streakRestNote({ sundayRest: sundayRestOn(settings), periodTracker: isPeriodTrackerOn(user) })} />
           <AppText variant="heading" accessibilityRole="header">By habit</AppText>
           <Card style={{ gap: spacing.md }}>
             {perHabit.map(({ h, pct }) => (

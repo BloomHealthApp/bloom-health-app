@@ -3,6 +3,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Avatar } from '@/avatars/Avatar';
 import { BubuMascot } from '@/components/BubuMascot';
+import { CycleCard } from '@/components/CycleCard';
 import { EmptyState } from '@/components/EmptyState';
 import { HabitCard } from '@/components/HabitCard';
 import { ProgressRing } from '@/components/ProgressRing';
@@ -15,13 +16,15 @@ import { AppText, Button, Card, ErrorBanner, Loading, Row, Screen } from '@/comp
 import { useActions } from '@/features/actions';
 import { useDerived, useWorkoutsByDate } from '@/features/derived';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
+import { predict } from '@/lib/cycle';
 import { prettyDate } from '@/lib/dates';
 import { HABIT_IDS } from '@/lib/defaults';
 import { formatDuration } from '@/lib/format';
 import { dailyMessage } from '@/lib/messages';
+import { isPeriodTrackerOn, streakRestNote, sundayRestOn } from '@/lib/profile';
 import { effectiveStatus } from '@/lib/scoring';
 import { useAuth } from '@/providers/AuthProvider';
-import { useData, useSyncStatus } from '@/providers/DataProvider';
+import { useData, usePeriods, useSettings, useSyncStatus } from '@/providers/DataProvider';
 import { spacing } from '@/theme/tokens';
 
 export default function Home() {
@@ -32,6 +35,10 @@ export default function Home() {
   const sync = useSyncStatus();
   const { syncNow } = useData();
   const byDate = useWorkoutsByDate();
+  const { settings } = useSettings();
+  const { periods } = usePeriods();
+  const trackerOn = isPeriodTrackerOn(user);
+  const prediction = React.useMemo(() => predict(periods, d.today), [periods, d.today]);
   useSyncOnFocus(isOwner ? undefined : 30_000); // viewer freshness: poll every 30 s while Home is focused
   const [err, setErr] = React.useState<string | null>(null);
 
@@ -95,7 +102,9 @@ export default function Home() {
             </Row>
           </Card>
 
-          <StreakCard current={d.currentStreak} longest={d.longestStreak} />
+          <StreakCard current={d.currentStreak} longest={d.longestStreak} restNote={streakRestNote({ sundayRest: sundayRestOn(settings), periodTracker: trackerOn })} />
+
+          {trackerOn ? <CycleCard prediction={prediction} hasPeriods={periods.length > 0} onPress={() => router.push('/periods')} /> : null}
 
           {water ? <WaterTracker ml={valueOf(water.id) ?? 0} goal={water.target} readOnly={!isOwner} onAdd={(ml) => run(() => actions.addWater(water, d.today, ml))} /> : null}
           {steps ? <StepsCard steps={valueOf(steps.id) ?? 0} goal={steps.target} goalMax={steps.targetMax} readOnly={!isOwner} onSave={(n) => run(() => actions.setSteps(steps, d.today, n))} /> : null}

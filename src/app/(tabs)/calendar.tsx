@@ -89,7 +89,7 @@ export default function CalendarTab() {
         ))}
         <AppText variant="caption" muted>More</AppText>
       </Row>
-      <AppText variant="caption" muted style={{ textAlign: 'center' }}>Dashed outline = rest day · goal {d.threshold}%</AppText>
+      <AppText variant="caption" muted style={{ textAlign: 'center' }}>Soft dashed cell = rest day · goal {d.threshold}%</AppText>
     </Screen>
   );
 }

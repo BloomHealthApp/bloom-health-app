@@ -9,10 +9,12 @@ import { authErrorMessage } from '@/lib/authForm';
 import { useAuth } from '@/providers/AuthProvider';
 import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
+import { GENDER_OPTIONS, type Gender } from '@/types/api';
 
 const RESEND_COOLDOWN_MS = 30_000;
+const GENDER_VALUES: string[] = GENDER_OPTIONS.map((o) => o.value);
 
-type Params = { challengeId?: string; purpose?: string; name?: string; phone?: string; email?: string; identifier?: string };
+type Params = { challengeId?: string; purpose?: string; name?: string; phone?: string; email?: string; identifier?: string; gender?: string };
 
 export default function OtpScreen() {
   const p = useLocalSearchParams<Params>();
@@ -53,7 +55,7 @@ export default function OtpScreen() {
     setError(null);
     try {
       const r = isSignUp
-        ? await requestSignUp({ name: p.name ?? '', phone: p.phone ?? '', email: p.email ?? '' })
+        ? await requestSignUp({ name: p.name ?? '', phone: p.phone ?? '', email: p.email ?? '', gender: GENDER_VALUES.includes(p.gender as Gender) ? (p.gender as Gender) : null })
         : await requestSignIn(p.identifier ?? '');
       setFreshChallenge(r.challengeId);
       setCode('');
