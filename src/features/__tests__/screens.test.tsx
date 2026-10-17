@@ -1,0 +1,192 @@
+import React from 'react';
+import renderer, { act } from 'react-test-renderer';
+import SettingsTab from '@/app/(tabs)/settings';
+import SignUpScreen from '@/app/(auth)/signup';
+import PeriodsScreen from '@/app/periods';
+import { defaultSettings } from '@/lib/defaults';
+import { ThemeProvider } from '@/theme/ThemeProvider';
+import type { Settings, User } from '@/types/api';
+
+jest.mock('@react-native-async-storage/async-storage', () => ({ getItem: async () => null, setItem: async () => {}, removeItem: async () => {} }));
+jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
+jest.mock('react-native-reanimated', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { View } = require('react-native');
+  return { __esModule: true, default: { View }, Easing: { inOut: () => undefined, quad: undefined }, useAnimatedStyle: () => ({}), useReducedMotion: () => false, useSharedValue: (v: number) => ({ value: v }), withRepeat: (v: unknown) => v, withSequence: (...v: unknown[]) => v[0], withTiming: (v: unknown) => v };
+});
+
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), canGoBack: () => true }),
+  useFocusEffect: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Redirect: ({ href }: { href: string }) => require('react').createElement('Redirect', { href }),
+}));
+jest.mock('expo-constants', () => ({ expoConfig: { version: '1.0.0' } }));
+
+const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { patchMe: jest.Mock }; updateUser: jest.Mock; signOut: jest.Mock; requestSignUp: jest.Mock } = {
+  status: 'signedIn',
+  user: null,
+  isOwner: true,
+  api: { patchMe: jest.fn() },
+  updateUser: jest.fn(),
+  signOut: jest.fn(),
+  requestSignUp: jest.fn(),
+};
+jest.mock('@/providers/AuthProvider', () => ({ useAuth: () => mockAuth }));
+
+const mockActions = { saveSettings: jest.fn(async () => {}), isOwner: true };
+jest.mock('@/features/actions', () => ({ useActions: () => mockActions }));
+const mockData: { settings: Settings } = { settings: defaultSettings() };
+jest.mock('@/providers/DataProvider', () => ({
+  useSettings: () => ({ settings: mockData.settings, loading: false }),
+  useData: () => ({ syncNow: async () => {}, reminderStatus: null, refreshReminders: async () => null, engine: { sync: async () => {} } }),
+  useSyncStatus: () => ({ state: 'synced', pending: 0, failed: 0, lastSyncedAt: null, lastError: null }),
+  usePeriods: () => ({ periods: [], loading: false }),
+}));
+jest.mock('@/features/useSyncOnFocus', () => ({ useSyncOnFocus: () => {} }));
+
+const user = (over: Partial<User> = {}): User => ({ id: 'u1', email: 'a@b.co', displayName: 'Mia', avatar: null, timezone: 'UTC', theme: 'cottonCandy', role: 'owner', sharedSpaceId: 's', ownerDisplayName: 'Mia', gender: null, periodTrackerEnabled: false, ...over });
+
+function render(el: React.ReactElement) {
+  let t!: renderer.ReactTestRenderer;
+  act(() => {
+    t = renderer.create(<ThemeProvider>{el}</ThemeProvider>);
+  });
+  return t;
+}
+const press = (t: renderer.ReactTestRenderer, label: string) =>
+  act(async () => {
+    const n = t.root.findAll((x) => x.props.accessibilityLabel === label && typeof x.props.onPress === 'function')[0];
+    if (!n) throw new Error(`no pressable "${label}"`);
+    await n.props.onPress();
+  });
+const sw = (t: renderer.ReactTestRenderer, label: string) => t.root.findAll((x) => x.props.accessibilityLabel === label && typeof x.props.onValueChange === 'function')[0];
+const text = (t: renderer.ReactTestRenderer) => {
+  const seen = new WeakSet<object>();
+  return JSON.stringify(t.toJSON(), (_k, v) => {
+    if (typeof v === 'function') return undefined;
+    if (v && typeof v === 'object') {
+      if (seen.has(v)) return undefined;
+      seen.add(v);
+    }
+    return v;
+  });
+};
+
+beforeEach(() => {
+  mockPush.mockReset();
+  mockAuth.status = 'signedIn';
+  mockAuth.isOwner = true;
+  mockAuth.user = user();
+  mockAuth.api.patchMe.mockReset();
+  mockAuth.updateUser.mockReset();
+  mockAuth.requestSignUp.mockReset();
+  mockActions.saveSettings.mockClear();
+  mockData.settings = defaultSettings();
+});
+
+describe('Settings: gender, period tracker and Sunday switches', () => {
+  it('female owners see the tracker switch (on) and can open the tracker', async () => {
+    mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
+    const t = render(<SettingsTab />);
+    expect(sw(t, 'Period tracker').props.value).toBe(true);
+    await press(t, 'Open period tracker');
+    expect(mockPush).toHaveBeenCalledWith('/periods');
+  });
+
+  it('other / prefer-not-to-say owners get an opt-in switch that starts off, and turning it on PATCHes periodTrackerEnabled', async () => {
+    mockAuth.user = user({ gender: 'other', periodTrackerEnabled: false });
+    mockAuth.api.patchMe.mockResolvedValue(user({ gender: 'other', periodTrackerEnabled: true }));
+    const t = render(<SettingsTab />);
+    expect(sw(t, 'Period tracker').props.value).toBe(false);
+    expect(text(t)).not.toContain('Open period tracker');
+    await act(async () => { await sw(t, 'Period tracker').props.onValueChange(true); });
+    expect(mockAuth.api.patchMe).toHaveBeenCalledWith({ periodTrackerEnabled: true });
+    expect(mockAuth.updateUser).toHaveBeenCalledWith(expect.objectContaining({ periodTrackerEnabled: true }));
+  });
+
+  it.each([
+    ['male owner', { gender: 'male' as const }],
+    ['owner without a gender', { gender: null }],
+    ['viewer, even if female', { gender: 'female' as const, role: 'viewer' as const, periodTrackerEnabled: false }],
+  ])('hides the tracker switch for a %s', (_n, over) => {
+    mockAuth.user = user(over);
+    mockAuth.isOwner = over.role !== 'viewer';
+    const t = render(<SettingsTab />);
+    expect(sw(t, 'Period tracker')).toBeUndefined();
+    expect(text(t)).not.toMatch(/period/i);
+  });
+
+  it('gender picker saves via PATCH /me; choosing male also resets the tracker flag; tapping the selected one clears it', async () => {
+    mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
+    mockAuth.api.patchMe.mockResolvedValue(user({ gender: 'male' }));
+    const t = render(<SettingsTab />);
+    await press(t, 'Male');
+    expect(mockAuth.api.patchMe).toHaveBeenLastCalledWith({ gender: 'male', periodTrackerEnabled: null });
+    await press(t, 'Female');
+    expect(mockAuth.api.patchMe).toHaveBeenLastCalledWith({ gender: null, periodTrackerEnabled: null });
+    await press(t, 'Other');
+    expect(mockAuth.api.patchMe).toHaveBeenLastCalledWith({ gender: 'other' });
+  });
+
+  it('a failed save shows an error banner', async () => {
+    mockAuth.user = user({ gender: 'other' });
+    mockAuth.api.patchMe.mockRejectedValue(new Error('No connection.'));
+    const t = render(<SettingsTab />);
+    await act(async () => { await sw(t, 'Period tracker').props.onValueChange(true); });
+    expect(text(t)).toContain('No connection.');
+  });
+
+  it("Sundays don't break my streak: on by default, absent means on, toggling saves sundayRest", async () => {
+    mockData.settings = { ...defaultSettings(), sundayRest: undefined };
+    const t = render(<SettingsTab />);
+    expect(sw(t, "Sundays don't break my streak").props.value).toBe(true);
+    await act(async () => { await sw(t, "Sundays don't break my streak").props.onValueChange(false); });
+    expect(mockActions.saveSettings).toHaveBeenCalledWith({ sundayRest: false }, mockData.settings);
+  });
+
+  it('viewers cannot change the Sunday switch', () => {
+    mockAuth.user = user({ role: 'viewer', gender: 'male' });
+    mockAuth.isOwner = false;
+    const t = render(<SettingsTab />);
+    expect(sw(t, "Sundays don't break my streak").props.disabled).toBe(true);
+  });
+});
+
+describe('sign-up gender selector', () => {
+  const fill = (t: renderer.ReactTestRenderer) => {
+    act(() => {
+      t.root.findByProps({ accessibilityLabel: 'Your name' }).props.onChangeText('Mia');
+      t.root.findByProps({ accessibilityLabel: 'Phone' }).props.onChangeText('+919811100001');
+      t.root.findByProps({ accessibilityLabel: 'Email' }).props.onChangeText('mia@example.com');
+    });
+  };
+  it('is optional: omitted gender is not sent as a truthy value', async () => {
+    mockAuth.requestSignUp.mockResolvedValue({ status: 'sent', challengeId: 'c' });
+    const t = render(<SignUpScreen />);
+    fill(t);
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignUp).toHaveBeenCalledWith({ name: 'Mia', phone: '+919811100001', email: 'mia@example.com', gender: null });
+  });
+  it('sends the chosen gender, and it can be cleared again', async () => {
+    mockAuth.requestSignUp.mockResolvedValue({ status: 'sent', challengeId: 'c' });
+    const t = render(<SignUpScreen />);
+    fill(t);
+    await press(t, 'Prefer not to say');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignUp).toHaveBeenLastCalledWith(expect.objectContaining({ gender: 'prefer_not_to_say' }));
+    await press(t, 'Prefer not to say'); // clear
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignUp).toHaveBeenLastCalledWith(expect.objectContaining({ gender: null }));
+  });
+});
+
+describe('period tracker route access', () => {
+  it('viewers and owners with the tracker off are redirected away', () => {
+    mockAuth.user = user({ role: 'viewer', gender: 'female' });
+    expect(render(<PeriodsScreen />).root.findAllByType('Redirect' as never).length).toBe(1);
+    mockAuth.user = user({ gender: 'male' });
+    expect(render(<PeriodsScreen />).root.findAllByType('Redirect' as never).length).toBe(1);
+  });
+});

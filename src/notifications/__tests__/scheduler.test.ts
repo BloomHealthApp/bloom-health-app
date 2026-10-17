@@ -103,3 +103,83 @@ describe('syncReminders', () => {
     expect(f.scheduled.size).toBe(0);
   });
 });
+
+describe('period heads-up reminder', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const sched = require('../scheduler') as typeof import('../scheduler');
+  const NOW = new Date(2026, 9, 10, 8, 0, 0); // Oct 10 2026, 08:00 local
+
+  function fakes2(opts: { granted?: boolean; canAskAgain?: boolean; noDateTriggers?: boolean } = {}) {
+    const f = fakes(opts);
+    const at: import('../scheduler').OneOffReminder[] = [];
+    if (!opts.noDateTriggers) {
+      f.api.scheduleAt = async (p) => {
+        at.push(p);
+        f.scheduled.set(p.identifier, p as never);
+      };
+    }
+    return { ...f, at };
+  }
+
+  it('plans two days before the estimate at 09:00, never in the past, nothing without an estimate', () => {
+    const p = sched.planPeriodReminder('2026-10-21', NOW)!;
+    expect(p.date.getFullYear()).toBe(2026);
+    expect([p.date.getMonth(), p.date.getDate(), p.date.getHours()]).toEqual([9, 19, 9]);
+    expect(sched.planPeriodReminder('2026-10-11', NOW)).toBeNull();
+    expect(sched.planPeriodReminder(null, NOW)).toBeNull();
+  });
+
+  it('uses generic text: the word period never appears in the notification', () => {
+    const p = sched.planPeriodReminder('2026-10-21', NOW)!;
+    expect(`${p.title} ${p.body}`.toLowerCase()).not.toMatch(/period|cycle|menstru/);
+  });
+
+  it('schedules once, is idempotent, reschedules when the estimate moves and cancels when turned off', async () => {
+    const { api, storage, at, scheduled } = fakes2();
+    const args = { api, storage, enabled: true, askPermission: false, now: NOW };
+    expect(await sched.syncPeriodReminder({ ...args, nextStart: '2026-10-21' })).toMatchObject({ status: 'scheduled', skipped: false });
+    expect(await sched.syncPeriodReminder({ ...args, nextStart: '2026-10-21' })).toMatchObject({ status: 'scheduled', skipped: true });
+    expect(at).toHaveLength(1);
+    expect(await sched.syncPeriodReminder({ ...args, nextStart: '2026-10-25' })).toMatchObject({ status: 'scheduled', skipped: false });
+    expect(at).toHaveLength(2);
+    expect(scheduled.has(sched.PERIOD_REMINDER_ID)).toBe(true);
+    expect(await sched.syncPeriodReminder({ ...args, enabled: false, nextStart: '2026-10-25' })).toEqual({ status: 'off' });
+    expect(scheduled.has(sched.PERIOD_REMINDER_ID)).toBe(false);
+  });
+
+  it('does not touch the daily reminders (separate identifier prefix)', async () => {
+    const { api, storage, scheduled } = fakes2();
+    await syncReminders({ api, storage, reminders: rem(), timezone: 'UTC', askPermission: false });
+    const before = [...scheduled.keys()].sort();
+    await sched.syncPeriodReminder({ api, storage, enabled: true, nextStart: '2026-10-21', askPermission: false, now: NOW });
+    await syncReminders({ api, storage, reminders: rem(), timezone: 'UTC', askPermission: false });
+    expect([...scheduled.keys()].filter((k) => k !== sched.PERIOD_REMINDER_ID).sort()).toEqual(before);
+    expect(scheduled.has(sched.PERIOD_REMINDER_ID)).toBe(true);
+  });
+
+  it('degrades gracefully: denied permission, runtimes without date triggers (Expo Go), no estimate', async () => {
+    const denied = fakes2({ granted: false, canAskAgain: false });
+    expect(await sched.syncPeriodReminder({ api: denied.api, storage: denied.storage, enabled: true, nextStart: '2026-10-21', askPermission: true, now: NOW })).toEqual({ status: 'denied', canAskAgain: false });
+    const noTriggers = fakes2({ noDateTriggers: true });
+    expect(await sched.syncPeriodReminder({ api: noTriggers.api, storage: noTriggers.storage, enabled: true, nextStart: '2026-10-21', askPermission: true, now: NOW })).toEqual({ status: 'unavailable' });
+    const none = fakes2();
+    expect(await sched.syncPeriodReminder({ api: none.api, storage: none.storage, enabled: true, nextStart: null, askPermission: true, now: NOW })).toEqual({ status: 'nothing_to_schedule' });
+  });
+
+  it('asks for permission only on an explicit user action', async () => {
+    const a = fakes2({ granted: false, canAskAgain: true });
+    await sched.syncPeriodReminder({ api: a.api, storage: a.storage, enabled: true, nextStart: '2026-10-21', askPermission: false, now: NOW });
+    expect(a.calls.request).toBe(0);
+    const b = fakes2({ granted: false, canAskAgain: true });
+    (b.api as { requestPermissions: () => Promise<{ granted: boolean }> }).requestPermissions = async () => ({ granted: true });
+    const r = await sched.syncPeriodReminder({ api: b.api, storage: b.storage, enabled: true, nextStart: '2026-10-21', askPermission: true, now: NOW });
+    expect(r.status).toBe('scheduled');
+  });
+
+  it('cancelAllReminders (sign-out) also removes the period reminder', async () => {
+    const { api, storage, scheduled } = fakes2();
+    await sched.syncPeriodReminder({ api, storage, enabled: true, nextStart: '2026-10-21', askPermission: false, now: NOW });
+    await cancelAllReminders(api, storage);
+    expect(scheduled.has(sched.PERIOD_REMINDER_ID)).toBe(false);
+  });
+});
