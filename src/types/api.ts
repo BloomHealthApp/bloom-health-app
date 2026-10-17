@@ -17,10 +17,12 @@ export const UserSchema = z.object({
   role: RoleSchema,
   sharedSpaceId: z.string(),
   ownerDisplayName: z.string(),
+  /** the space owner's avatar id (equals `avatar` for owners); absent on older servers */
+  ownerAvatar: z.string().nullable().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
-export const SignUpRequestSchema = z.object({ name: z.string(), phone: z.string(), email: z.string() });
+export const SignUpRequestSchema = z.object({ name: z.string(), phone: z.string(), email: z.string(), avatar: z.string().nullable().optional() });
 export type SignUpRequest = z.infer<typeof SignUpRequestSchema>;
 export const SignInRequestSchema = z.object({ identifier: z.string() });
 export type SignInRequest = z.infer<typeof SignInRequestSchema>;

@@ -1,11 +1,13 @@
 // In-memory implementation of docs/api-contract.md used when EXPO_PUBLIC_USE_MOCK_API=true.
 // Exposes a fetch-compatible function so the real ApiClient (refresh-on-401, zod parsing) is exercised too.
 // Demo accounts: anu@example.com / +919876543210 (owner), aman@example.com / +919876543211 (viewer). OTP is always 123456.
+// Users get an `ownerAvatar` on every response (the space owner's avatar); avatars are validated against the allowlist.
 // Sign-up creates a new owner with their own empty space (default habits/settings, no history).
 import { DEFAULT_HABIT_DEFS, defaultSettings } from '@/lib/defaults';
 import { addDays, localDateInTz, weekdayOf } from '@/lib/dates';
 import { evaluateStatus, summarize, type HabitRule } from '@/lib/scoring';
 import { uuid } from '@/lib/ids';
+import { isAvatarId } from '@/avatars/avatarCatalog';
 import type { DailyLog, Habit, Settings, ThemeName, User, Workout } from '@/types/api';
 
 export const MOCK_OTP = '123456';
@@ -25,7 +27,7 @@ export function normalizeMockPhone(raw: string): string | null {
 interface Challenge {
   /** undefined user + no pending => decoy that can never verify */
   userId?: string;
-  pending?: { name: string; phone: string; email: string };
+  pending?: { name: string; phone: string; email: string; avatar?: string | null };
   attempts: number;
 }
 const ACCESS_TTL_S = 900;
@@ -37,8 +39,8 @@ type Rec = { id: string; version: number; createdAt: string; updatedAt: string; 
 
 class MockDb {
   users: MockUser[] = [
-    { id: 'u-anu', email: 'anu@example.com', phone: '+919876543210', displayName: 'Anu', avatar: null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
-    { id: 'u-aman', email: 'aman@example.com', phone: '+919876543211', displayName: 'Aman', avatar: null, timezone: 'Asia/Kolkata', theme: 'lavenderDream', role: 'viewer', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
+    { id: 'u-anu', email: 'anu@example.com', phone: '+919876543210', displayName: 'Anu', avatar: 'bubu-02', timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
+    { id: 'u-aman', email: 'aman@example.com', phone: '+919876543211', displayName: 'Aman', avatar: 'bubu-04', timezone: 'Asia/Kolkata', theme: 'lavenderDream', role: 'viewer', sharedSpaceId: SPACE, ownerDisplayName: 'Anu' },
   ];
   seq = 0;
   /** Entities are scoped per shared space; `space` is the space of the request being handled. */
@@ -63,9 +65,9 @@ class MockDb {
   }
 
   /** Creates a fresh owner account with its own empty space. */
-  createOwner(p: { name: string; phone: string; email: string }): MockUser {
+  createOwner(p: { name: string; phone: string; email: string; avatar?: string | null }): MockUser {
     const id = `u-${uuid()}`;
-    const user: MockUser = { id, email: p.email, phone: p.phone, displayName: p.name, avatar: null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: `space-${id}`, ownerDisplayName: p.name };
+    const user: MockUser = { id, email: p.email, phone: p.phone, displayName: p.name, avatar: p.avatar ?? null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: `space-${id}`, ownerDisplayName: p.name };
     this.users.push(user);
     this.space = user.sharedSpaceId;
     this.seedDefaults();
@@ -177,6 +179,12 @@ function err(status: number, code: string, message: string, details?: Record<str
   return json(status, { error: { code, message, ...(details ? { details } : {}) } });
 }
 
+/** The user as the API returns it: stored fields plus `ownerAvatar` (the space owner's avatar; own avatar for owners). */
+function view(user: MockUser): User {
+  const owner = user.role === 'owner' ? user : db.users.find((x) => x.sharedSpaceId === user.sharedSpaceId && x.role === 'owner');
+  return { ...user, ownerAvatar: owner?.avatar ?? null };
+}
+
 function issueTokens(user: MockUser) {
   const refreshToken = `mr.${user.id}.${uuid()}`;
   db.refreshTokens.add(refreshToken);
@@ -184,7 +192,7 @@ function issueTokens(user: MockUser) {
     accessToken: `ma.${user.id}.${Date.now() + ACCESS_TTL_S * 1000}`,
     refreshToken,
     expiresIn: ACCESS_TTL_S,
-    user,
+    user: view(user),
   };
 }
 
@@ -287,17 +295,18 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
   // ---- public ----
   if (method === 'GET' && path === '/health') return json(200, { status: 'ok', time: new Date().toISOString(), version: 'mock' });
   if (method === 'POST' && path === '/auth/signup/request') {
-    const bad = Object.keys(body).filter((k) => !['name', 'phone', 'email'].includes(k));
+    const bad = Object.keys(body).filter((k) => !['name', 'phone', 'email', 'avatar'].includes(k));
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const phone = typeof body.phone === 'string' ? normalizeMockPhone(body.phone) : null;
     if (bad.length) return err(400, 'validation_failed', `unknown fields: ${bad.join(',')}`);
+    if (body.avatar !== undefined && body.avatar !== null && !isAvatarId(body.avatar)) return err(400, 'validation_failed', 'avatar must be null or one of bubu-01..bubu-09');
     if (name.length < 1 || name.length > 40) return err(400, 'validation_failed', 'name must be 1-40 characters');
     if (!phone) return err(400, 'validation_failed', 'phone must have 8-15 digits');
     if (email.length > 254 || !EMAIL_RE.test(email)) return err(400, 'validation_failed', 'email is not valid');
     if (db.users.some((u) => u.email === email || u.phone === phone)) return err(409, 'already_registered', 'an account with this email or phone already exists');
     const challengeId = uuid();
-    db.challenges.set(challengeId, { pending: { name, phone, email }, attempts: 0 });
+    db.challenges.set(challengeId, { pending: { name, phone, email, avatar: (body.avatar as string | null | undefined) ?? null }, attempts: 0 });
     return json(202, { status: 'sent', challengeId });
   }
   if (method === 'POST' && path === '/auth/signin/request') {
@@ -351,15 +360,16 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
   const user = u;
   db.space = user.sharedSpaceId;
 
-  if (path === '/me' && method === 'GET') return json(200, user);
+  if (path === '/me' && method === 'GET') return json(200, view(user));
   if (path === '/me' && method === 'PATCH') {
     const bad = Object.keys(body).filter((k) => !['displayName', 'avatar', 'timezone', 'theme'].includes(k));
     if (bad.length) return err(400, 'validation_failed', `unknown fields: ${bad.join(',')}`);
+    if (body.avatar !== undefined && body.avatar !== null && !isAvatarId(body.avatar)) return err(400, 'validation_failed', 'avatar must be null or one of bubu-01..bubu-09');
     if (body.displayName !== undefined) user.displayName = String(body.displayName);
-    if (body.avatar !== undefined) user.avatar = body.avatar as string | null;
     if (body.timezone !== undefined) user.timezone = String(body.timezone);
+    if (body.avatar !== undefined) user.avatar = body.avatar as string | null;
     if (body.theme !== undefined) user.theme = body.theme as ThemeName;
-    return json(200, user);
+    return json(200, view(user));
   }
   if (path === '/settings' && method === 'GET') {
     const s = db.all<Settings>('settings')[0];
