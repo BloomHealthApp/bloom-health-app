@@ -5,7 +5,7 @@ import { BubuMascot } from './BubuMascot';
 import type { MascotMood } from './mascotTypes';
 import { AppText, Button } from './ui';
 
-export function EmptyState({ title, message, mood = 'sleepy', actionLabel, onAction }: { title: string; message?: string; mood?: MascotMood; actionLabel?: string; onAction?: () => void }) {
+export function EmptyState({ title, message, mood = 'thinking', actionLabel, onAction }: { title: string; message?: string; mood?: MascotMood; actionLabel?: string; onAction?: () => void }) {
   return (
     <View style={{ alignItems: 'center', padding: spacing.xl, gap: spacing.md }}>
       <BubuMascot mood={mood} size={110} />

@@ -81,7 +81,7 @@ export default function Progress() {
       {d.loading ? (
         <Loading />
       ) : d.logs.length === 0 ? (
-        <EmptyState title="Nothing to chart yet" message={isOwner ? 'Log a few habits and your progress will bloom here.' : 'No progress has been logged yet.'} />
+        <EmptyState mood="thinking" title="Nothing to chart yet" message={isOwner ? 'Log a few habits and your progress will bloom here.' : 'No progress has been logged yet.'} />
       ) : (
         <>
           <Segmented label="Range" options={[{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }]} value={mode} onChange={(v) => { setMode(v); setOffset(0); }} />

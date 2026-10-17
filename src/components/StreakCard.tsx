@@ -13,7 +13,7 @@ export function StreakCard({ current, longest }: { current: number; longest: num
   return (
     <Card tint accessible accessibilityLabel={`Current streak ${current} days. Longest streak ${longest} days.${next ? ` Next milestone ${next} days.` : ''}`}>
       <Row style={{ gap: spacing.lg }}>
-        {celebrating ? <BubuMascot mood="cheer" size={72} /> : null}
+        {celebrating ? <BubuMascot mood="celebrating" size={72} /> : null}
         <View style={{ flex: 1 }}>
           {celebrating ? <AppText variant="label" accent>Milestone reached: {current} days!</AppText> : null}
           <Row style={{ alignItems: 'flex-end', gap: spacing.sm }}>

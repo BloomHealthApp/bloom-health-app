@@ -83,7 +83,7 @@ export default function Home() {
               <ProgressRing percent={d.todayScore.completionPercent} size={120} stroke={12} sublabel="today" />
               <View style={{ flex: 1, gap: spacing.sm }}>
                 <Row style={{ gap: spacing.sm }}>
-                  <BubuMascot mood={msg.mood} size={56} />
+                  <BubuMascot mood={msg.mood} size={72} />
                   <AppText variant="bodyStrong" style={{ flex: 1 }}>{msg.text}</AppText>
                 </Row>
                 <AppText variant="caption" muted>

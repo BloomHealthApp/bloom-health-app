@@ -95,7 +95,7 @@ export default function WorkoutScreen() {
       ) : null}
 
       <AppText variant="heading" accessibilityRole="header">Recent sessions</AppText>
-      {loading ? <Loading /> : recent.length === 0 ? <EmptyState title="No workouts yet" message={actions.isOwner ? 'Start the timer or add a past session.' : 'Nothing logged yet.'} mood="sleepy" /> : null}
+      {loading ? <Loading /> : recent.length === 0 ? <EmptyState title="No workouts yet" message={actions.isOwner ? 'Start the timer or add a past session.' : 'Nothing logged yet.'} mood="workout" /> : null}
       {recent.map((w) => {
         const meta = WORKOUT_TYPES.find((t) => t.type === w.type);
         return (

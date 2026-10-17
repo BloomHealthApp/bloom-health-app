@@ -71,7 +71,7 @@ export default function OtpScreen() {
 
   return (
     <Screen>
-      <BubuMascot mood="sleepy" size={110} />
+      <BubuMascot mood="thinking" size={110} />
       <AppText variant="title">Enter your code</AppText>
       <AppText muted>
         {isSignUp

@@ -50,7 +50,7 @@ export default function CalendarTab() {
       {d.loading ? (
         <Loading />
       ) : d.logs.length === 0 && d.activeHabits.length === 0 ? (
-        <EmptyState title="Nothing here yet" message="Your heatmap will fill in as days are logged." />
+        <EmptyState mood="thinking" title="Nothing here yet" message="Your heatmap will fill in as days are logged." />
       ) : (
         <Card>
           <Row>

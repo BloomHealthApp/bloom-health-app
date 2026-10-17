@@ -5,6 +5,7 @@ import { Linking, Pressable, Switch, TextInput, View } from 'react-native';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { Field } from '@/components/Field';
 import { SyncStatusChip } from '@/components/SyncStatusChip';
+import { BubuMascot } from '@/components/BubuMascot';
 import { ThemePicker } from '@/components/ThemePicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
 import { AppText, Button, Card, ErrorBanner, Row, Screen } from '@/components/ui';
@@ -66,6 +67,9 @@ export default function SettingsTab() {
       {msg ? <AppText variant="caption" accent accessibilityLiveRegion="polite">{msg}</AppText> : null}
 
       <Section title="Profile">
+        <View style={{ alignItems: 'center' }}>
+          <BubuMascot mood="happy" size={96} />
+        </View>
         <AppText muted>{user?.email}{user?.phone ? ` · ${user.phone}` : ''} · {isOwner ? 'Owner' : `Viewer of ${user?.ownerDisplayName}`}</AppText>
         <Field label="Display name" value={name} onChangeText={setName} maxLength={40} />
         <Button

@@ -16,7 +16,7 @@ export default function ManageHabits() {
   return (
     <Screen header={<ScreenHeader title="Habits" />}>
       {isOwner ? <Button title="Add custom habit" onPress={() => router.push('/habit/form')} /> : <AppText muted>Only the owner can change habits.</AppText>}
-      {habits.length === 0 ? <EmptyState title="No habits yet" mood="sleepy" /> : null}
+      {habits.length === 0 ? <EmptyState title="No habits yet" mood="thinking" /> : null}
       <View style={{ gap: spacing.sm }}>
         {habits.map((h) => (
           <Card key={h.id} style={{ padding: 0, opacity: h.isActive ? 1 : 0.6 }}>
