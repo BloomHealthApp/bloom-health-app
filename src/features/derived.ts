@@ -3,7 +3,11 @@ import { AppState } from 'react-native';
 import { deviceTimezone, localDateInTz } from '@/lib/dates';
 import { computeProgress } from '@/lib/progress';
 import { indexLogs, scoreDay, summarize, type DayScore, type DayContext } from '@/lib/scoring';
-import { useHabits, useLogs, useSettings, useWorkouts } from '@/providers/DataProvider';
+import { periodNeutralDates } from '@/lib/cycle';
+import { isPeriodTrackerOn } from '@/lib/profile';
+import { useAuth } from '@/providers/AuthProvider';
+import { useHabits, useLogs, usePeriods, useSettings, useWorkouts } from '@/providers/DataProvider';
+import { useServerSummary } from './serverSummary';
 import type { DailyLog, Habit } from '@/types/api';
 
 /** Today's local date in the device timezone; refreshes on foreground and every minute (midnight rollover / tz change). */
@@ -50,9 +54,16 @@ export function useDerived(): Derived {
   const { logs, loading: l2 } = useLogs();
   const { settings } = useSettings();
   const { today, timezone } = useToday();
+  const { user } = useAuth();
+  const { periods } = usePeriods();
+  const owner = user?.role === 'owner';
+  const trackerOn = isPeriodTrackerOn(user);
+  // Owner: period days become neutral dates computed locally. Viewer: no period data at all; numbers come from the server summary.
+  const neutralDates = useMemo(() => (owner ? periodNeutralDates(periods, today, trackerOn) : []), [owner, periods, today, trackerOn]);
+  const serverSummary = useServerSummary(!owner && !!user, today);
 
   return useMemo(() => {
-    const { activeHabits, liveLogs, ctx, dayScores, todayScore, currentStreak, longestStreak } = computeProgress({ habits, logs, settings, today, timezone });
+    const { activeHabits, liveLogs, ctx, dayScores, todayScore, currentStreak, longestStreak } = computeProgress({ habits, logs, settings, today, timezone, neutralDates, serverSummary });
     const idx = indexLogs(liveLogs);
     return {
       today,
@@ -70,7 +81,7 @@ export function useDerived(): Derived {
       threshold: settings.dailyThreshold,
       loading: l1 || l2,
     };
-  }, [habits, logs, settings, today, timezone, l1, l2]);
+  }, [habits, logs, settings, today, timezone, neutralDates, serverSummary, l1, l2]);
 }
 
 export { summarize };

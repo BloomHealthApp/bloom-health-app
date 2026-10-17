@@ -1,12 +1,20 @@
 import { useMemo } from 'react';
-import { localDateInTz } from '@/lib/dates';
+import { deviceTimezone, localDateInTz } from '@/lib/dates';
+import { PeriodValidationError, validatePeriod } from '@/lib/periodRules';
+import type { PeriodDraft } from '@/lib/periodsView';
 import { HABIT_IDS } from '@/lib/defaults';
 import { logId, uuid } from '@/lib/ids';
 import { evaluateStatus, type HabitRule } from '@/lib/scoring';
 import type { FinishedWorkout } from '@/lib/workoutTimer';
 import { useAuth } from '@/providers/AuthProvider';
 import { useData } from '@/providers/DataProvider';
-import type { DailyLog, Habit, LogStatus, Settings, Workout, WorkoutType } from '@/types/api';
+import type { DailyLog, Habit, LogStatus, Period, Settings, Workout, WorkoutType } from '@/types/api';
+
+export type { PeriodDraft };
+
+export function periodPayload(p: PeriodDraft): Record<string, unknown> {
+  return { startDate: p.startDate, endDate: p.endDate, flow: p.flow, symptoms: p.symptoms, mood: p.mood, note: p.note };
+}
 
 export class ReadOnlyError extends Error {
   constructor() {
@@ -154,21 +162,46 @@ export function useActions() {
       done();
     }
 
-    async function saveSettings(patch: Partial<Pick<Settings, 'dailyThreshold' | 'restDays' | 'reminders'>>, current: Settings) {
+    async function saveSettings(patch: Partial<Pick<Settings, 'dailyThreshold' | 'restDays' | 'reminders' | 'sundayRest'>>, current: Settings) {
       guard();
       const next: Settings = { ...current, ...patch, updatedAt: now() };
       await engine.mutate({
         entityType: 'settings',
         entityId: current.id,
         op: 'upsert',
-        payload: { dailyThreshold: next.dailyThreshold, restDays: next.restDays, reminders: next.reminders },
+        // sundayRest is only sent once it is known (older services reject unknown fields); un-sent edits coalesce, so always repeat it
+        payload: { dailyThreshold: next.dailyThreshold, restDays: next.restDays, reminders: next.reminders, ...(next.sundayRest !== undefined ? { sundayRest: next.sundayRest } : {}) },
         entity: next as never,
       });
       done();
     }
 
+    /** Validates against the contract rules and the owner's other periods, then queues the write (offline-first). */
+    async function savePeriod(draft: PeriodDraft, existing?: Period): Promise<Period> {
+      guard();
+      const id = existing?.id ?? uuid();
+      const all = await store.getAll<Period>('period');
+      const reason = validatePeriod(draft, all, localDateInTz(new Date(), deviceTimezone()), id);
+      if (reason) throw new PeriodValidationError(reason);
+      const entity: Period = { ...draft, id, version: existing?.version ?? 0, createdAt: existing?.createdAt ?? now(), updatedAt: now(), deletedAt: null };
+      await engine.mutate({ entityType: 'period', entityId: id, op: 'upsert', payload: periodPayload(draft), entity: entity as never });
+      done();
+      return entity;
+    }
+    const startPeriod = (startDate: string) => savePeriod({ startDate, endDate: null, flow: 'medium', symptoms: [], mood: null, note: null });
+    const endPeriod = (p: Period, endDate: string) => savePeriod({ ...p, endDate }, p);
+    async function deletePeriod(p: Period) {
+      guard();
+      await engine.mutate({ entityType: 'period', entityId: p.id, op: 'delete', payload: {}, entity: { ...p, deletedAt: now() } as never });
+      done();
+    }
+
     return {
       isOwner,
+      savePeriod,
+      startPeriod,
+      endPeriod,
+      deletePeriod,
       setLog,
       toggleBoolean: (habit: HabitRule & { id: string }, date: string, on: boolean) => setLog(habit, date, on ? 1 : 0),
       addWater: (rule: HabitRule, date: string, ml: number) => addToLog(HABIT_IDS.water, rule, date, ml),

@@ -12,7 +12,8 @@ import { uuid } from '@/lib/ids';
 import { expoNotifApi } from '@/notifications/expoAdapter';
 import { syncReminders, type SyncResult } from '@/notifications/scheduler';
 import { SyncEngine, type SyncStatus } from '@/sync/engine';
-import type { DailyLog, EntityType, Habit, Settings, Workout } from '@/types/api';
+import { livePeriods } from '@/lib/cycle';
+import type { DailyLog, EntityType, Habit, Period, Settings, Workout } from '@/types/api';
 import { useAuth } from './AuthProvider';
 
 interface Ctx {
@@ -180,6 +181,13 @@ export function useLogs() {
 export function useWorkouts() {
   const { data, loading } = useEntities<Workout>('workout');
   return { workouts: useMemo(() => data.filter((w) => !w.deletedAt), [data]), loading };
+}
+/** The owner's non-deleted periods, oldest first. Always empty for viewers (they never receive period data). */
+export function usePeriods() {
+  const { user } = useAuth();
+  const { data, loading } = useEntities<Period>('period');
+  const owner = user?.role === 'owner';
+  return { periods: useMemo(() => (owner ? livePeriods(data) : []), [data, owner]), loading };
 }
 export function useSettings(): { settings: Settings; loading: boolean } {
   const { data, loading } = useEntities<Settings>('settings');

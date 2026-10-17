@@ -116,5 +116,10 @@ export function prettyDate(localDate: string): string {
   const [, m, d] = localDate.split('-').map(Number);
   return `${DAYS[weekdayOf(localDate)]}, ${MONTHS[m - 1].slice(0, 3)} ${d}`;
 }
+/** e.g. "Oct 17" */
+export function shortDate(localDate: string): string {
+  const [, m, d] = localDate.split('-').map(Number);
+  return `${MONTHS[m - 1].slice(0, 3)} ${d}`;
+}
 export const WEEKDAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
