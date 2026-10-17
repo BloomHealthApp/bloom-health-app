@@ -69,7 +69,7 @@ describe('PeriodsView', () => {
     expect(s).toContain('Next period ~Oct 21');
     expect(s).toContain('Average cycle');
     expect(s).toContain('28 days');
-    expect(s).toContain('Sep 23 – Sep 27 · 5 days');
+    expect(s).toContain('Sep 23 – Sep 27');
     expect(has(t, 'Start period')).toBe(true);
     expect(has(t, 'End period')).toBe(false);
   });

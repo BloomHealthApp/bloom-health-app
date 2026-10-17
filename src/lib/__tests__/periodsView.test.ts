@@ -59,9 +59,9 @@ describe('cycleSummary and stats', () => {
 describe('history, drafts and validation', () => {
   it('lists newest first with ranges and lengths, ignoring deleted', () => {
     const rows = historyRows([...regular, per('z', '2026-10-01', null, { deletedAt: 'x' }), per('o', '2026-10-02', null, { flow: 'heavy', symptoms: ['cramps', 'acne', 'nausea'] })], '2026-10-04');
-    expect(rows[0].title).toBe('Oct 2 – ongoing · 3 days');
-    expect(rows[0].subtitle).toBe('Heavy · Cramps · Acne');
-    expect(rows[1].title).toBe('Sep 23 – Sep 27 · 5 days');
+    expect(rows[0].title).toBe('Oct 2 – ongoing');
+    expect(rows[0].subtitle).toBe('3 days · Heavy · Cramps · Acne');
+    expect(rows[1].title).toBe('Sep 23 – Sep 27');
     expect(rows).toHaveLength(5);
   });
   it('toggleItem adds, removes and respects the cap', () => {

@@ -147,7 +147,7 @@ export interface HistoryRow {
   title: string;
   subtitle: string;
 }
-/** Newest first: "Oct 3 – Oct 7 · 5 days" or "Oct 3 – ongoing". */
+/** Newest first: title "Oct 3 – Oct 7" (or "Oct 3 – ongoing"), subtitle "5 days · Medium · Cramps". */
 export function historyRows(periods: Period[], today: string): HistoryRow[] {
   return livePeriods(periods)
     .reverse()
@@ -155,8 +155,8 @@ export function historyRows(periods: Period[], today: string): HistoryRow[] {
       const len = periodLength(period);
       const range = period.endDate ? `${shortDate(period.startDate)} – ${shortDate(period.endDate)}` : `${shortDate(period.startDate)} – ongoing`;
       const days = len ?? diffDays(today, period.startDate) + 1;
-      const bits = [FLOW_LABELS[period.flow], ...period.symptoms.slice(0, 2).map((s) => SYMPTOM_LABELS[s])];
-      return { period, title: `${range} · ${plural(days, 'day')}`, subtitle: bits.join(' · ') };
+      const bits = [plural(days, 'day'), FLOW_LABELS[period.flow], ...period.symptoms.slice(0, 2).map((s) => SYMPTOM_LABELS[s])];
+      return { period, title: range, subtitle: bits.join(' · ') };
     });
 }
 
