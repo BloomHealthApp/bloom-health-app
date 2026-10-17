@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
-import { addDays, deviceTimezone, localDateInTz } from '@/lib/dates';
-import { indexLogs, scoreDay, scoreRange, summarize, computeStreaks, type DayScore, type DayContext } from '@/lib/scoring';
+import { deviceTimezone, localDateInTz } from '@/lib/dates';
+import { computeProgress } from '@/lib/progress';
+import { indexLogs, scoreDay, summarize, type DayScore, type DayContext } from '@/lib/scoring';
 import { useHabits, useLogs, useSettings, useWorkouts } from '@/providers/DataProvider';
 import type { DailyLog, Habit } from '@/types/api';
 
@@ -51,20 +52,7 @@ export function useDerived(): Derived {
   const { today, timezone } = useToday();
 
   return useMemo(() => {
-    const activeHabits = habits.filter((h) => h.isActive);
-    const liveLogs = logs.filter((l) => !l.deletedAt);
-    const ctx: DayContext = {
-      habits: activeHabits,
-      logs: liveLogs,
-      threshold: settings.dailyThreshold,
-      restDays: settings.restDays,
-      restDayMode: settings.restDayMode,
-      timezone,
-    };
-    const earliest = liveLogs.reduce((m, l) => (l.localDate < m ? l.localDate : m), addDays(today, -60));
-    const days = scoreRange(earliest, today, ctx);
-    const dayScores = new Map(days.map((d) => [d.localDate, d]));
-    const { current, longest } = computeStreaks(days, today);
+    const { activeHabits, liveLogs, ctx, dayScores, todayScore, currentStreak, longestStreak } = computeProgress({ habits, logs, settings, today, timezone });
     const idx = indexLogs(liveLogs);
     return {
       today,
@@ -75,10 +63,10 @@ export function useDerived(): Derived {
       logIndex: idx as Map<string, DailyLog>,
       ctx,
       scoreFor: (d: string) => dayScores.get(d) ?? scoreDay(d, ctx, idx),
-      todayScore: dayScores.get(today) ?? scoreDay(today, ctx, idx),
+      todayScore,
       dayScores,
-      currentStreak: current,
-      longestStreak: longest,
+      currentStreak,
+      longestStreak,
       threshold: settings.dailyThreshold,
       loading: l1 || l2,
     };
