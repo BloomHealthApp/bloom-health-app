@@ -35,8 +35,9 @@ const user = (role: 'owner' | 'viewer'): User => ({ id: 'u', email: 'a@b.co', di
 const summary = (streak: number) => ({ currentStreak: streak, longestStreak: streak + 3, days: [{ localDate: TODAY, completionPercent: 100, successful: true, restDay: false }], workoutCount: 0, workoutSeconds: 0, milestones: [] });
 
 let latest: Derived | null = null;
-function Probe() {
-  latest = useDerived();
+function Probe({ sink }: { sink: (d: Derived) => void }) {
+  const d = useDerived();
+  React.useEffect(() => sink(d));
   return null;
 }
 async function mount() {
@@ -45,7 +46,7 @@ async function mount() {
   await act(async () => {
     t = renderer.create(
       <QueryClientProvider client={qc}>
-        <Probe />
+        <Probe sink={(d) => { latest = d; }} />
       </QueryClientProvider>,
     );
   });

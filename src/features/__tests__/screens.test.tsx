@@ -110,7 +110,7 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
     ['male owner', { gender: 'male' as const }],
     ['owner without a gender', { gender: null }],
     ['viewer, even if female', { gender: 'female' as const, role: 'viewer' as const, periodTrackerEnabled: false }],
-  ])('hides the tracker switch for a %s', (_n, over) => {
+  ] as [string, Partial<User>][])('hides the tracker switch for a %s', (_n, over) => {
     mockAuth.user = user(over);
     mockAuth.isOwner = over.role !== 'viewer';
     const t = render(<SettingsTab />);
