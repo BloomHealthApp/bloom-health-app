@@ -1,0 +1,29 @@
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { View } from 'react-native';
+import { BubuMascot } from '@/components/BubuMascot';
+import { ThemePicker } from '@/components/ThemePicker';
+import { AppText, Button, Screen } from '@/components/ui';
+import { DISCLAIMER } from '@/lib/messages';
+import { spacing } from '@/theme/tokens';
+
+export default function Welcome() {
+  const router = useRouter();
+  return (
+    <Screen>
+      <View style={{ alignItems: 'center', gap: spacing.md, paddingTop: spacing.xl }}>
+        <BubuMascot mood="cheer" size={180} />
+        <AppText variant="title" accent style={{ textAlign: 'center' }}>Bubu Bloom</AppText>
+        <AppText muted style={{ textAlign: 'center' }}>
+          A gentle little habit and wellness tracker for two. Small steps, kind streaks, and a bear who is proud of you.
+        </AppText>
+      </View>
+      <View style={{ gap: spacing.sm }}>
+        <AppText variant="label" muted>Pick a look (you can change it any time)</AppText>
+        <ThemePicker />
+      </View>
+      <Button title="Get started" onPress={() => router.push('/(auth)/email')} />
+      <AppText variant="caption" muted style={{ textAlign: 'center' }}>{DISCLAIMER}</AppText>
+    </Screen>
+  );
+}
