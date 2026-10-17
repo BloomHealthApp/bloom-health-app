@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import type { NotifApi, PlannedReminder } from './scheduler';
+import type { NotifApi, OneOffReminder, PlannedReminder } from './scheduler';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -71,6 +71,18 @@ export const expoNotifApi: NotifApi = {
         minute: p.minute,
         channelId: CHANNEL_ID,
       },
+    });
+  },
+  async scheduleAt(p: OneOffReminder) {
+    const N = notifications();
+    if (!N) return;
+    if (Platform.OS === 'android') {
+      await N.setNotificationChannelAsync(CHANNEL_ID, { name: 'Reminders', importance: N.AndroidImportance.DEFAULT });
+    }
+    await N.scheduleNotificationAsync({
+      identifier: p.identifier,
+      content: { title: p.title, body: p.body },
+      trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: p.date, channelId: CHANNEL_ID },
     });
   },
   async cancel(identifier: string) {
