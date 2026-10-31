@@ -9,6 +9,7 @@ Hooks and small mounted components joining the store, sync and pure logic.
 | `derived.ts` | Score, streaks and today | [derived.md](derived.md) |
 | `serverSummary.ts` | Viewer progress | [serverSummary.md](serverSummary.md) |
 | `periodReminder.ts` | Period reminder opt-in | [periodReminder.md](periodReminder.md) |
+| `reminderModes.ts` | Alert type per reminder, stored per user on this device | [reminderModes.md](reminderModes.md) |
 | `PeriodReminderSync.tsx` | Keeps that reminder in step with the estimate; renders nothing | |
 | `useActiveWorkout.ts` | Running workout state, persisted in SQLite `meta` | |
 | `useSyncOnFocus.ts` | Sync on focus, with optional polling | |

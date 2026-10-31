@@ -154,6 +154,24 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
   });
 });
 
+describe('Settings: reminder alert types', () => {
+  const radios = (t: renderer.ReactTestRenderer) => t.root.findAll((x) => x.props.accessibilityRole === 'radio' && typeof x.props.onPress === 'function' && /: (Notification|Alarm|Loud alarm)$/.test(x.props.accessibilityLabel));
+
+  it('offers owners three alert types per reminder, defaulting to notification', () => {
+    mockAuth.user = user();
+    const t = render(<SettingsTab />);
+    expect(radios(t)).toHaveLength(15);
+    const wake = radios(t).filter((x) => x.props.accessibilityLabel.startsWith('Good morning:'));
+    expect(wake.map((x) => x.props.accessibilityLabel)).toEqual(['Good morning: Notification', 'Good morning: Alarm', 'Good morning: Loud alarm']);
+    expect(wake.map((x) => x.props.accessibilityState.checked)).toEqual([true, false, false]);
+  });
+  it('is hidden from viewers', () => {
+    mockAuth.user = user({ role: 'viewer' });
+    mockAuth.isOwner = false;
+    expect(radios(render(<SettingsTab />))).toHaveLength(0);
+  });
+});
+
 describe('sign-up gender selector', () => {
   const fill = (t: renderer.ReactTestRenderer) => {
     act(() => {

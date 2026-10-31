@@ -21,6 +21,7 @@
 | `expo-secure-store` | Tokens | `src/auth/tokenStore.ts` | Memory cache for the session (e.g. web) |
 | `@react-native-async-storage/async-storage` | Cached user, flags and preferences | providers, `features/periodReminder.ts`, `avatars/avatarPrompt.ts`, `widgets/widgetData.ts` | Reads fall back to safe defaults |
 | `expo-notifications` | Local reminders only, no push | `src/notifications/expoAdapter.ts` | Lazy-loaded; reminders become unavailable (e.g. some Expo Go builds) |
+| `modules/bloom-alarm` (local Expo module) | Loud alarm: AlarmKit on iOS 26+, full-screen ringing on Android | `src/notifications/alarmAdapter.ts` | Optional native module; falls back to the Alarm tone |
 | `react-native-android-widget` | Android home-screen widgets `BubuSmall` and `BubuMedium` | `src/widgets/widgetAdapter.ts` | Lazy-loaded; no-op in Expo Go and off Android |
 | `@react-native-community/netinfo` | Online state for sync | `src/providers/DataProvider.tsx` | |
 

@@ -1,6 +1,6 @@
 import type { Reminder } from '@/types/api';
 import { DEFAULT_REMINDERS } from '@/lib/defaults';
-import { buildPlan, cancelAllReminders, syncReminders, type NotifApi, type PlannedReminder, type Storage } from '../scheduler';
+import { buildPlan, cancelAllReminders, syncReminders, type AlarmApi, type LoudAlarmAvailability, type NotifApi, type PlannedReminder, type Storage } from '../scheduler';
 
 function fakes(opts: { granted?: boolean; canAskAgain?: boolean; grantOnRequest?: boolean } = {}) {
   const scheduled = new Map<string, PlannedReminder>();
@@ -101,6 +101,117 @@ describe('syncReminders', () => {
     await syncReminders({ api: f.api, storage: f.storage, reminders: rem(), timezone: 'UTC', askPermission: false });
     await cancelAllReminders(f.api, f.storage);
     expect(f.scheduled.size).toBe(0);
+  });
+});
+
+describe('reminder modes', () => {
+  function loud(opts: { availability?: LoudAlarmAvailability; grantOnRequest?: boolean; failSchedule?: boolean } = {}) {
+    const scheduled = new Map<string, PlannedReminder>();
+    let availability = opts.availability ?? 'granted';
+    const calls = { schedule: 0, request: 0 };
+    const alarmApi: AlarmApi = {
+      getAvailability: async () => availability,
+      requestPermission: async () => {
+        calls.request++;
+        if (opts.grantOnRequest) availability = 'granted';
+      },
+      getScheduledIds: async () => [...scheduled.keys()],
+      schedule: async (p) => {
+        calls.schedule++;
+        if (opts.failSchedule) throw new Error('exact alarm permission revoked');
+        scheduled.set(p.identifier, p);
+      },
+      cancel: async (id) => void scheduled.delete(id),
+    };
+    return { alarmApi, scheduled, calls };
+  }
+  const WAKE = 'bubu.reminder.wakeUp';
+  const base = (f: ReturnType<typeof fakes>) => ({ api: f.api, storage: f.storage, reminders: rem(), timezone: 'UTC', askPermission: false });
+
+  it('defaults to notification, and adding modes to the app does not reschedule existing users', async () => {
+    const f = fakes();
+    const { alarmApi, scheduled } = loud();
+    await syncReminders(base(f));
+    expect(f.scheduled.get(WAKE)?.mode).toBe('notification');
+    const before = f.calls.schedule;
+    const r = await syncReminders({ ...base(f), modes: {}, alarmApi });
+    expect(r).toEqual({ status: 'scheduled', count: 5, skipped: true });
+    expect(f.calls.schedule).toBe(before);
+    expect(scheduled.size).toBe(0);
+  });
+  it('changing to alarm reschedules once, without duplicates', async () => {
+    const f = fakes();
+    await syncReminders(base(f));
+    const before = f.calls.schedule;
+    await syncReminders({ ...base(f), modes: { wakeUp: 'alarm' } });
+    expect(f.scheduled.get(WAKE)?.mode).toBe('alarm');
+    expect(f.scheduled.size).toBe(5);
+    expect(f.calls.schedule).toBe(before + 5);
+    expect(await syncReminders({ ...base(f), modes: { wakeUp: 'alarm' } })).toMatchObject({ skipped: true });
+  });
+  it('switching systems cancels the old entry, so a reminder never fires twice', async () => {
+    const f = fakes();
+    const l = loud();
+    await syncReminders(base(f));
+    await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi });
+    expect(l.scheduled.has(WAKE)).toBe(true);
+    expect(f.scheduled.has(WAKE)).toBe(false);
+    expect(await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi })).toMatchObject({ skipped: true });
+    await syncReminders({ ...base(f), modes: { wakeUp: 'notification' }, alarmApi: l.alarmApi });
+    expect(l.scheduled.has(WAKE)).toBe(false);
+    expect(f.scheduled.has(WAKE)).toBe(true);
+  });
+  it.each(['unavailable', 'denied', 'needsPermission'] as const)('falls back to the alarm tone and reports it when loud alarms are %s', async (availability) => {
+    const f = fakes();
+    const l = loud({ availability });
+    const r = await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi });
+    expect(r).toMatchObject({ status: 'scheduled', loudAlarmFallback: availability });
+    expect(f.scheduled.get(WAKE)?.mode).toBe('alarm');
+    expect(l.scheduled.size).toBe(0);
+    expect(await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi })).toMatchObject({ skipped: true, loudAlarmFallback: availability });
+  });
+  it('falls back without any native module', async () => {
+    const f = fakes();
+    expect(await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' } })).toMatchObject({ loudAlarmFallback: 'unavailable' });
+    expect(f.scheduled.get(WAKE)?.mode).toBe('alarm');
+  });
+  it('asks for alarm permission only when told to, then upgrades to the loud alarm', async () => {
+    const f = fakes();
+    const l = loud({ availability: 'needsPermission', grantOnRequest: true });
+    await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi, askPermission: true });
+    expect(l.calls.request).toBe(0);
+    const r = await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi, askAlarmPermission: true });
+    expect(l.calls.request).toBe(1);
+    expect(r).not.toHaveProperty('loudAlarmFallback');
+    expect(l.scheduled.has(WAKE)).toBe(true);
+    expect(f.scheduled.has(WAKE)).toBe(false);
+  });
+  it('a native scheduling failure still leaves an alarm that sounds', async () => {
+    const f = fakes();
+    const l = loud({ failSchedule: true });
+    const r = await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi });
+    expect(r).toMatchObject({ status: 'scheduled', count: 5, loudAlarmFallback: 'unavailable' });
+    expect(f.scheduled.get(WAKE)?.mode).toBe('alarm');
+  });
+  it('denied notifications and turning a reminder off also cancel its loud alarm', async () => {
+    const f = fakes();
+    const l = loud();
+    const modes = { wakeUp: 'loudAlarm' } as const;
+    await syncReminders({ ...base(f), modes, alarmApi: l.alarmApi });
+    await syncReminders({ ...base(f), reminders: rem([{ enabled: false }]), modes, alarmApi: l.alarmApi });
+    expect(l.scheduled.size).toBe(0);
+    await syncReminders({ ...base(f), modes, alarmApi: l.alarmApi });
+    const denied = fakes({ granted: false, canAskAgain: false });
+    await syncReminders({ ...base(denied), modes, alarmApi: l.alarmApi });
+    expect(l.scheduled.size).toBe(0);
+  });
+  it('sign-out clears both systems', async () => {
+    const f = fakes();
+    const l = loud();
+    await syncReminders({ ...base(f), modes: { wakeUp: 'loudAlarm' }, alarmApi: l.alarmApi });
+    await cancelAllReminders(f.api, f.storage, l.alarmApi);
+    expect(f.scheduled.size).toBe(0);
+    expect(l.scheduled.size).toBe(0);
   });
 });
 

@@ -10,7 +10,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.bloomhealthapp.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAlarmKitUsageDescription": "Bloom Health rings the Loud alarms you turn on in Settings, even when your phone is on silent."
       }
     },
     "android": {
@@ -44,7 +45,8 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#D65B98"
+          "color": "#D65B98",
+          "sounds": ["./assets/sounds/alarm.wav"]
         }
       ],
       [
