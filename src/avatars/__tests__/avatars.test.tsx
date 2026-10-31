@@ -17,14 +17,14 @@ function render(el: React.ReactElement) {
 }
 
 describe('avatar catalog', () => {
-  it('has the nine allowlisted ids with labels and a default', () => {
-    expect(AVATAR_IDS).toEqual(['bubu-01', 'bubu-02', 'bubu-03', 'bubu-04', 'bubu-05', 'bubu-06', 'bubu-07', 'bubu-08', 'bubu-09']);
-    expect(Object.keys(AVATAR_LABELS)).toHaveLength(9);
+  it('has the fifteen allowlisted ids with labels and a default', () => {
+    expect(AVATAR_IDS).toEqual(['bubu-01', 'bubu-02', 'bubu-03', 'bubu-04', 'bubu-05', 'bubu-06', 'bubu-07', 'bubu-08', 'bubu-09', 'bubu-10', 'bubu-11', 'bubu-12', 'bubu-13', 'bubu-14', 'bubu-15']);
+    expect(Object.keys(AVATAR_LABELS)).toHaveLength(15);
     expect(DEFAULT_AVATAR_ID).toBe('bubu-01');
   });
   it('isAvatarId accepts only allowlisted ids', () => {
     for (const id of AVATAR_IDS) expect(isAvatarId(id)).toBe(true);
-    for (const bad of ['bubu-00', 'bubu-10', 'evil', '', null, undefined, 1]) expect(isAvatarId(bad)).toBe(false);
+    for (const bad of ['bubu-00', 'bubu-16', 'evil', '', null, undefined, 1]) expect(isAvatarId(bad)).toBe(false);
     expect(avatarLabel('bubu-03')).toBe('Candy Stick');
     expect(avatarLabel('nope')).toBe('Bloom');
   });
@@ -54,17 +54,17 @@ describe('Avatar', () => {
   });
   it('draws distinct art for every id and for the fallback', () => {
     const arts = new Set([...AVATAR_IDS, null].map((id) => JSON.stringify(avatarArt(id))));
-    expect(arts.size).toBe(10);
+    expect(arts.size).toBe(16);
   });
 });
 
 describe('AvatarPicker', () => {
   const radios = (t: renderer.ReactTestRenderer) => t.root.findAll((n) => n.props.accessibilityRole === 'radio' && typeof n.props.onPress === 'function');
 
-  it('shows nine options with labels and marks only the selected one', () => {
+  it('shows every option with labels and marks only the selected one', () => {
     const t = render(<AvatarPicker value="bubu-04" onChange={() => {}} />);
     const r = radios(t);
-    expect(r).toHaveLength(9);
+    expect(r).toHaveLength(15);
     expect(r.map((n) => n.props.accessibilityLabel)).toEqual(AVATAR_IDS.map((id) => `${AVATAR_LABELS[id]} avatar`));
     expect(r.map((n) => n.props.accessibilityState.selected)).toEqual(AVATAR_IDS.map((id) => id === 'bubu-04'));
   });

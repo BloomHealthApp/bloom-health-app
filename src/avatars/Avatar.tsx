@@ -8,7 +8,7 @@ export const AVATAR_MIN_SIZE = 32;
 export const AVATAR_MAX_SIZE = 120;
 
 interface Props {
-  /** avatar id (bubu-01..bubu-09); null/undefined/unknown shows the neutral Bloom face */
+  /** avatar id (bubu-01..bubu-15); null/undefined/unknown shows the neutral Bloom face */
   id: string | null | undefined;
   /** diameter in points, clamped to 32-120 */
   size?: number;

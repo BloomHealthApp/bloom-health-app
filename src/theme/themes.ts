@@ -16,6 +16,8 @@ export interface ThemeColors {
   success: string;
   warning: string;
   danger: string;
+  /** mascot cheek colour; when unset, it is the primary mixed with pink */
+  blush?: string;
   /** 5-step heatmap ramp, index 0 = no data */
   heat: [string, string, string, string, string];
 }
@@ -103,6 +105,50 @@ export const mintPeach: Theme = {
   },
 };
 
-export const THEMES: Record<ThemeName, Theme> = { cottonCandy, lavenderDream, mintPeach };
-export const THEME_LIST: Theme[] = [cottonCandy, lavenderDream, mintPeach];
-export const DEFAULT_THEME: ThemeName = 'cottonCandy';
+export const forestTrail: Theme = {
+  name: 'forestTrail',
+  label: 'Forest Trail',
+  colors: {
+    bg: '#F6F8F2',
+    surface: '#FFFFFF',
+    tint: '#DCE8D6',
+    primary: '#2F6B4F',
+    onPrimary: '#FFFFFF',
+    accent: '#24563F',
+    secondary: '#E8DCC4',
+    text: '#1F3329',
+    textMuted: '#526257',
+    border: '#CBD9C4',
+    success: '#2F855A',
+    warning: '#B5701F',
+    danger: '#B23A3A',
+    blush: '#D9A77F',
+    heat: ramp('#DCE8D6', '#2F6B4F'),
+  },
+};
+
+export const midnightNavy: Theme = {
+  name: 'midnightNavy',
+  label: 'Midnight Navy',
+  colors: {
+    bg: '#F4F6FA',
+    surface: '#FFFFFF',
+    tint: '#D9E2F0',
+    primary: '#1F3A5F',
+    onPrimary: '#FFFFFF',
+    accent: '#2B5A8C',
+    secondary: '#C9D6E6',
+    text: '#16263D',
+    textMuted: '#4F5F75',
+    border: '#CCD6E4',
+    success: '#2F855A',
+    warning: '#B7791F',
+    danger: '#C53030',
+    blush: '#D9A77F',
+    heat: ramp('#D9E2F0', '#1F3A5F'),
+  },
+};
+
+export const THEMES: Record<ThemeName, Theme> = { forestTrail, midnightNavy, cottonCandy, lavenderDream, mintPeach };
+export const THEME_LIST: Theme[] = [forestTrail, midnightNavy, cottonCandy, lavenderDream, mintPeach];
+export const DEFAULT_THEME: ThemeName = 'forestTrail';

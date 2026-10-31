@@ -30,7 +30,7 @@ function mixHex(a: string, b: string, t: number): string {
 
 export function mascotPalette(c: ThemeColors): MascotPalette {
   return {
-    cheek: mixHex(c.primary, '#FF9DB5', 0.72),
+    cheek: c.blush ?? mixHex(c.primary, '#FF9DB5', 0.72),
     primary: c.primary,
     soft: c.secondary,
     accent: c.accent,

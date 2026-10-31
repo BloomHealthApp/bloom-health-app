@@ -47,7 +47,7 @@ describe('avatars in the mock contract server', () => {
     expect(await c.patchMe({ avatar: null })).toMatchObject({ avatar: null, ownerAvatar: null });
   });
 
-  it.each(['evil', 'bubu-00', 'bubu-10', '', 'https://x.test/a.png'])('PATCH /me rejects %p with 400 and changes nothing', async (bad) => {
+  it.each(['evil', 'bubu-00', 'bubu-16', '', 'https://x.test/a.png'])('PATCH /me rejects %p with 400 and changes nothing', async (bad) => {
     const c = make();
     await signIn(c, 'anu@example.com');
     const e = await c.patchMe({ displayName: 'Changed', avatar: bad }).catch((x) => x);

@@ -4,12 +4,12 @@ import type { MascotMood } from '@/components/mascotTypes';
 import { diffDays, localDateInTz } from '@/lib/dates';
 import { dailyMessage } from '@/lib/messages';
 import type { DayScore } from '@/lib/scoring';
-import { THEMES } from '@/theme/themes';
+import { DEFAULT_THEME, THEMES } from '@/theme/themes';
 import type { Role, ThemeName } from '@/types/api';
 
 export const SNAPSHOT_KEY = 'bubu.widget.snapshot';
 export const SNAPSHOT_VERSION = 1;
-export const FALLBACK_THEME: ThemeName = 'cottonCandy';
+export const FALLBACK_THEME: ThemeName = DEFAULT_THEME;
 
 /**
  * ready      - signed in, habits scheduled today

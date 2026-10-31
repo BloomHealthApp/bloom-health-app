@@ -37,7 +37,7 @@ export default function OtpScreen() {
     setBusy(true);
     setError(null);
     try {
-      await verifyOtp(challengeId, c);
+      await verifyOtp(challengeId, c, isSignUp ? theme.name : undefined);
       // Signing in swaps the root tree; the index/auth layouts redirect to the tabs.
     } catch (e) {
       if (e instanceof NetworkError) setError('No connection. Check your internet and try again.');

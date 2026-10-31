@@ -4,7 +4,7 @@ import { ApiClient } from '@/api/client';
 import { mockFetch } from '@/api/mock/mockServer';
 import { createTokenProvider } from '@/auth/tokenStore';
 import { API_BASE_URL, USE_MOCK_API } from '@/config';
-import type { Gender, OtpChallenge, User } from '@/types/api';
+import type { Gender, OtpChallenge, ThemeName, User } from '@/types/api';
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
 const USER_KEY = 'bubu.user';
@@ -16,7 +16,8 @@ interface Ctx {
   isOwner: boolean;
   requestSignUp: (input: { name: string; phone: string; email: string; gender?: Gender | null }) => Promise<OtpChallenge>;
   requestSignIn: (identifier: string) => Promise<OtpChallenge>;
-  verifyOtp: (challengeId: string, code: string) => Promise<void>;
+  /** signupTheme: the theme picked before the account existed; a new account starts on the server default otherwise */
+  verifyOtp: (challengeId: string, code: string, signupTheme?: ThemeName) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (u: User) => void;
 }
@@ -72,9 +73,10 @@ export function AuthProvider({ children, onSignedOut }: { children: React.ReactN
       isOwner: user?.role === 'owner',
       requestSignUp: ({ name, phone, email, gender }) => api.requestSignUp({ name: name.trim(), phone: phone.trim(), email: email.trim().toLowerCase(), ...(gender ? { gender } : {}) }),
       requestSignIn: (identifier) => api.requestSignIn(identifier.trim().toLowerCase()),
-      verifyOtp: async (challengeId, code) => {
+      verifyOtp: async (challengeId, code, signupTheme) => {
         const u = await api.verifyOtp(challengeId, code.trim());
-        persistUser(u);
+        const wantsTheme = signupTheme && signupTheme !== u.theme;
+        persistUser(wantsTheme ? await api.patchMe({ theme: signupTheme }).catch(() => u) : u);
         setStatus('signedIn');
       },
       signOut: async () => {
