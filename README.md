@@ -9,6 +9,8 @@ Expo SDK 58 + Expo Router + strict TypeScript, TanStack Query, `expo-sqlite` (of
 The app talks **only** to the REST API described in `../docs/api-contract.md` (v1). It never connects to MongoDB and ships
 no database credentials.
 
+Conventions and project context for contributors are in [`CLAUDE.md`](CLAUDE.md) and [`.claude/context/`](.claude/context/README.md).
+
 ## Quick start
 
 ```bash
