@@ -1,10 +1,10 @@
-# Bubu Bloom (mobile app)
+# Bloom Health (mobile app)
 
 A private wellness / habit tracker for two people (an **owner** who logs, and an invited **viewer** who follows along read-only).
 Expo SDK 58 + Expo Router + strict TypeScript, TanStack Query, `expo-sqlite` (offline cache + sync queue),
 `expo-secure-store` (tokens), `expo-notifications`, `react-native-svg`, `react-native-reanimated`, Nunito.
 
-> Bubu Bloom is a personal habit tracker, not medical advice.
+> Bloom Health is a personal habit tracker, not medical advice.
 
 The app talks **only** to the REST API described in `../docs/api-contract.md` (v1). It never connects to MongoDB and ships
 no database credentials.
@@ -38,7 +38,7 @@ refresh and response validation are exercised too.
 
 ### Against the real service
 
-1. Start `bubu-bloom-service` (see its README).
+1. Start `bloom-health-service` (see its README).
 2. Set `EXPO_PUBLIC_API_BASE_URL`, leave `EXPO_PUBLIC_USE_MOCK_API=false`, run `npx expo start`.
 3. Create an account (name, phone, email) or sign in with your phone or email, then enter the 6-digit code emailed to the
    email on your account. There are no passwords.

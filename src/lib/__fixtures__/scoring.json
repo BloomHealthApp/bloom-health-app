@@ -1,5 +1,5 @@
 {
-  "_note": "App-local fixtures in the shared shape. Optional `sundayRest` (applied via effectiveRestDays; absent here means NOT applied so older cases keep their meaning) and `neutralDates` (YYYY-MM-DD) cover Sunday rest and period-style neutral days. Merge with bubu-bloom-service/testdata/scoring.json once that file is final.",
+  "_note": "App-local fixtures in the shared shape. Optional `sundayRest` (applied via effectiveRestDays; absent here means NOT applied so older cases keep their meaning) and `neutralDates` (YYYY-MM-DD) cover Sunday rest and period-style neutral days. Merge with bloom-health-service/testdata/scoring.json once that file is final.",
   "cases": [
     {
       "name": "boolean + quantity, partial does not count",

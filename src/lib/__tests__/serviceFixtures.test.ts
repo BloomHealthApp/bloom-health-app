@@ -1,7 +1,7 @@
 import svc from '../__fixtures__/service-scoring.json';
 import { summarize, type HabitRule, type RestDayMode } from '../scoring';
 
-// Runs the service's shared fixtures (bubu-bloom-service/testdata/scoring.json) through the app's scoring lib.
+// Runs the service's shared fixtures (bloom-health-service/testdata/scoring.json) through the app's scoring lib.
 describe('service fixtures', () => {
   const habits = svc.habits.map((h) => ({
     id: h.id,
