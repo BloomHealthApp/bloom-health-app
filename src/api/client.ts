@@ -65,7 +65,6 @@ export class ApiClient {
     private tokens: TokenProvider,
   ) {}
 
-  // ---------- core ----------
   private async raw(method: string, path: string, opts: ReqOpts<undefined>, accessToken: string | null): Promise<Response> {
     const qs = opts.query
       ? '?' +
@@ -191,7 +190,6 @@ export class ApiClient {
     });
   }
 
-  // ---------- auth ----------
   /** Starts sign-up: emails a code to `email`. Throws ApiError 409 `already_registered` if email/phone is taken. */
   requestSignUp(body: SignUpRequest): Promise<OtpChallenge> {
     return this.request('POST', '/auth/signup/request', { body, auth: false, schema: OtpChallengeSchema });
@@ -216,7 +214,6 @@ export class ApiClient {
     }
   }
 
-  // ---------- profile & settings ----------
   getMe(): Promise<User> {
     return this.request('GET', '/me', { schema: UserSchema });
   }
@@ -228,7 +225,7 @@ export class ApiClient {
     return this.request('GET', '/settings', { schema: SettingsSchema });
   }
 
-  // ---------- reads (direct REST; the app normally uses sync/pull) ----------
+  // Direct REST reads; the app normally uses sync/pull.
   async listHabits(includeInactive = true): Promise<Habit[]> {
     const r = await this.request('GET', '/habits', { query: { includeInactive }, schema: HabitItems });
     return r.items;
@@ -247,7 +244,6 @@ export class ApiClient {
     return this.request('GET', '/stats/summary', { query: { from, to }, schema: StatsSummarySchema });
   }
 
-  // ---------- sync ----------
   async syncPush(deviceId: string, operations: PushOperation[]): Promise<PushResult[]> {
     const r = await this.request('POST', '/sync/push', { body: { deviceId, operations }, schema: PushResponseSchema });
     return r.results;

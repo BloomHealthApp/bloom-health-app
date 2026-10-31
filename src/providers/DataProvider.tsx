@@ -51,7 +51,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // engine opts is read at call time; patch deviceId once known
   const [reminderStatus, setReminderStatus] = useState<SyncResult | null>(null);
 
-  // ---- init store, wipe cache if a different user signs in ----
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -76,10 +75,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, engine, user?.id]);
 
-  // ---- store changes -> refresh queries ----
   useEffect(() => store.subscribe(() => void qc.invalidateQueries({ queryKey: ['store'] })), [store, qc]);
 
-  // ---- debounced sync trigger ----
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scheduleSync = useCallback(
     (delayMs = 400) => {
@@ -90,7 +87,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
   const syncNow = useCallback(() => engine.sync(), [engine]);
 
-  // ---- reminders ----
   const settingsRef = useRef<Settings | null>(null);
   const refreshReminders = useCallback(
     async (askPermission = false) => {
@@ -113,7 +109,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (ready) void refreshReminders(false);
   }, [settingsSig, ready, refreshReminders, settingsQuery.data]);
 
-  // ---- foreground / network / timezone / backoff timers ----
   useEffect(() => {
     const checkTimezone = async () => {
       const tz = deviceTimezone();

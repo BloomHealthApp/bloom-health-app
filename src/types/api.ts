@@ -156,7 +156,7 @@ export const StatsSummarySchema = z.object({
 });
 export type StatsSummary = z.infer<typeof StatsSummarySchema>;
 
-// ---- Period tracker (private to the owner: never returned to or accepted from viewers) ----
+// Period data is private to the owner: never returned to or accepted from viewers.
 export const PERIOD_FLOWS = ['light', 'medium', 'heavy'] as const;
 export const PERIOD_SYMPTOMS = ['cramps', 'headache', 'bloating', 'fatigue', 'mood_swings', 'backache', 'acne', 'nausea', 'cravings', 'tender_breasts'] as const;
 export const PERIOD_MOODS = ['happy', 'calm', 'sad', 'irritable', 'anxious'] as const;
@@ -187,7 +187,6 @@ export const PeriodSchema = z.object({
 });
 export type Period = z.infer<typeof PeriodSchema>;
 
-// ---- Sync ----
 export type EntityType = 'habit' | 'dailyLog' | 'workout' | 'settings' | 'period';
 export type SyncEntity = Habit | DailyLog | Workout | Settings | Period;
 

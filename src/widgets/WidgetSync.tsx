@@ -5,12 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { buildSnapshot, publishSignedOut, publishSnapshot, type WidgetSnapshot } from './widgetData';
 
-/**
- * Mounted inside DataProvider (signed-in only). Re-publishes the widget snapshot whenever its inputs change:
- * a habit log changes, a sync pull/push lands in SQLite, the day rolls over, or the theme changes (all flow through
- * useDerived / useTheme), and again whenever the app returns to the foreground. Renders nothing.
- * Viewer accounts see the owner's cached data, so they publish the same snapshot read-only.
- */
+/** Mounted inside DataProvider: re-publishes the widget snapshot when its inputs change and on foreground. Renders nothing. */
 export function WidgetSync() {
   const { user } = useAuth();
   const { theme } = useTheme();

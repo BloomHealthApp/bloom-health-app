@@ -54,7 +54,6 @@ export class SyncEngine {
     this.opts.deviceId = id;
   }
 
-  // ---------------- status ----------------
   getStatus(): SyncStatus {
     return this.status;
   }
@@ -82,7 +81,6 @@ export class SyncEngine {
     return this.status;
   }
 
-  // ---------------- local writes ----------------
   /**
    * Optimistically writes `entity` (null for deletes of never-synced items) to the cache and queues an operation.
    * Consecutive un-sent upserts for the same entity are coalesced into one operation (same operationId).
@@ -135,7 +133,6 @@ export class SyncEngine {
     await this.refreshStatus();
   }
 
-  // ---------------- sync ----------------
   /** Single-flight: concurrent callers share one run; a request made mid-run triggers one more pass. */
   sync(): Promise<void> {
     if (this.running) {
@@ -287,7 +284,6 @@ export class SyncEngine {
     }
   }
 
-  // ---------------- manual actions ----------------
   /** Make `failed` (retry-exhausted) ops pending again. Rejected/conflict ops are not retryable. */
   async retryFailed(): Promise<void> {
     for (const op of await this.store.listOps()) {

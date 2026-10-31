@@ -107,7 +107,6 @@ export async function cancelAllReminders(api: NotifApi, storage: Storage): Promi
   await cancelPeriodReminder(api, storage);
 }
 
-// ---------------- optional "period may start soon" reminder ----------------
 // Its own identifier (not under ID_PREFIX, so syncReminders never touches it). The text is deliberately generic:
 // notifications show on the lock screen, so the word "period" appears only inside the app.
 export const PERIOD_REMINDER_ID = 'bubu.cycle.heads-up';

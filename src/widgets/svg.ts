@@ -1,6 +1,4 @@
-// SVG-string rendering for the home-screen widget. The widget library cannot draw react-native-svg components, so the
-// original Bloom artwork (components/mascotArt.tsx) is evaluated into a React element tree and serialised to an SVG string.
-// No artwork is duplicated: if the mascot changes, the widget changes with it.
+// Renders the Bloom artwork to SVG strings, because the widget library cannot draw react-native-svg components.
 import type { ReactElement, ReactNode } from 'react';
 import { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 import { MascotArt, mascotPalette } from '@/components/mascotArt';
@@ -51,7 +49,6 @@ export function mascotSvg(mood: MascotMood, themeName: ThemeName): string {
 const FLAME_D = 'M12 2 C13 7 18 9 18 15 C18 19 15 22 12 22 C9 22 6 19 6 15 C6 12 8 10 9 8 C10 10 11 10 11.5 9.5 C12 7 11.5 4 12 2Z';
 const FLAME_INNER_D = 'M12 22 C10 22 8.5 20.5 8.5 18.5 C8.5 16.5 10.5 15.5 11 13.5 C13 15 15.5 16.5 15.5 18.5 C15.5 20.5 14 22 12 22Z';
 
-/** Streak flame icon. */
 export function flameSvg(color: string, inner = '#FFD54F'): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="${FLAME_D}" fill="${color}"/><path d="${FLAME_INNER_D}" fill="${inner}"/></svg>`;
 }

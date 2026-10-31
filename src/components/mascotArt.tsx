@@ -3,12 +3,7 @@ import { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 import type { ThemeColors } from '@/theme/themes';
 import type { MascotMood } from './mascotTypes';
 
-/**
- * Original "Bloom": a chubby mochi bunny-bear bean with two small rounded ears (soft peach inside),
- * a little head sprout, stubby arms and tiny feet. Sticker look: thick brown outline, flat pastel fills,
- * a white die-cut border and a soft drop shadow. Everything is drawn in a 200x200 viewBox.
- * Body stays cream-white; cheeks, props and accents follow the active theme.
- */
+/** Original "Bloom" mascot in a 200x200 viewBox. Cheeks, props and accents follow the active theme. */
 export const INK = '#5B3A3A';
 export const CREAM = '#FFF7EC';
 export const PEACH = '#FFC9B8';

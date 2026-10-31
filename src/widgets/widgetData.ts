@@ -1,6 +1,4 @@
-// Platform-neutral data layer for home-screen widgets. It owns the WidgetSnapshot (what a widget shows), builds it from the
-// app's own scoring output, persists the last snapshot so a widget can render while the app is closed, and asks the
-// platform adapter to redraw. An iOS widget can later read the same snapshot (e.g. via an app group) without changes here.
+// Platform-neutral data layer for home-screen widgets: builds, persists and publishes the WidgetSnapshot.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MascotMood } from '@/components/mascotTypes';
 import { diffDays, localDateInTz } from '@/lib/dates';
@@ -212,7 +210,6 @@ export function publishSignedOut(theme: ThemeName, opts: Publisher = {}): Promis
   return publishSnapshot(signedOutSnapshot(theme), opts);
 }
 
-/** test helper */
 export function __resetPublishState(): void {
   lastSignature = null;
 }
