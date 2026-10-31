@@ -9,6 +9,10 @@ export const SIGNATURE_KEY = 'reminderSignature';
 
 export type ReminderMode = 'notification' | 'alarm' | 'loudAlarm';
 export type ReminderModes = Partial<Record<Reminder['key'], ReminderMode>>;
+/** 0.1 to 1. Only Android loud alarms can honour it; other alerts follow the phone's own volume. */
+export type ReminderVolumes = Partial<Record<Reminder['key'], number>>;
+export const MIN_ALARM_VOLUME = 0.1;
+export const clampAlarmVolume = (v: number) => Math.round(Math.min(1, Math.max(MIN_ALARM_VOLUME, v)) * 100) / 100;
 
 export interface PlannedReminder {
   identifier: string;
@@ -18,6 +22,7 @@ export interface PlannedReminder {
   title: string;
   body: string;
   mode: ReminderMode;
+  volume: number;
 }
 
 export type LoudAlarmAvailability = 'granted' | 'needsPermission' | 'denied' | 'unavailable';
@@ -48,7 +53,7 @@ export interface OneOffReminder {
   date: Date;
 }
 
-export function buildPlan(reminders: Reminder[], modes: ReminderModes = {}): PlannedReminder[] {
+export function buildPlan(reminders: Reminder[], modes: ReminderModes = {}, volumes: ReminderVolumes = {}): PlannedReminder[] {
   const seen = new Set<string>();
   const out: PlannedReminder[] = [];
   for (const r of reminders) {
@@ -56,14 +61,15 @@ export function buildPlan(reminders: Reminder[], modes: ReminderModes = {}): Pla
     const t = parseHHmm(r.time);
     if (!t) continue;
     seen.add(r.key);
-    out.push({ identifier: ID_PREFIX + r.key, key: r.key, hour: t.hour, minute: t.minute, mode: modes[r.key] ?? 'notification', ...REMINDER_LABELS[r.key] });
+    out.push({ identifier: ID_PREFIX + r.key, key: r.key, hour: t.hour, minute: t.minute, mode: modes[r.key] ?? 'notification', volume: clampAlarmVolume(volumes[r.key] ?? 1), ...REMINDER_LABELS[r.key] });
   }
   return out;
 }
 
 // Plain notifications keep their original format, so upgrading the app does not reschedule them.
 export function planSignature(plan: PlannedReminder[], timezone: string): string {
-  return `${timezone}|${plan.map((p) => `${p.key}@${p.hour}:${p.minute}${p.mode === 'notification' ? '' : `#${p.mode}`}`).sort().join(',')}`;
+  const suffix = (p: PlannedReminder) => (p.mode === 'notification' ? '' : p.mode === 'loudAlarm' ? `#${p.mode}~${p.volume}` : `#${p.mode}`);
+  return `${timezone}|${plan.map((p) => `${p.key}@${p.hour}:${p.minute}${suffix(p)}`).sort().join(',')}`;
 }
 
 export type LoudAlarmFallback = Exclude<LoudAlarmAvailability, 'granted'>;
@@ -86,12 +92,13 @@ export async function syncReminders(args: {
   /** true only when the user explicitly turned reminders on (prompt allowed) */
   askPermission: boolean;
   modes?: ReminderModes;
+  volumes?: ReminderVolumes;
   alarmApi?: AlarmApi;
   /** true only when the user just chose Loud alarm: on Android this opens a system settings screen. */
   askAlarmPermission?: boolean;
 }): Promise<SyncResult> {
-  const { api, storage, reminders, timezone, askPermission, modes, alarmApi, askAlarmPermission } = args;
-  const plan = buildPlan(reminders, modes);
+  const { api, storage, reminders, timezone, askPermission, modes, volumes, alarmApi, askAlarmPermission } = args;
+  const plan = buildPlan(reminders, modes, volumes);
   const existing = (await api.getScheduledIds()).filter((id) => id.startsWith(ID_PREFIX));
   const existingLoud = ((await alarmApi?.getScheduledIds()) ?? []).filter((id) => id.startsWith(ID_PREFIX));
   const cancelEverything = async () => {

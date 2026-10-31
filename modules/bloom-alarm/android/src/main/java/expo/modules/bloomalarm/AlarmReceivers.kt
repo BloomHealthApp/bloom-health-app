@@ -25,6 +25,7 @@ class AlarmFireReceiver : BroadcastReceiver() {
       .putExtra(AlarmScheduler.EXTRA_ID, id)
       .putExtra(AlarmScheduler.EXTRA_TITLE, stored?.title ?: intent.getStringExtra(AlarmScheduler.EXTRA_TITLE).orEmpty())
       .putExtra(AlarmScheduler.EXTRA_BODY, stored?.body ?: intent.getStringExtra(AlarmScheduler.EXTRA_BODY).orEmpty())
+      .putExtra(AlarmScheduler.EXTRA_VOLUME, stored?.volume ?: intent.getDoubleExtra(AlarmScheduler.EXTRA_VOLUME, 1.0))
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(ring) else context.startService(ring)
   }
 }

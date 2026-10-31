@@ -8,6 +8,8 @@ export interface BloomAlarmInput {
   minute: number;
   title: string;
   body: string;
+  /** 0.1 to 1. Android only: iOS gives apps no control over AlarmKit volume. */
+  volume: number;
 }
 
 export interface BloomAlarmNative {

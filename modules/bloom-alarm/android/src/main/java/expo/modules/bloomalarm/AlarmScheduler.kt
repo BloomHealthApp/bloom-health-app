@@ -10,7 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
 
-data class StoredAlarm(val id: String, val hour: Int, val minute: Int, val title: String, val body: String)
+data class StoredAlarm(val id: String, val hour: Int, val minute: Int, val title: String, val body: String, val volume: Double)
 
 /** The schedule has to live natively: alarms must be restored after a reboot without starting React Native. */
 object AlarmStore {
@@ -22,7 +22,7 @@ object AlarmStore {
     val array = JSONArray(raw)
     return List(array.length()) { i ->
       val o = array.getJSONObject(i)
-      StoredAlarm(o.getString("id"), o.getInt("hour"), o.getInt("minute"), o.getString("title"), o.getString("body"))
+      StoredAlarm(o.getString("id"), o.getInt("hour"), o.getInt("minute"), o.getString("title"), o.getString("body"), o.optDouble("volume", 1.0))
     }
   }
 
@@ -35,7 +35,7 @@ object AlarmStore {
   private fun write(context: Context, alarms: List<StoredAlarm>) {
     val array = JSONArray()
     alarms.forEach {
-      array.put(JSONObject().put("id", it.id).put("hour", it.hour).put("minute", it.minute).put("title", it.title).put("body", it.body))
+      array.put(JSONObject().put("id", it.id).put("hour", it.hour).put("minute", it.minute).put("title", it.title).put("body", it.body).put("volume", it.volume))
     }
     context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, array.toString()).apply()
   }
@@ -46,6 +46,7 @@ object AlarmScheduler {
   const val EXTRA_ID = "id"
   const val EXTRA_TITLE = "title"
   const val EXTRA_BODY = "body"
+  const val EXTRA_VOLUME = "volume"
   private const val SNOOZE_MINUTES = 10
 
   fun canSchedule(context: Context): Boolean =
@@ -53,17 +54,17 @@ object AlarmScheduler {
 
   fun schedule(context: Context, alarm: StoredAlarm) {
     val at = nextOccurrence(alarm.hour, alarm.minute, System.currentTimeMillis())
-    set(context, at, firePendingIntent(context, alarm.id, alarm.title, alarm.body, snooze = false))
+    set(context, at, firePendingIntent(context, alarm.id, alarm.title, alarm.body, alarm.volume, snooze = false))
   }
 
-  fun snooze(context: Context, id: String, title: String, body: String) {
+  fun snooze(context: Context, id: String, title: String, body: String, volume: Double) {
     val at = System.currentTimeMillis() + SNOOZE_MINUTES * 60_000L
-    set(context, at, firePendingIntent(context, id, title, body, snooze = true))
+    set(context, at, firePendingIntent(context, id, title, body, volume, snooze = true))
   }
 
   fun cancel(context: Context, id: String) {
-    manager(context).cancel(firePendingIntent(context, id, "", "", snooze = false))
-    manager(context).cancel(firePendingIntent(context, id, "", "", snooze = true))
+    manager(context).cancel(firePendingIntent(context, id, "", "", 1.0, snooze = false))
+    manager(context).cancel(firePendingIntent(context, id, "", "", 1.0, snooze = true))
   }
 
   fun restoreAll(context: Context) {
@@ -89,13 +90,14 @@ object AlarmScheduler {
     manager(context).setAlarmClock(AlarmManager.AlarmClockInfo(at, show), operation)
   }
 
-  private fun firePendingIntent(context: Context, id: String, title: String, body: String, snooze: Boolean): PendingIntent {
+  private fun firePendingIntent(context: Context, id: String, title: String, body: String, volume: Double, snooze: Boolean): PendingIntent {
     val intent = Intent(context, AlarmFireReceiver::class.java)
       .setAction(ACTION_FIRE)
       .setData(Uri.parse("bloomalarm://${if (snooze) "snooze" else "fire"}/$id"))
       .putExtra(EXTRA_ID, id)
       .putExtra(EXTRA_TITLE, title)
       .putExtra(EXTRA_BODY, body)
+      .putExtra(EXTRA_VOLUME, volume)
     return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   }
 

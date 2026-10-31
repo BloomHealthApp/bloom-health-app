@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Linking, Modal, Pressable, Switch, TextInput, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Linking, Modal, Pressable, Switch, View } from 'react-native';
 import { Avatar } from '@/avatars/Avatar';
 import { AvatarPicker } from '@/avatars/AvatarPicker';
 import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
@@ -11,17 +11,17 @@ import { GenderPicker } from '@/components/GenderPicker';
 import { SyncStatusChip } from '@/components/SyncStatusChip';
 import { ThemePicker } from '@/components/ThemePicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
+import { ReminderRow } from '@/components/reminders/ReminderRow';
 import { AppText, Button, Card, ErrorBanner, Row, Screen } from '@/components/ui';
 import { USE_MOCK_API, API_BASE_URL } from '@/config';
 import { useActions } from '@/features/actions';
-import { getReminderModes, setReminderModes } from '@/features/reminderModes';
+import { getReminderModes, getReminderVolumes, setReminderModes, setReminderVolumes } from '@/features/reminderModes';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
-import { parseHHmm, WEEKDAY_LABELS } from '@/lib/dates';
-import { REMINDER_LABELS } from '@/lib/defaults';
+import { WEEKDAY_LABELS } from '@/lib/dates';
 import { DISCLAIMER } from '@/lib/messages';
 import { genderPatch, isPeriodTrackerOn, showTrackerSwitch, sundayRestOn } from '@/lib/profile';
 import { canShowFullScreenAlarm, nativeAlarmApi, openFullScreenAlarmSettings } from '@/notifications/alarmAdapter';
-import { cancelAllReminders, type ReminderMode, type ReminderModes } from '@/notifications/scheduler';
+import { cancelAllReminders, type ReminderMode, type ReminderModes, type ReminderVolumes } from '@/notifications/scheduler';
 import { expoNotifApi } from '@/notifications/expoAdapter';
 import { useAuth } from '@/providers/AuthProvider';
 import { useData, useSettings, useSyncStatus } from '@/providers/DataProvider';
@@ -29,12 +29,6 @@ import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Gender, Reminder, ThemeName } from '@/types/api';
-
-const REMINDER_MODES: { mode: ReminderMode; label: string }[] = [
-  { mode: 'notification', label: 'Notification' },
-  { mode: 'alarm', label: 'Alarm' },
-  { mode: 'loudAlarm', label: 'Loud alarm' },
-];
 
 export default function SettingsTab() {
   const router = useRouter();
@@ -52,6 +46,8 @@ export default function SettingsTab() {
   const [pickingAvatar, setPickingAvatar] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [modes, setModes] = useState<ReminderModes>({});
+  const [volumes, setVolumes] = useState<ReminderVolumes>({});
+  const [previewing, setPreviewing] = useState<Reminder['key'] | null>(null);
   const [fullScreenAllowed, setFullScreenAllowed] = useState(true);
   const userId = user?.id;
   const hasLoudAlarm = Object.values(modes).includes('loudAlarm');
@@ -62,13 +58,18 @@ export default function SettingsTab() {
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    void getReminderModes(userId).then((m) => {
-      if (!cancelled) setModes(m);
+    void Promise.all([getReminderModes(userId), getReminderVolumes(userId)]).then(([m, v]) => {
+      if (cancelled) return;
+      setModes(m);
+      setVolumes(v);
     });
     return () => {
       cancelled = true;
     };
   }, [userId]);
+
+  // Closing the preview stops its sound when the user leaves this tab.
+  useFocusEffect(useCallback(() => () => setPreviewing(null), []));
 
   useEffect(() => {
     if (!hasLoudAlarm) return;
@@ -95,6 +96,22 @@ export default function SettingsTab() {
       const next = settings.reminders.map((r) => (r.key === key ? { ...r, ...patch } : r));
       await actions.saveSettings({ reminders: next }, settings);
       if (ask) await refreshReminders(true);
+    });
+
+  const chooseMode = (key: Reminder['key'], mode: ReminderMode) => {
+    const unchanged = (modes[key] ?? 'notification') === mode;
+    setPreviewing(unchanged && previewing === key ? null : key);
+    if (unchanged) return;
+    void setReminderMode(key, mode);
+  };
+
+  const setReminderVolume = (key: Reminder['key'], volume: number) =>
+    guarded(async () => {
+      if (!userId) return;
+      const next = { ...volumes, [key]: volume };
+      setVolumes(next);
+      await setReminderVolumes(userId, next);
+      await refreshReminders();
     });
 
   const setReminderMode = (key: Reminder['key'], mode: ReminderMode) =>
@@ -215,7 +232,16 @@ export default function SettingsTab() {
             </View>
           ) : null}
           {settings.reminders.map((r) => (
-            <ReminderRow key={r.key} reminder={r} mode={modes[r.key] ?? 'notification'} onChange={(patch) => setReminder(r.key, patch, patch.enabled === true)} onModeChange={(m) => setReminderMode(r.key, m)} />
+            <ReminderRow
+              key={r.key}
+              reminder={r}
+              mode={modes[r.key] ?? 'notification'}
+              volume={volumes[r.key] ?? 1}
+              previewing={previewing === r.key}
+              onChange={(patch) => setReminder(r.key, patch, patch.enabled === true)}
+              onChooseMode={(m) => chooseMode(r.key, m)}
+              onVolumeChange={(v) => setReminderVolume(r.key, v)}
+            />
           ))}
           {loudAlarmFallback ? (
             <View accessibilityRole="alert" style={{ gap: spacing.sm }}>
@@ -237,7 +263,7 @@ export default function SettingsTab() {
               <Button title="Allow full-screen alerts" variant="secondary" onPress={() => void openFullScreenAlarmSettings()} />
             </View>
           ) : null}
-          <AppText variant="caption" muted>Alarm plays an alarm tone, and silent mode can mute it. Loud alarm rings even on silent until you stop it. Your choice is saved on this device only.</AppText>
+          <AppText variant="caption" muted>Tap an option to preview it. Your choice is saved on this device only.</AppText>
           <AppText variant="caption" muted>Times use this device&apos;s timezone and are rescheduled automatically if it changes.</AppText>
         </Section>
       ) : null}
@@ -303,60 +329,5 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <AppText variant="heading" accessibilityRole="header">{title}</AppText>
       {children}
     </Card>
-  );
-}
-
-function ReminderRow({ reminder, mode, onChange, onModeChange }: { reminder: Reminder; mode: ReminderMode; onChange: (p: Partial<Reminder>) => void; onModeChange: (m: ReminderMode) => void }) {
-  const { theme } = useTheme();
-  const [time, setTime] = useState(reminder.time);
-  useEffect(() => setTime(reminder.time), [reminder.time]);
-  const valid = !!parseHHmm(time);
-  const label = REMINDER_LABELS[reminder.key].title;
-  return (
-    <View style={{ gap: spacing.sm }}>
-      <Row style={{ gap: spacing.md }}>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodyStrong">{label}</AppText>
-          {!valid ? <AppText variant="caption" style={{ color: theme.colors.danger }}>Use HH:mm, e.g. 21:30</AppText> : null}
-        </View>
-        <TextInput
-          value={time}
-          onChangeText={setTime}
-          onEndEditing={() => {
-            const p = parseHHmm(time);
-            if (p) onChange({ time: `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}` });
-            else setTime(reminder.time);
-          }}
-          accessibilityLabel={`${label} time`}
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
-          style={{ width: 84, minHeight: MIN_TOUCH, textAlign: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: valid ? theme.colors.border : theme.colors.danger, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text, backgroundColor: theme.colors.bg }}
-        />
-        <Switch
-          value={reminder.enabled}
-          onValueChange={(v) => onChange({ enabled: v })}
-          accessibilityLabel={`${label} reminder`}
-          trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-          style={{ minHeight: MIN_TOUCH }}
-        />
-      </Row>
-      <View accessibilityRole="radiogroup" accessibilityLabel={`${label} alert type`} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-        {REMINDER_MODES.map((m) => {
-          const on = m.mode === mode;
-          return (
-            <Pressable
-              key={m.mode}
-              onPress={() => onModeChange(m.mode)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on }}
-              accessibilityLabel={`${label}: ${m.label}`}
-              style={{ minHeight: MIN_TOUCH, paddingHorizontal: spacing.md, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? theme.colors.primary : theme.colors.tint }}
-            >
-              <AppText variant="label" style={{ color: on ? theme.colors.onPrimary : theme.colors.text }}>{m.label}</AppText>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
   );
 }

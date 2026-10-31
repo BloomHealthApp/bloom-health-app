@@ -205,6 +205,16 @@ describe('reminder modes', () => {
     await syncReminders({ ...base(denied), modes, alarmApi: l.alarmApi });
     expect(l.scheduled.size).toBe(0);
   });
+  it('a volume change reschedules only a loud alarm, clamped to an audible level', async () => {
+    const f = fakes();
+    const l = loud();
+    const modes = { wakeUp: 'loudAlarm', hydration: 'alarm' } as const;
+    await syncReminders({ ...base(f), modes, alarmApi: l.alarmApi });
+    expect(l.scheduled.get(WAKE)?.volume).toBe(1);
+    await syncReminders({ ...base(f), modes, volumes: { wakeUp: 0.01 }, alarmApi: l.alarmApi });
+    expect(l.scheduled.get(WAKE)?.volume).toBe(0.1);
+    expect(await syncReminders({ ...base(f), modes, volumes: { wakeUp: 0.01, hydration: 0.5 }, alarmApi: l.alarmApi })).toMatchObject({ skipped: true });
+  });
   it('sign-out clears both systems', async () => {
     const f = fakes();
     const l = loud();

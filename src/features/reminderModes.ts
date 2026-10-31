@@ -2,9 +2,10 @@
 // the device, and never sent to the server.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ReminderKeySchema } from '@/types/api';
-import type { ReminderMode, ReminderModes } from '@/notifications/scheduler';
+import { clampAlarmVolume, type ReminderMode, type ReminderModes, type ReminderVolumes } from '@/notifications/scheduler';
 
 const prefKey = (userId: string) => `bubu.reminderModes.${userId}`;
+const volumesKey = (userId: string) => `bubu.reminderVolumes.${userId}`;
 const MODES: readonly string[] = ['notification', 'alarm', 'loudAlarm'] satisfies ReminderMode[];
 
 export async function getReminderModes(userId: string): Promise<ReminderModes> {
@@ -25,6 +26,29 @@ export async function getReminderModes(userId: string): Promise<ReminderModes> {
 export async function setReminderModes(userId: string, modes: ReminderModes): Promise<void> {
   try {
     await AsyncStorage.setItem(prefKey(userId), JSON.stringify(modes));
+  } catch {
+    /* preference is best effort */
+  }
+}
+
+export async function getReminderVolumes(userId: string): Promise<ReminderVolumes> {
+  try {
+    const parsed: unknown = JSON.parse((await AsyncStorage.getItem(volumesKey(userId))) ?? '{}');
+    if (!parsed || typeof parsed !== 'object') return {};
+    const out: ReminderVolumes = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      const key = ReminderKeySchema.safeParse(k);
+      if (key.success && typeof v === 'number' && Number.isFinite(v)) out[key.data] = clampAlarmVolume(v);
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export async function setReminderVolumes(userId: string, volumes: ReminderVolumes): Promise<void> {
+  try {
+    await AsyncStorage.setItem(volumesKey(userId), JSON.stringify(volumes));
   } catch {
     /* preference is best effort */
   }

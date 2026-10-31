@@ -4,6 +4,7 @@
 Reusable UI. `ui.tsx` holds the basic primitives, and `periods/` holds the tracker UI ([periods/context.md](periods/context.md)).
 
 ## Rules
+- `reminders/ReminderRow.tsx` previews mirror what actually appears: the Android loud alarm mock copies `AlarmActivity`, so change them together.
 - Touch targets are at least 44pt, status is never shown by color alone, and interactive elements have labels and roles.
 - Rest days are drawn as a soft cell without a reason (`CalendarDayCell`, `WeeklyProgressChart`).
 - `CycleCard` is never rendered for viewers.

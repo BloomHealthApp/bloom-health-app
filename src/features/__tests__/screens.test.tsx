@@ -1,6 +1,7 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import SettingsTab from '@/app/(tabs)/settings';
+import { showsVolumeSlider } from '@/components/reminders/ReminderRow';
 import SignUpScreen from '@/app/(auth)/signup';
 import PeriodsScreen from '@/app/periods';
 import { defaultSettings } from '@/lib/defaults';
@@ -165,10 +166,38 @@ describe('Settings: reminder alert types', () => {
     expect(wake.map((x) => x.props.accessibilityLabel)).toEqual(['Good morning: Notification', 'Good morning: Alarm', 'Good morning: Loud alarm']);
     expect(wake.map((x) => x.props.accessibilityState.checked)).toEqual([true, false, false]);
   });
+  it('tapping an option shows its preview, and tapping it again hides it', async () => {
+    mockAuth.user = user();
+    const t = render(<SettingsTab />);
+    const previews = () => t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview');
+    expect(previews()).toHaveLength(0);
+    await press(t, 'Good morning: Notification');
+    expect(previews()).toHaveLength(1);
+    expect(t.root.findAll((x) => typeof x.props.accessibilityLabel === 'string' && x.props.accessibilityLabel.startsWith('Notification preview:')).length).toBeGreaterThan(0);
+    await press(t, 'Good morning: Notification');
+    expect(previews()).toHaveLength(0);
+  });
+  it('previewing another reminder closes the first, and Alarm offers a play button', async () => {
+    mockAuth.user = user();
+    const t = render(<SettingsTab />);
+    await press(t, 'Good morning: Alarm');
+    await press(t, 'Hydration check: Alarm');
+    expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview')).toHaveLength(1);
+    expect(t.root.findAll((x) => x.props.accessibilityLabel === 'Play alarm sound').length).toBeGreaterThan(0);
+  });
   it('is hidden from viewers', () => {
     mockAuth.user = user({ role: 'viewer' });
     mockAuth.isOwner = false;
     expect(radios(render(<SettingsTab />))).toHaveLength(0);
+  });
+});
+
+describe('volume slider availability', () => {
+  it('appears only where the OS honours it: Android loud alarms', () => {
+    expect(showsVolumeSlider('loudAlarm', 'android')).toBe(true);
+    expect(showsVolumeSlider('loudAlarm', 'ios')).toBe(false);
+    expect(showsVolumeSlider('alarm', 'android')).toBe(false);
+    expect(showsVolumeSlider('notification', 'android')).toBe(false);
   });
 });
 

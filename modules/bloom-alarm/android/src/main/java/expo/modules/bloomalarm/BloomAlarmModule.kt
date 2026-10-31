@@ -18,6 +18,7 @@ class AlarmInput : Record {
   @Field var minute: Int = 0
   @Field var title: String = ""
   @Field var body: String = ""
+  @Field var volume: Double = 1.0
 }
 
 class BloomAlarmModule : Module() {
@@ -53,7 +54,7 @@ class BloomAlarmModule : Module() {
     }
 
     AsyncFunction("schedule") { input: AlarmInput ->
-      val alarm = StoredAlarm(input.id, input.hour, input.minute, input.title, input.body)
+      val alarm = StoredAlarm(input.id, input.hour, input.minute, input.title, input.body, input.volume)
       AlarmScheduler.schedule(context, alarm)
       AlarmStore.put(context, alarm)
     }

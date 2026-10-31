@@ -9,7 +9,7 @@ import type { Store } from '@/db/store';
 import { defaultSettings } from '@/lib/defaults';
 import { deviceTimezone } from '@/lib/dates';
 import { uuid } from '@/lib/ids';
-import { getReminderModes } from '@/features/reminderModes';
+import { getReminderModes, getReminderVolumes } from '@/features/reminderModes';
 import { nativeAlarmApi } from '@/notifications/alarmAdapter';
 import { expoNotifApi } from '@/notifications/expoAdapter';
 import { syncReminders, type SyncResult } from '@/notifications/scheduler';
@@ -95,8 +95,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!user || user.role !== 'owner') return null; // reminders are for the habit owner
       const s = settingsRef.current ?? defaultSettings();
       try {
-        const modes = await getReminderModes(user.id);
-        const r = await syncReminders({ api: expoNotifApi, storage: asyncStorage, reminders: s.reminders, timezone: deviceTimezone(), askPermission, modes, alarmApi: nativeAlarmApi, askAlarmPermission });
+        const [modes, volumes] = await Promise.all([getReminderModes(user.id), getReminderVolumes(user.id)]);
+        const r = await syncReminders({ api: expoNotifApi, storage: asyncStorage, reminders: s.reminders, timezone: deviceTimezone(), askPermission, modes, volumes, alarmApi: nativeAlarmApi, askAlarmPermission });
         setReminderStatus(r);
         return r;
       } catch {

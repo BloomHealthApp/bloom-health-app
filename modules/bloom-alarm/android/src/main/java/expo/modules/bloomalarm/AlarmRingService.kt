@@ -13,6 +13,7 @@ import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -21,6 +22,7 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import kotlin.math.roundToInt
 
 /** Keeps ringing after the app and screen are gone, which a notification sound cannot do. */
 class AlarmRingService : Service() {
@@ -30,6 +32,7 @@ class AlarmRingService : Service() {
   private var currentId = ""
   private var currentTitle = ""
   private var currentBody = ""
+  private var currentVolume = 1.0
   private val handler = Handler(Looper.getMainLooper())
   private val autoStop = Runnable { finish() }
 
@@ -41,11 +44,12 @@ class AlarmRingService : Service() {
         currentId = intent.getStringExtra(AlarmScheduler.EXTRA_ID).orEmpty()
         currentTitle = intent.getStringExtra(AlarmScheduler.EXTRA_TITLE).orEmpty()
         currentBody = intent.getStringExtra(AlarmScheduler.EXTRA_BODY).orEmpty()
+        currentVolume = intent.getDoubleExtra(AlarmScheduler.EXTRA_VOLUME, 1.0)
         begin()
       }
       ACTION_SNOOZE -> {
         try {
-          if (currentId.isNotEmpty()) AlarmScheduler.snooze(this, currentId, currentTitle, currentBody)
+          if (currentId.isNotEmpty()) AlarmScheduler.snooze(this, currentId, currentTitle, currentBody, currentVolume)
         } catch (e: SecurityException) {
           Log.w(TAG, "Could not snooze", e)
         }
@@ -85,7 +89,8 @@ class AlarmRingService : Service() {
     val audio = getSystemService(AudioManager::class.java)
     try {
       restoreVolume = audio.getStreamVolume(AudioManager.STREAM_ALARM)
-      audio.setStreamVolume(AudioManager.STREAM_ALARM, audio.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0)
+      val max = audio.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+      audio.setStreamVolume(AudioManager.STREAM_ALARM, (max * currentVolume).roundToInt().coerceIn(1, max), 0)
     } catch (e: SecurityException) {
       restoreVolume = null
       Log.w(TAG, "Could not raise the alarm volume", e)
@@ -94,7 +99,10 @@ class AlarmRingService : Service() {
       .setUsage(AudioAttributes.USAGE_ALARM)
       .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
       .build()
-    val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+    // The tone expo-notifications bundles, so the alarm sounds like the preview in Settings.
+    val tone = resources.getIdentifier("alarm", "raw", packageName)
+    val uri = if (tone != 0) Uri.parse("android.resource://$packageName/$tone")
+    else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
       ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
     try {
       player = MediaPlayer().apply {

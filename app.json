@@ -46,7 +46,9 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#D65B98",
-          "sounds": ["./assets/sounds/alarm.wav"]
+          "sounds": [
+            "./assets/sounds/alarm.wav"
+          ]
         }
       ],
       [
@@ -81,7 +83,16 @@
             }
           ]
         }
-      ]
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      "expo-asset"
     ],
     "scheme": "bloomhealth",
     "extra": {

@@ -9,7 +9,7 @@ function createAlarmApi(native: BloomAlarmNative): AlarmApi {
     getAvailability: () => native.getAvailability(),
     requestPermission: () => native.requestPermission(),
     getScheduledIds: () => native.getScheduledIds(),
-    schedule: ({ identifier, hour, minute, title, body }: PlannedReminder) => native.schedule({ id: identifier, hour, minute, title, body }),
+    schedule: ({ identifier, hour, minute, title, body, volume }: PlannedReminder) => native.schedule({ id: identifier, hour, minute, title, body, volume }),
     cancel: (identifier) => native.cancel(identifier),
   };
 }
