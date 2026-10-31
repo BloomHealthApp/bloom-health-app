@@ -90,7 +90,7 @@ describe('choose-avatar screen', () => {
     mockAuth.api.patchMe.mockRejectedValue(new Error('offline'));
     const t = render(<ChooseAvatar />);
     await press(t, 'Continue');
-    expect(JSON.stringify(t.toJSON())).toContain('Could not save your Bubu');
+    expect(JSON.stringify(t.toJSON())).toContain('Could not save your Bloom');
     expect(mockReplace).not.toHaveBeenCalled();
     expect(mockStore.has(avatarPromptKey('u1'))).toBe(false);
     await press(t, 'Skip for now');

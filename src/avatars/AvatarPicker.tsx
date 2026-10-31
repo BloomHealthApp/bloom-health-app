@@ -20,7 +20,7 @@ export function AvatarPicker({ value, onChange, disabled, size = 76 }: Props) {
   const { theme } = useTheme();
   const cell = Math.max(size, MIN_TOUCH);
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Choose your Bubu" style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md }}>
+    <View accessibilityRole="radiogroup" accessibilityLabel="Choose your Bloom" style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md }}>
       {AVATAR_IDS.map((id) => {
         const selected = id === value;
         return (

@@ -25,7 +25,7 @@ export function SmallWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnapsh
   return (
     <FlexWidget
       clickAction="OPEN_APP"
-      accessibilityLabel={isLive(s) ? `Bubu Bloom. ${plural(s.currentStreak, 'day')} streak. Tap to open.` : `Bubu Bloom. ${s.message}`}
+      accessibilityLabel={isLive(s) ? `Bloom Health. ${plural(s.currentStreak, 'day')} streak. Tap to open.` : `Bloom Health. ${s.message}`}
       style={{ height: 'match_parent', width: 'match_parent', backgroundColor: p.background, borderRadius: 24, padding: 8, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
     >
       <SvgWidget svg={mascotSvg(s.mood, s.theme)} style={{ width: mascot, height: mascot }} />
@@ -52,12 +52,12 @@ export function MediumWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnaps
     return (
       <FlexWidget
         clickAction="OPEN_APP"
-        accessibilityLabel={`Bubu Bloom. ${s.message}`}
+        accessibilityLabel={`Bloom Health. ${s.message}`}
         style={{ height: 'match_parent', width: 'match_parent', backgroundColor: p.background, borderRadius: 24, padding: 10, flexDirection: 'row', alignItems: 'center' }}
       >
         <SvgWidget svg={mascotSvg(s.mood, s.theme)} style={{ width: mascot, height: mascot }} />
         <FlexWidget style={{ flex: 1, marginLeft: 12, flexDirection: 'column', justifyContent: 'center' }}>
-          <TextWidget text="Bubu Bloom" style={{ fontSize: 16, fontWeight: '800', color: p.text }} />
+          <TextWidget text="Bloom Health" style={{ fontSize: 16, fontWeight: '800', color: p.text }} />
           <TextWidget text={s.message} maxLines={2} truncate="END" style={{ fontSize: 13, color: p.muted, marginTop: 2 }} />
         </FlexWidget>
       </FlexWidget>
@@ -67,7 +67,7 @@ export function MediumWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnaps
   return (
     <FlexWidget
       clickAction="OPEN_APP"
-      accessibilityLabel={`Bubu Bloom. ${plural(s.currentStreak, 'day')} streak, ${s.percent} percent done today. Tap to open.`}
+      accessibilityLabel={`Bloom Health. ${plural(s.currentStreak, 'day')} streak, ${s.percent} percent done today. Tap to open.`}
       style={{ height: 'match_parent', width: 'match_parent', backgroundColor: p.background, borderRadius: 24, padding: 10, flexDirection: 'row', alignItems: 'center' }}
     >
       <SvgWidget svg={mascotSvg(s.mood, s.theme)} style={{ width: mascot, height: mascot }} />
@@ -91,6 +91,6 @@ export function MediumWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnaps
 }
 
 /** Pick the layout for a registered widget name. */
-export function renderBubuWidget(widgetName: string, snapshot: WidgetSnapshot, size?: WidgetSize): React.JSX.Element {
+export function renderHealthWidget(widgetName: string, snapshot: WidgetSnapshot, size?: WidgetSize): React.JSX.Element {
   return widgetName === WIDGET_MEDIUM ? <MediumWidget snapshot={snapshot} size={size} /> : <SmallWidget snapshot={snapshot} size={size} />;
 }

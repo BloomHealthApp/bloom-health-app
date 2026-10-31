@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { MILESTONES, isMilestone, nextMilestone } from '@/lib/scoring';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
-import { BubuMascot } from './BubuMascot';
+import { Mascot } from './Mascot';
 import { AppText, Card, Row } from './ui';
 
 /** `restNote` explains rest days (e.g. "Sundays don't break your streak"); see lib/profile streakRestNote for the wording rules. */
@@ -14,7 +14,7 @@ export function StreakCard({ current, longest, restNote }: { current: number; lo
   return (
     <Card tint accessible accessibilityLabel={`Current streak ${current} days. Longest streak ${longest} days.${next ? ` Next milestone ${next} days.` : ''}${restNote ? ` ${restNote}.` : ''}`}>
       <Row style={{ gap: spacing.lg }}>
-        {celebrating ? <BubuMascot mood="celebrating" size={72} /> : null}
+        {celebrating ? <Mascot mood="celebrating" size={72} /> : null}
         <View style={{ flex: 1 }}>
           {celebrating ? <AppText variant="label" accent>Milestone reached: {current} days!</AppText> : null}
           <Row style={{ alignItems: 'flex-end', gap: spacing.sm }}>

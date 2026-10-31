@@ -2,7 +2,7 @@ import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { THEME_LIST } from '@/theme/themes';
-import { BubuMascotStatic } from '../BubuMascotStatic';
+import { MascotStatic } from '../MascotStatic';
 import { CalendarDayCell, heatLevel } from '../CalendarDayCell';
 import { HabitCard } from '../HabitCard';
 import { ProgressRing } from '../ProgressRing';
@@ -24,7 +24,7 @@ function render(el: React.ReactElement) {
 
 describe('component smoke renders', () => {
   it('renders all mascot moods', () => {
-    for (const mood of ['happy', 'sleepy', 'cheer', 'sad'] as const) expect(render(<BubuMascotStatic mood={mood} />).toJSON()).toBeTruthy();
+    for (const mood of ['happy', 'sleepy', 'cheer', 'sad'] as const) expect(render(<MascotStatic mood={mood} />).toJSON()).toBeTruthy();
   });
   it('renders ring, chart, cell and habit card; touch targets and labels present', () => {
     const t = render(

@@ -4,7 +4,7 @@ import { cycleSummary } from '@/lib/periodsView';
 import type { Prediction } from '@/lib/cycle';
 import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
-import { BubuMascot } from './BubuMascot';
+import { Mascot } from './Mascot';
 import { AppText, Row } from './ui';
 
 /** Small Home card for owners with the tracker on (never rendered for viewers). Tapping opens the tracker. */
@@ -20,7 +20,7 @@ export function CycleCard({ prediction, hasPeriods, onPress }: { prediction: Pre
       style={({ pressed }) => ({ minHeight: MIN_TOUCH, backgroundColor: theme.colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: spacing.md, opacity: pressed ? 0.85 : 1 })}
     >
       <Row style={{ gap: spacing.md }}>
-        <BubuMascot mood={s.mood} size={56} />
+        <Mascot mood={s.mood} size={56} />
         <View style={{ flex: 1 }}>
           <AppText variant="caption" muted>🔒 Private cycle</AppText>
           <AppText variant="bodyStrong">{s.title}</AppText>

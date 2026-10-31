@@ -30,7 +30,7 @@ export const SYMPTOM_LABELS: Record<PeriodSymptom, string> = {
 export const MOOD_LABELS: Record<PeriodMood, string> = { happy: 'Happy', calm: 'Calm', sad: 'Sad', irritable: 'Irritable', anxious: 'Anxious' };
 
 export const DISCLAIMER_PERIODS = 'Estimates only, not medical advice.';
-export const PRIVACY_NOTE = 'Private to you. Period data stays in your account and is never shown to anyone you share Bubu Bloom with.';
+export const PRIVACY_NOTE = 'Private to you. Period data stays in your account and is never shown to anyone you share Bloom Health with.';
 
 export const emptyDraft = (startDate: string): PeriodDraft => ({ startDate, endDate: null, flow: 'medium', symptoms: [], mood: null, note: null });
 export const draftFromPeriod = (p: Period): PeriodDraft => ({ startDate: p.startDate, endDate: p.endDate, flow: p.flow, symptoms: [...p.symptoms], mood: p.mood, note: p.note });

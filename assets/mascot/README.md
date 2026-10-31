@@ -1,6 +1,6 @@
-# Bubu mascot
+# Bloom mascot
 
-Bubu is an **original character** drawn entirely in code (react-native-svg): a chubby "mochi bunny-bear" bean with two
+Bloom is an **original character** drawn entirely in code (react-native-svg): a chubby "mochi bunny-bear" bean with two
 small rounded ears (soft peach inside), a little sprout on the head, stubby arms and tiny feet. The look is a flat
 pastel sticker: thick dark-brown outline, a white die-cut border and a soft drop shadow, big blush cheeks, tiny dot
 eyes and a tiny mouth. The body stays cream-white; cheeks, props and accents follow the active theme
@@ -10,8 +10,8 @@ simple shapes made for this app. No third-party artwork is included.
 ## Where it lives
 
 - `src/components/mascotArt.tsx` - the drawing (one function per layer: shadow, white border, colour artwork).
-- `src/components/BubuMascotStatic.tsx` - pure SVG, no animation; also the reduced-motion render.
-- `src/components/BubuMascot.tsx` - the component screens use. Adds the gentle idle bob (skipped when the OS asks
+- `src/components/MascotStatic.tsx` - pure SVG, no animation; also the reduced-motion render.
+- `src/components/Mascot.tsx` - the component screens use. Adds the gentle idle bob (skipped when the OS asks
   for reduced motion or `animated={false}`) and the accessibility label.
 - `src/components/mascotTypes.ts` - the `MascotMood` union.
 
@@ -31,7 +31,7 @@ simple shapes made for this app. No third-party artwork is included.
 
 ## Props
 
-`<BubuMascot mood size animated accessibilityLabel />` - `size` is the rendered width and height (looks crisp from
+`<Mascot mood size animated accessibilityLabel />` - `size` is the rendered width and height (looks crisp from
 80 to 200 and beyond, it is vector). Keep text beside or below the mascot, never behind it.
 
 ## Swapping in your own licensed artwork
@@ -47,5 +47,5 @@ export const customMascot: CustomMascotSet | null = {
 };
 ```
 
-Restart Metro (`npx expo start -c`). Every screen renders through `BubuMascot`, so one change updates the whole app.
+Restart Metro (`npx expo start -c`). Every screen renders through `Mascot`, so one change updates the whole app.
 Only use artwork you created or are explicitly licensed to use in a published app.

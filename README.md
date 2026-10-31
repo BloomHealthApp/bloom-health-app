@@ -68,11 +68,11 @@ eas build -p ios --profile preview-ios           # internal distribution build
 
 ## Profile avatars
 
-Each user picks one of nine original cotton-candy Bubu avatars (`bubu-01` ... `bubu-09`: Classic, Cloud Hat, Candy Stick, Heart Specs,
+Each user picks one of nine original cotton-candy Bloom avatars (`bubu-01` ... `bubu-09`: Classic, Cloud Hat, Candy Stick, Heart Specs,
 Star Clip, Flower Crown, Dreamy, Sweet Tooth, Balloon). The server stores only the id (`PATCH /me {avatar}`; anything outside the allowlist is
-`400`, `null` clears it); the art is drawn locally with `react-native-svg` from the shared Bubu pieces in `components/mascotArt.tsx`, in a fixed
+`400`, `null` clears it); the art is drawn locally with `react-native-svg` from the shared Bloom pieces in `components/mascotArt.tsx`, in a fixed
 palette that does not follow the theme. Avatars appear on Home (next to the greeting), in Settings > Profile (tap to change) and, for viewers,
-in the "Viewing <owner>'s progress" banner (`ownerAvatar`). Right after the first sign-up the one-time "Choose your Bubu" screen offers the grid
+in the "Viewing <owner>'s progress" banner (`ownerAvatar`). Right after the first sign-up the one-time "Choose your Bloom" screen offers the grid
 with Continue / Skip (per-account flag in AsyncStorage, so it never reappears after a skip). Accounts that already exist without an avatar see it
 once too. Adding a tenth avatar needs an app release and an allowlist update in the service.
 
@@ -108,10 +108,10 @@ src/sync/           engine.ts (queue, push/pull, conflicts), backoff.ts
 src/providers/      AuthProvider (SecureStore tokens), DataProvider (store+engine, focus/network/timezone triggers)
 src/notifications/  scheduler.ts (pure, idempotent), expoAdapter.ts
 src/components/     HabitCard, ProgressRing, WaterTracker, StepsCard, WorkoutTimer, StreakCard, WeeklyProgressChart,
-                    CalendarDayCell, ThemePicker, BubuMascot(+Static), EmptyState, ConfirmationDialog, SyncStatusChip ...
+                    CalendarDayCell, ThemePicker, Mascot(+Static), EmptyState, ConfirmationDialog, SyncStatusChip ...
 src/lib/cycle.ts       pure cycle math (averages, next-start estimate, neutral dates); periodRules/periodsView/profile: tracker rules
-src/avatars/        nine cotton-candy Bubu profile avatars: catalog (ids/labels), AvatarArt (react-native-svg), Avatar, AvatarPicker,
-                    avatarPrompt (one-time "Choose your Bubu" flag)
+src/avatars/        nine cotton-candy Bloom profile avatars: catalog (ids/labels), AvatarArt (react-native-svg), Avatar, AvatarPicker,
+                    avatarPrompt (one-time "Choose your Bloom" flag)
 src/theme/          tokens, three pastel themes, ThemeProvider (persisted locally + saved to profile)
 assets/mascot/      README: how to swap in your own mascot art
 src/widgets/        Android home-screen widget (see "Android home-screen widget"); index.ts is the app entry
@@ -142,9 +142,9 @@ src/widgets/        Android home-screen widget (see "Android home-screen widget"
 ## Android home-screen widget
 
 Two Android widgets, built with [`react-native-android-widget`](https://github.com/sAleksovski/react-native-android-widget)
-(`^0.22.1`; Expo config plugin, New Architecture / TurboModule): **Bubu streak** (2x2: Bubu + current streak) and
-**Bubu daily progress** (4x2: streak, longest streak, today's ring, "X of Y habits done", an encouraging message).
-Both use the active app theme and the original Bubu mascot, and tapping opens the app. iOS is not implemented (the data
+(`^0.22.1`; Expo config plugin, New Architecture / TurboModule): **Bloom streak** (2x2: Bloom + current streak) and
+**Bloom daily progress** (4x2: streak, longest streak, today's ring, "X of Y habits done", an encouraging message).
+Both use the active app theme and the original Bloom mascot, and tapping opens the app. iOS is not implemented (the data
 layer is platform-neutral so an iOS widget can reuse it later).
 
 **Build.** The widget is native code, so it does **not** appear in Expo Go (the app still runs there; the widget code is
@@ -157,9 +157,9 @@ npx eas-cli@latest build -p android --profile development         # dev client (
 
 Locally: `npx expo prebuild --platform android` then `npx expo run:android` (the generated `android/` is not committed).
 
-**Add it to the home screen.** Install the build, open Bubu Bloom once and sign in (this writes the first snapshot), then
-long-press an empty spot on the Android home screen > Widgets > Bubu Bloom > drag *Bubu streak* or *Bubu daily progress*.
-Before the first open it shows "Open Bubu Bloom to get started"; after sign-out, "Open Bubu Bloom to sign in".
+**Add it to the home screen.** Install the build, open Bloom Health once and sign in (this writes the first snapshot), then
+long-press an empty spot on the Android home screen > Widgets > Bloom Health > drag *Bloom streak* or *Bloom daily progress*.
+Before the first open it shows "Open Bloom Health to get started"; after sign-out, "Open Bloom Health to sign in".
 
 **Code.**
 
@@ -169,7 +169,7 @@ src/lib/progress.ts              pure today-score + streak derivation, shared by
 src/widgets/widgetData.ts        WidgetSnapshot, buildSnapshot, AsyncStorage persistence, publishSnapshot / publishSignedOut
 src/widgets/WidgetSync.tsx       republishes on log/sync/day/theme change, app foreground and sign-out (mounted in app/_layout)
 src/widgets/widgetAdapter.ts     lazy, guarded access to the native module (no-op in Expo Go / Jest / iOS)
-src/widgets/BubuWidgets.tsx      the two layouts;  widgetTaskHandler.ts  headless renderer used while the app is closed
+src/widgets/HealthWidgets.tsx      the two layouts;  widgetTaskHandler.ts  headless renderer used while the app is closed
 src/widgets/svg.ts               mascot / flame / ring as SVG strings (the mascot reuses components/mascotArt.tsx)
 src/widgets/widgetTheme.ts       app theme -> widget colours;  assets/widget/  picker preview images
 ```
@@ -180,7 +180,7 @@ entry in `app.json`.
 
 ## Mascot
 
-Bubu is an original SVG (round blob bear with a sprout). To use your own art see `assets/mascot/README.md`.
+Bloom is an original SVG (round blob bear with a sprout). To use your own art see `assets/mascot/README.md`.
 
 ## Known limitations
 

@@ -99,10 +99,10 @@ describe('buildSnapshot', () => {
 describe('placeholders', () => {
   it('signed out asks the user to sign in', () => {
     const s = signedOutSnapshot('mintPeach');
-    expect(s).toMatchObject({ state: 'signedOut', theme: 'mintPeach', message: 'Open Bubu Bloom to sign in', currentStreak: 0 });
+    expect(s).toMatchObject({ state: 'signedOut', theme: 'mintPeach', message: 'Open Bloom Health to sign in', currentStreak: 0 });
   });
   it('unopened asks the user to open the app', () => {
-    expect(unopenedSnapshot().message).toBe('Open Bubu Bloom to get started');
+    expect(unopenedSnapshot().message).toBe('Open Bloom Health to get started');
   });
   it('are untouched by day resolution', () => {
     const s = signedOutSnapshot();
@@ -176,7 +176,7 @@ describe('persistence + publishing', () => {
     await publishSnapshot(buildSnapshot(base()), { storage: st, refresh });
     await publishSignedOut('lavenderDream', { storage: st, refresh });
     const saved = JSON.parse(st.data[SNAPSHOT_KEY]);
-    expect(saved).toMatchObject({ state: 'signedOut', theme: 'lavenderDream', message: 'Open Bubu Bloom to sign in', currentStreak: 0 });
+    expect(saved).toMatchObject({ state: 'signedOut', theme: 'lavenderDream', message: 'Open Bloom Health to sign in', currentStreak: 0 });
     expect(refresh).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'signedOut' }));
   });
 

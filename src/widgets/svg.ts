@@ -1,5 +1,5 @@
 // SVG-string rendering for the home-screen widget. The widget library cannot draw react-native-svg components, so the
-// original Bubu artwork (components/mascotArt.tsx) is evaluated into a React element tree and serialised to an SVG string.
+// original Bloom artwork (components/mascotArt.tsx) is evaluated into a React element tree and serialised to an SVG string.
 // No artwork is duplicated: if the mascot changes, the widget changes with it.
 import type { ReactElement, ReactNode } from 'react';
 import { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';

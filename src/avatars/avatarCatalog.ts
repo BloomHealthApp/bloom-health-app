@@ -21,5 +21,5 @@ export function isAvatarId(v: unknown): v is AvatarId {
 }
 
 export function avatarLabel(id: string | null | undefined): string {
-  return isAvatarId(id) ? AVATAR_LABELS[id] : 'Bubu';
+  return isAvatarId(id) ? AVATAR_LABELS[id] : 'Bloom';
 }

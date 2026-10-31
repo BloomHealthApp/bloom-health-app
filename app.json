@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Bubu Bloom",
+    "name": "Bloom Health",
     "slug": "bubu-bloom",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -49,8 +49,8 @@
           "widgets": [
             {
               "name": "BubuSmall",
-              "label": "Bubu streak",
-              "description": "Bubu and your current habit streak.",
+              "label": "Bloom streak",
+              "description": "Bloom and your current habit streak.",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,
@@ -61,8 +61,8 @@
             },
             {
               "name": "BubuMedium",
-              "label": "Bubu daily progress",
-              "description": "Streaks, today's progress and a little encouragement from Bubu.",
+              "label": "Bloom daily progress",
+              "description": "Streaks, today's progress and a little encouragement from Bloom.",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,

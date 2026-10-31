@@ -32,7 +32,7 @@ export default function ChooseAvatar() {
       updateUser(await api.patchMe({ avatar: picked }));
       await leave();
     } catch {
-      setError('Could not save your Bubu. Try again, or skip and choose one later in Settings.');
+      setError('Could not save your Bloom. Try again, or skip and choose one later in Settings.');
       setBusy(false);
     }
   };
@@ -41,7 +41,7 @@ export default function ChooseAvatar() {
     <Screen>
       <View style={{ alignItems: 'center', gap: spacing.sm }}>
         <Avatar id={picked} size={120} accessibilityLabel={`Selected: ${avatarLabel(picked)}`} />
-        <AppText variant="title" accessibilityRole="header" style={{ textAlign: 'center' }}>Choose your Bubu</AppText>
+        <AppText variant="title" accessibilityRole="header" style={{ textAlign: 'center' }}>Choose your Bloom</AppText>
         <AppText muted style={{ textAlign: 'center' }}>Pick a profile picture. You can change it any time in Settings.</AppText>
       </View>
       <AvatarPicker value={picked} onChange={setPicked} disabled={busy} />

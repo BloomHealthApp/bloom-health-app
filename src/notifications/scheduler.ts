@@ -120,7 +120,7 @@ export function planPeriodReminder(nextStart: string | null, now: Date): OneOffR
   const [y, m, d] = nextStart.split('-').map(Number);
   const date = new Date(y, m - 1, d - PERIOD_REMINDER_LEAD_DAYS, PERIOD_REMINDER_HOUR, 0, 0, 0);
   if (Number.isNaN(date.getTime()) || date.getTime() <= now.getTime()) return null;
-  return { identifier: PERIOD_REMINDER_ID, title: 'Bubu Bloom', body: 'A gentle heads-up. Take a moment to check in with yourself today.', date };
+  return { identifier: PERIOD_REMINDER_ID, title: 'Bloom Health', body: 'A gentle heads-up. Take a moment to check in with yourself today.', date };
 }
 
 export type PeriodReminderResult = { status: 'off' } | { status: 'nothing_to_schedule' } | { status: 'unavailable' } | { status: 'denied'; canAskAgain: boolean } | { status: 'scheduled'; at: string; skipped: boolean };

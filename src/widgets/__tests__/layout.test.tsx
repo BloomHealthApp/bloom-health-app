@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { THEMES } from '@/theme/themes';
 import type { ThemeName } from '@/types/api';
-import { MediumWidget, renderBubuWidget, SmallWidget, WIDGET_MEDIUM, WIDGET_SMALL } from '../BubuWidgets';
+import { MediumWidget, renderHealthWidget, SmallWidget, WIDGET_MEDIUM, WIDGET_SMALL } from '../HealthWidgets';
 import { buildSnapshot, signedOutSnapshot, unopenedSnapshot, type WidgetSnapshot } from '../widgetData';
 
 // The library's JS builders do not need the native module, but its index imports it eagerly.
@@ -58,8 +58,8 @@ describe('widget layouts', () => {
 
   it('signed-out, never-opened and no-habit states show a sensible message', () => {
     for (const W of [SmallWidget, MediumWidget]) {
-      expect(texts(W({ snapshot: signedOutSnapshot() }))).toContain('Open Bubu Bloom to sign in');
-      expect(texts(W({ snapshot: unopenedSnapshot() }))).toContain('Open Bubu Bloom to get started');
+      expect(texts(W({ snapshot: signedOutSnapshot() }))).toContain('Open Bloom Health to sign in');
+      expect(texts(W({ snapshot: unopenedSnapshot() }))).toContain('Open Bloom Health to get started');
     }
     const none = buildSnapshot({ role: 'owner', theme: 'mintPeach', today: '2026-03-10', timezone: 'UTC', todayScore: { eligible: 0, completed: 0, completionPercent: 0, successful: false, neutral: true }, currentStreak: 2, longestStreak: 2 });
     expect(texts(MediumWidget({ snapshot: none }))).toContain('No habits scheduled today');
@@ -69,7 +69,7 @@ describe('widget layouts', () => {
     for (const name of Object.keys(THEMES) as ThemeName[]) {
       for (const s of [ready(name), signedOutSnapshot(name), unopenedSnapshot(name)]) {
         for (const w of [WIDGET_SMALL, WIDGET_MEDIUM]) {
-          const el = renderBubuWidget(w, s, { width: 180, height: 110 });
+          const el = renderHealthWidget(w, s, { width: 180, height: 110 });
           for (const t of [...texts(el), ...svgs(el)]) expect(t).not.toMatch(/undefined|NaN|\[object/);
         }
       }
@@ -77,8 +77,8 @@ describe('widget layouts', () => {
   });
 
   it('picks the layout by widget name', () => {
-    expect(renderBubuWidget(WIDGET_MEDIUM, ready()).type).toBe(MediumWidget);
-    expect(renderBubuWidget(WIDGET_SMALL, ready()).type).toBe(SmallWidget);
-    expect(renderBubuWidget('Unknown', ready()).type).toBe(SmallWidget);
+    expect(renderHealthWidget(WIDGET_MEDIUM, ready()).type).toBe(MediumWidget);
+    expect(renderHealthWidget(WIDGET_SMALL, ready()).type).toBe(SmallWidget);
+    expect(renderHealthWidget('Unknown', ready()).type).toBe(SmallWidget);
   });
 });

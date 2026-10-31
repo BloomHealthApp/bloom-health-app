@@ -106,9 +106,9 @@ function placeholder(state: 'signedOut' | 'unopened', theme: ThemeName, text: st
 }
 
 export const signedOutSnapshot = (theme: ThemeName = FALLBACK_THEME, now = Date.now()) =>
-  placeholder('signedOut', theme, 'Open Bubu Bloom to sign in', now);
+  placeholder('signedOut', theme, 'Open Bloom Health to sign in', now);
 export const unopenedSnapshot = (theme: ThemeName = FALLBACK_THEME, now = Date.now()) =>
-  placeholder('unopened', theme, 'Open Bubu Bloom to get started', now);
+  placeholder('unopened', theme, 'Open Bloom Health to get started', now);
 
 /**
  * The app may have been closed for hours or days when the OS asks the widget to redraw. Re-express a stored snapshot for

@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { Image, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
-import { BubuMascotStatic } from './BubuMascotStatic';
+import { MascotStatic } from './MascotStatic';
 import { customMascot } from './mascotAsset';
 import type { MascotMood } from './mascotTypes';
 
-export { BubuMascotStatic };
+export { MascotStatic };
 
 export type { MascotMood };
 
@@ -18,19 +18,19 @@ interface Props {
 }
 
 const LABELS: Record<MascotMood, string> = {
-  happy: 'Bubu the bunny-bear, smiling',
-  sleepy: 'Bubu the bunny-bear, sleepy',
-  cheer: 'Bubu the bunny-bear, cheering',
-  sad: 'Bubu the bunny-bear, a little sad',
-  eating: 'Bubu the bunny-bear, enjoying a popsicle',
-  loved: 'Bubu the bunny-bear, holding a flower',
-  celebrating: 'Bubu the bunny-bear, celebrating with confetti',
-  hydrate: 'Bubu the bunny-bear, holding a water bottle',
-  workout: 'Bubu the bunny-bear, lifting a tiny dumbbell',
-  thinking: 'Bubu the bunny-bear, looking at a blank notebook',
+  happy: 'Bloom the bunny-bear, smiling',
+  sleepy: 'Bloom the bunny-bear, sleepy',
+  cheer: 'Bloom the bunny-bear, cheering',
+  sad: 'Bloom the bunny-bear, a little sad',
+  eating: 'Bloom the bunny-bear, enjoying a popsicle',
+  loved: 'Bloom the bunny-bear, holding a flower',
+  celebrating: 'Bloom the bunny-bear, celebrating with confetti',
+  hydrate: 'Bloom the bunny-bear, holding a water bottle',
+  workout: 'Bloom the bunny-bear, lifting a tiny dumbbell',
+  thinking: 'Bloom the bunny-bear, looking at a blank notebook',
 };
 
-export function BubuMascot({ mood = 'happy', size = 120, animated = true, accessibilityLabel }: Props) {
+export function Mascot({ mood = 'happy', size = 120, animated = true, accessibilityLabel }: Props) {
   const reduced = useReducedMotion();
   const y = useSharedValue(0);
   const shouldAnimate = animated && !reduced;
@@ -53,7 +53,7 @@ export function BubuMascot({ mood = 'happy', size = 120, animated = true, access
   const label = accessibilityLabel ?? LABELS[mood];
 
   const custom = customMascot?.[mood];
-  const art = custom ? <Image source={custom} style={{ width: size, height: size }} resizeMode="contain" /> : <BubuMascotStatic mood={mood} size={size} />;
+  const art = custom ? <Image source={custom} style={{ width: size, height: size }} resizeMode="contain" /> : <MascotStatic mood={mood} size={size} />;
 
   if (!shouldAnimate) {
     return (

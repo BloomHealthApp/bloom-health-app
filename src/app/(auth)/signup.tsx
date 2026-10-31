@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { BubuMascot } from '@/components/BubuMascot';
+import { Mascot } from '@/components/Mascot';
 import { Field } from '@/components/Field';
 import { GenderPicker } from '@/components/GenderPicker';
 import { AppText, Button, ErrorBanner, Screen } from '@/components/ui';
@@ -54,7 +54,7 @@ export default function SignUpScreen() {
 
   return (
     <Screen>
-      <BubuMascot mood="loved" size={110} />
+      <Mascot mood="loved" size={110} />
       <AppText variant="title">Create account</AppText>
       <AppText muted>Tell us a little about you. We will email a 6-digit code to confirm your email. No password needed.</AppText>
       <Field label="Your name" value={name} onChangeText={setName} maxLength={40} autoCapitalize="words" autoComplete="name" textContentType="name" placeholder="Anu" error={touched ? nameErr : null} />
