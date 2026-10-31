@@ -49,7 +49,7 @@ export function CalendarDayCell({ day, percent, threshold, isToday, isFuture, re
           borderColor: isToday ? theme.colors.accent : theme.colors.border,
         }}
       >
-        <AppText variant="label" style={{ fontFamily: strong ? fonts.heavy : fonts.semibold, color: strong ? '#FFFFFF' : isFuture ? theme.colors.textMuted : theme.colors.text }}>{day}</AppText>
+        <AppText variant="label" style={{ fontFamily: strong ? fonts.heavy : fonts.semibold, color: strong ? (theme.isDark ? theme.colors.onPrimary : '#FFFFFF') : isFuture ? theme.colors.textMuted : theme.colors.text }}>{day}</AppText>
       </Pressable>
     </View>
   );

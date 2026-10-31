@@ -114,7 +114,7 @@ src/components/     HabitCard, ProgressRing, WaterTracker, StepsCard, WorkoutTim
 src/lib/cycle.ts       pure cycle math (averages, next-start estimate, neutral dates); periodRules/periodsView/profile: tracker rules
 src/avatars/        fifteen Bloom profile avatars: catalog (ids/labels), AvatarArt (react-native-svg), Avatar, AvatarPicker,
                     avatarPrompt (one-time "Choose your Bloom" flag)
-src/theme/          tokens, five themes, ThemeProvider (persisted locally + saved to profile)
+src/theme/          tokens, five themes each with light and dark palettes, ThemeProvider (theme persisted locally + saved to profile; appearance local only)
 assets/mascot/      README: how to swap in your own mascot art
 src/widgets/        Android home-screen widget (see "Android home-screen widget"); index.ts is the app entry
 ```
