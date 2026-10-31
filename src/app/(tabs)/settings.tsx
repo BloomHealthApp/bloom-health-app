@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Linking, Modal, Pressable, Switch, TextInput, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Linking, Modal, Pressable, Switch, View } from 'react-native';
 import { Avatar } from '@/avatars/Avatar';
 import { AvatarPicker } from '@/avatars/AvatarPicker';
 import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
@@ -11,15 +11,17 @@ import { GenderPicker } from '@/components/GenderPicker';
 import { SyncStatusChip } from '@/components/SyncStatusChip';
 import { ThemePicker } from '@/components/ThemePicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
+import { ReminderRow } from '@/components/reminders/ReminderRow';
 import { AppText, Button, Card, ErrorBanner, Row, Screen } from '@/components/ui';
 import { USE_MOCK_API, API_BASE_URL } from '@/config';
 import { useActions } from '@/features/actions';
+import { getReminderModes, getReminderVolumes, setReminderModes, setReminderVolumes } from '@/features/reminderModes';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
-import { parseHHmm, WEEKDAY_LABELS } from '@/lib/dates';
-import { REMINDER_LABELS } from '@/lib/defaults';
+import { WEEKDAY_LABELS } from '@/lib/dates';
 import { DISCLAIMER } from '@/lib/messages';
 import { genderPatch, isPeriodTrackerOn, showTrackerSwitch, sundayRestOn } from '@/lib/profile';
-import { cancelAllReminders } from '@/notifications/scheduler';
+import { canShowFullScreenAlarm, nativeAlarmApi, openFullScreenAlarmSettings } from '@/notifications/alarmAdapter';
+import { cancelAllReminders, type ReminderMode, type ReminderModes, type ReminderVolumes } from '@/notifications/scheduler';
 import { expoNotifApi } from '@/notifications/expoAdapter';
 import { useAuth } from '@/providers/AuthProvider';
 import { useData, useSettings, useSyncStatus } from '@/providers/DataProvider';
@@ -43,8 +45,42 @@ export default function SettingsTab() {
   const [confirmOut, setConfirmOut] = useState(false);
   const [pickingAvatar, setPickingAvatar] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
+  const [modes, setModes] = useState<ReminderModes>({});
+  const [volumes, setVolumes] = useState<ReminderVolumes>({});
+  const [previewing, setPreviewing] = useState<Reminder['key'] | null>(null);
+  const [fullScreenAllowed, setFullScreenAllowed] = useState(true);
+  const userId = user?.id;
+  const hasLoudAlarm = Object.values(modes).includes('loudAlarm');
+  const loudAlarmFallback = reminderStatus?.status === 'scheduled' ? reminderStatus.loudAlarmFallback : undefined;
 
   useEffect(() => setName(user?.displayName ?? ''), [user?.displayName]);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void Promise.all([getReminderModes(userId), getReminderVolumes(userId)]).then(([m, v]) => {
+      if (cancelled) return;
+      setModes(m);
+      setVolumes(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Closing the preview stops its sound when the user leaves this tab.
+  useFocusEffect(useCallback(() => () => setPreviewing(null), []));
+
+  useEffect(() => {
+    if (!hasLoudAlarm) return;
+    let cancelled = false;
+    void canShowFullScreenAlarm().then((allowed) => {
+      if (!cancelled) setFullScreenAllowed(allowed);
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [hasLoudAlarm, reminderStatus]);
 
   const guarded = async (fn: () => Promise<unknown>) => {
     setErr(null);
@@ -60,6 +96,31 @@ export default function SettingsTab() {
       const next = settings.reminders.map((r) => (r.key === key ? { ...r, ...patch } : r));
       await actions.saveSettings({ reminders: next }, settings);
       if (ask) await refreshReminders(true);
+    });
+
+  const chooseMode = (key: Reminder['key'], mode: ReminderMode) => {
+    const unchanged = (modes[key] ?? 'notification') === mode;
+    setPreviewing(unchanged && previewing === key ? null : key);
+    if (unchanged) return;
+    void setReminderMode(key, mode);
+  };
+
+  const setReminderVolume = (key: Reminder['key'], volume: number) =>
+    guarded(async () => {
+      if (!userId) return;
+      const next = { ...volumes, [key]: volume };
+      setVolumes(next);
+      await setReminderVolumes(userId, next);
+      await refreshReminders();
+    });
+
+  const setReminderMode = (key: Reminder['key'], mode: ReminderMode) =>
+    guarded(async () => {
+      if (!userId) return;
+      const next = { ...modes, [key]: mode };
+      setModes(next);
+      await setReminderModes(userId, next);
+      await refreshReminders(mode !== 'notification', mode === 'loudAlarm');
     });
 
   return (
@@ -171,8 +232,38 @@ export default function SettingsTab() {
             </View>
           ) : null}
           {settings.reminders.map((r) => (
-            <ReminderRow key={r.key} reminder={r} onChange={(patch) => setReminder(r.key, patch, patch.enabled === true)} />
+            <ReminderRow
+              key={r.key}
+              reminder={r}
+              mode={modes[r.key] ?? 'notification'}
+              volume={volumes[r.key] ?? 1}
+              previewing={previewing === r.key}
+              onChange={(patch) => setReminder(r.key, patch, patch.enabled === true)}
+              onChooseMode={(m) => chooseMode(r.key, m)}
+              onVolumeChange={(v) => setReminderVolume(r.key, v)}
+            />
           ))}
+          {loudAlarmFallback ? (
+            <View accessibilityRole="alert" style={{ gap: spacing.sm }}>
+              <AppText style={{ color: theme.colors.danger }} variant="bodyStrong">Loud alarms are not active.</AppText>
+              <AppText variant="caption" muted>
+                {loudAlarmFallback === 'unavailable'
+                  ? 'They need iOS 26 or later on iPhone, or a newer app version. Your alarms use the standard alarm sound for now, and silent mode can mute it.'
+                  : 'Allow alarms for Bloom Health to turn them on. Your alarms use the standard alarm sound for now, and silent mode can mute it.'}
+              </AppText>
+              {loudAlarmFallback === 'unavailable' ? null : (
+                <Button title={loudAlarmFallback === 'needsPermission' ? 'Allow alarms' : 'Open system settings'} variant="secondary" onPress={() => (loudAlarmFallback === 'needsPermission' ? void refreshReminders(true, true) : void Linking.openSettings())} />
+              )}
+            </View>
+          ) : null}
+          {hasLoudAlarm && !loudAlarmFallback && !fullScreenAllowed ? (
+            <View accessibilityRole="alert" style={{ gap: spacing.sm }}>
+              <AppText variant="bodyStrong">Loud alarms can&apos;t open full screen.</AppText>
+              <AppText variant="caption" muted>They still ring, but as a notification. Allow full-screen alerts to see them over your lock screen.</AppText>
+              <Button title="Allow full-screen alerts" variant="secondary" onPress={() => void openFullScreenAlarmSettings()} />
+            </View>
+          ) : null}
+          <AppText variant="caption" muted>Tap an option to preview it. Your choice is saved on this device only.</AppText>
           <AppText variant="caption" muted>Times use this device&apos;s timezone and are rescheduled automatically if it changes.</AppText>
         </Section>
       ) : null}
@@ -224,7 +315,7 @@ export default function SettingsTab() {
         onCancel={() => setConfirmOut(false)}
         onConfirm={async () => {
           setConfirmOut(false);
-          await cancelAllReminders(expoNotifApi, { get: (k) => AsyncStorage.getItem('bubu.' + k), set: (k, v) => (v === null ? AsyncStorage.removeItem('bubu.' + k) : AsyncStorage.setItem('bubu.' + k, v)) }).catch(() => {});
+          await cancelAllReminders(expoNotifApi, { get: (k) => AsyncStorage.getItem('bubu.' + k), set: (k, v) => (v === null ? AsyncStorage.removeItem('bubu.' + k) : AsyncStorage.setItem('bubu.' + k, v)) }, nativeAlarmApi).catch(() => {});
           await signOut();
         }}
       />
@@ -238,41 +329,5 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <AppText variant="heading" accessibilityRole="header">{title}</AppText>
       {children}
     </Card>
-  );
-}
-
-function ReminderRow({ reminder, onChange }: { reminder: Reminder; onChange: (p: Partial<Reminder>) => void }) {
-  const { theme } = useTheme();
-  const [time, setTime] = useState(reminder.time);
-  useEffect(() => setTime(reminder.time), [reminder.time]);
-  const valid = !!parseHHmm(time);
-  const label = REMINDER_LABELS[reminder.key].title;
-  return (
-    <Row style={{ gap: spacing.md }}>
-      <View style={{ flex: 1 }}>
-        <AppText variant="bodyStrong">{label}</AppText>
-        {!valid ? <AppText variant="caption" style={{ color: theme.colors.danger }}>Use HH:mm, e.g. 21:30</AppText> : null}
-      </View>
-      <TextInput
-        value={time}
-        onChangeText={setTime}
-        onEndEditing={() => {
-          const p = parseHHmm(time);
-          if (p) onChange({ time: `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}` });
-          else setTime(reminder.time);
-        }}
-        accessibilityLabel={`${label} time`}
-        keyboardType="numbers-and-punctuation"
-        maxLength={5}
-        style={{ width: 84, minHeight: MIN_TOUCH, textAlign: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: valid ? theme.colors.border : theme.colors.danger, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text, backgroundColor: theme.colors.bg }}
-      />
-      <Switch
-        value={reminder.enabled}
-        onValueChange={(v) => onChange({ enabled: v })}
-        accessibilityLabel={`${label} reminder`}
-        trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-        style={{ minHeight: MIN_TOUCH }}
-      />
-    </Row>
   );
 }

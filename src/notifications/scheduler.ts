@@ -7,6 +7,13 @@ import type { Reminder } from '@/types/api';
 export const ID_PREFIX = 'bubu.reminder.';
 export const SIGNATURE_KEY = 'reminderSignature';
 
+export type ReminderMode = 'notification' | 'alarm' | 'loudAlarm';
+export type ReminderModes = Partial<Record<Reminder['key'], ReminderMode>>;
+/** 0.1 to 1. Only Android loud alarms can honour it; other alerts follow the phone's own volume. */
+export type ReminderVolumes = Partial<Record<Reminder['key'], number>>;
+export const MIN_ALARM_VOLUME = 0.1;
+export const clampAlarmVolume = (v: number) => Math.round(Math.min(1, Math.max(MIN_ALARM_VOLUME, v)) * 100) / 100;
+
 export interface PlannedReminder {
   identifier: string;
   key: Reminder['key'];
@@ -14,6 +21,19 @@ export interface PlannedReminder {
   minute: number;
   title: string;
   body: string;
+  mode: ReminderMode;
+  volume: number;
+}
+
+export type LoudAlarmAvailability = 'granted' | 'needsPermission' | 'denied' | 'unavailable';
+
+/** The OS alarm system behind Loud alarm. Optional: runtimes without the native module fall back to the alarm tone. */
+export interface AlarmApi {
+  getAvailability(): Promise<LoudAlarmAvailability>;
+  requestPermission(): Promise<void>;
+  getScheduledIds(): Promise<string[]>;
+  schedule(p: PlannedReminder): Promise<void>;
+  cancel(identifier: string): Promise<void>;
 }
 
 export interface NotifApi {
@@ -33,7 +53,7 @@ export interface OneOffReminder {
   date: Date;
 }
 
-export function buildPlan(reminders: Reminder[]): PlannedReminder[] {
+export function buildPlan(reminders: Reminder[], modes: ReminderModes = {}, volumes: ReminderVolumes = {}): PlannedReminder[] {
   const seen = new Set<string>();
   const out: PlannedReminder[] = [];
   for (const r of reminders) {
@@ -41,17 +61,21 @@ export function buildPlan(reminders: Reminder[]): PlannedReminder[] {
     const t = parseHHmm(r.time);
     if (!t) continue;
     seen.add(r.key);
-    out.push({ identifier: ID_PREFIX + r.key, key: r.key, hour: t.hour, minute: t.minute, ...REMINDER_LABELS[r.key] });
+    out.push({ identifier: ID_PREFIX + r.key, key: r.key, hour: t.hour, minute: t.minute, mode: modes[r.key] ?? 'notification', volume: clampAlarmVolume(volumes[r.key] ?? 1), ...REMINDER_LABELS[r.key] });
   }
   return out;
 }
 
+// Plain notifications keep their original format, so upgrading the app does not reschedule them.
 export function planSignature(plan: PlannedReminder[], timezone: string): string {
-  return `${timezone}|${plan.map((p) => `${p.key}@${p.hour}:${p.minute}`).sort().join(',')}`;
+  const suffix = (p: PlannedReminder) => (p.mode === 'notification' ? '' : p.mode === 'loudAlarm' ? `#${p.mode}~${p.volume}` : `#${p.mode}`);
+  return `${timezone}|${plan.map((p) => `${p.key}@${p.hour}:${p.minute}${suffix(p)}`).sort().join(',')}`;
 }
 
+export type LoudAlarmFallback = Exclude<LoudAlarmAvailability, 'granted'>;
+
 export type SyncResult =
-  | { status: 'scheduled'; count: number; skipped: boolean }
+  | { status: 'scheduled'; count: number; skipped: boolean; loudAlarmFallback?: LoudAlarmFallback }
   | { status: 'denied'; canAskAgain: boolean }
   | { status: 'disabled' };
 
@@ -67,13 +91,23 @@ export async function syncReminders(args: {
   timezone: string;
   /** true only when the user explicitly turned reminders on (prompt allowed) */
   askPermission: boolean;
+  modes?: ReminderModes;
+  volumes?: ReminderVolumes;
+  alarmApi?: AlarmApi;
+  /** true only when the user just chose Loud alarm: on Android this opens a system settings screen. */
+  askAlarmPermission?: boolean;
 }): Promise<SyncResult> {
-  const { api, storage, reminders, timezone, askPermission } = args;
-  const plan = buildPlan(reminders);
+  const { api, storage, reminders, timezone, askPermission, modes, volumes, alarmApi, askAlarmPermission } = args;
+  const plan = buildPlan(reminders, modes, volumes);
   const existing = (await api.getScheduledIds()).filter((id) => id.startsWith(ID_PREFIX));
+  const existingLoud = ((await alarmApi?.getScheduledIds()) ?? []).filter((id) => id.startsWith(ID_PREFIX));
+  const cancelEverything = async () => {
+    for (const id of existing) await api.cancel(id);
+    for (const id of existingLoud) await alarmApi?.cancel(id);
+  };
 
   if (plan.length === 0) {
-    for (const id of existing) await api.cancel(id);
+    await cancelEverything();
     await storage.set(SIGNATURE_KEY, null);
     return { status: 'disabled' };
   }
@@ -84,25 +118,59 @@ export async function syncReminders(args: {
     perm = { granted: r.granted, canAskAgain: false };
   }
   if (!perm.granted) {
-    for (const id of existing) await api.cancel(id);
+    await cancelEverything();
     await storage.set(SIGNATURE_KEY, null);
     return { status: 'denied', canAskAgain: perm.canAskAgain };
   }
 
-  const sig = planSignature(plan, timezone);
-  const wanted = new Set(plan.map((p) => p.identifier));
-  const uptodate = (await storage.get(SIGNATURE_KEY)) === sig && plan.every((p) => existing.includes(p.identifier)) && existing.every((id) => wanted.has(id));
-  if (uptodate) return { status: 'scheduled', count: plan.length, skipped: true };
+  let availability: LoudAlarmAvailability = 'granted';
+  if (plan.some((p) => p.mode === 'loudAlarm')) {
+    availability = alarmApi ? await alarmApi.getAvailability() : 'unavailable';
+    if (availability === 'needsPermission' && askAlarmPermission && alarmApi) {
+      await alarmApi.requestPermission();
+      availability = await alarmApi.getAvailability();
+    }
+  }
+  const effective = plan.map((p) => (p.mode === 'loudAlarm' && availability !== 'granted' ? { ...p, mode: 'alarm' as const } : p));
+  let loudAlarmFallback: LoudAlarmFallback | undefined = availability === 'granted' ? undefined : availability;
+  const result = (skipped: boolean): SyncResult => ({ status: 'scheduled', count: plan.length, skipped, ...(loudAlarmFallback ? { loudAlarmFallback } : {}) });
 
-  // Cancel everything of ours first, then schedule with stable identifiers: re-running never duplicates.
-  for (const id of existing) await api.cancel(id);
-  for (const p of plan) await api.schedule(p);
-  await storage.set(SIGNATURE_KEY, sig);
-  return { status: 'scheduled', count: plan.length, skipped: false };
+  const sig = planSignature(effective, timezone);
+  const wanted = new Set(effective.filter((p) => p.mode !== 'loudAlarm').map((p) => p.identifier));
+  const wantedLoud = new Set(effective.filter((p) => p.mode === 'loudAlarm').map((p) => p.identifier));
+  const uptodate =
+    (await storage.get(SIGNATURE_KEY)) === sig &&
+    wanted.size === existing.length &&
+    existing.every((id) => wanted.has(id)) &&
+    wantedLoud.size === existingLoud.length &&
+    existingLoud.every((id) => wantedLoud.has(id));
+  if (uptodate) return result(true);
+
+  // Cancel everything of ours in both systems first, then schedule with stable identifiers: re-running never duplicates
+  // and a reminder that changed mode can never fire twice.
+  await cancelEverything();
+  const scheduled: PlannedReminder[] = [];
+  for (const p of effective) {
+    if (p.mode === 'loudAlarm' && alarmApi) {
+      try {
+        await alarmApi.schedule(p);
+        scheduled.push(p);
+        continue;
+      } catch {
+        loudAlarmFallback = 'unavailable'; // an alarm that still sounds beats a reminder that silently vanished
+      }
+    }
+    const fallback = p.mode === 'loudAlarm' ? { ...p, mode: 'alarm' as const } : p;
+    await api.schedule(fallback);
+    scheduled.push(fallback);
+  }
+  await storage.set(SIGNATURE_KEY, planSignature(scheduled, timezone));
+  return result(false);
 }
 
-export async function cancelAllReminders(api: NotifApi, storage: Storage): Promise<void> {
+export async function cancelAllReminders(api: NotifApi, storage: Storage, alarmApi?: AlarmApi): Promise<void> {
   for (const id of (await api.getScheduledIds()).filter((i) => i.startsWith(ID_PREFIX))) await api.cancel(id);
+  for (const id of ((await alarmApi?.getScheduledIds()) ?? []).filter((i) => i.startsWith(ID_PREFIX))) await alarmApi?.cancel(id);
   await storage.set(SIGNATURE_KEY, null);
   await cancelPeriodReminder(api, storage);
 }

@@ -4,6 +4,9 @@ import type { NotifApi, OneOffReminder, PlannedReminder } from './scheduler';
 type NotificationsModule = typeof import('expo-notifications');
 
 const CHANNEL_ID = 'reminders';
+// Android freezes a channel's sound and importance once created, so alarms need their own channel.
+const ALARM_CHANNEL_ID = 'alarms';
+const ALARM_SOUND = 'alarm.wav';
 
 let cached: NotificationsModule | null | undefined;
 
@@ -28,7 +31,19 @@ export function configureNotifications() {
   const N = notifications();
   if (!N) return;
   N.setNotificationHandler({
-    handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
+    handleNotification: async (n) => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: n.request.content.data?.mode === 'alarm', shouldSetBadge: false }),
+  });
+}
+
+async function ensureAlarmChannel(N: NotificationsModule) {
+  if (Platform.OS !== 'android') return;
+  await N.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
+    name: 'Alarms',
+    importance: N.AndroidImportance.MAX,
+    sound: ALARM_SOUND,
+    vibrationPattern: [0, 500, 250, 500],
+    // Not the ALARM usage: this mode must stay quiet in silent mode. Loud alarm is the one that rings through it.
+    audioAttributes: { usage: N.AndroidAudioUsage.NOTIFICATION_EVENT, contentType: N.AndroidAudioContentType.SONIFICATION },
   });
 }
 
@@ -59,17 +74,19 @@ export const expoNotifApi: NotifApi = {
   async schedule(p: PlannedReminder) {
     const N = notifications();
     if (!N) return;
-    if (Platform.OS === 'android') {
+    const alarm = p.mode === 'alarm';
+    if (alarm) await ensureAlarmChannel(N);
+    else if (Platform.OS === 'android') {
       await N.setNotificationChannelAsync(CHANNEL_ID, { name: 'Reminders', importance: N.AndroidImportance.DEFAULT });
     }
     await N.scheduleNotificationAsync({
       identifier: p.identifier,
-      content: { title: p.title, body: p.body },
+      content: alarm ? { title: p.title, body: p.body, sound: ALARM_SOUND, data: { mode: 'alarm' } } : { title: p.title, body: p.body },
       trigger: {
         type: N.SchedulableTriggerInputTypes.DAILY,
         hour: p.hour,
         minute: p.minute,
-        channelId: CHANNEL_ID,
+        channelId: alarm ? ALARM_CHANNEL_ID : CHANNEL_ID,
       },
     });
   },

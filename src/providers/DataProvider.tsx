@@ -9,6 +9,8 @@ import type { Store } from '@/db/store';
 import { defaultSettings } from '@/lib/defaults';
 import { deviceTimezone } from '@/lib/dates';
 import { uuid } from '@/lib/ids';
+import { getReminderModes, getReminderVolumes } from '@/features/reminderModes';
+import { nativeAlarmApi } from '@/notifications/alarmAdapter';
 import { expoNotifApi } from '@/notifications/expoAdapter';
 import { syncReminders, type SyncResult } from '@/notifications/scheduler';
 import { SyncEngine, type SyncStatus } from '@/sync/engine';
@@ -23,8 +25,8 @@ interface Ctx {
   scheduleSync: (delayMs?: number) => void;
   syncNow: () => Promise<void>;
   reminderStatus: SyncResult | null;
-  /** Re-run reminder scheduling; pass askPermission=true from a user gesture. */
-  refreshReminders: (askPermission?: boolean) => Promise<SyncResult | null>;
+  /** Re-run reminder scheduling; pass askPermission=true from a user gesture, and askAlarmPermission=true only when the user chose Loud alarm. */
+  refreshReminders: (askPermission?: boolean, askAlarmPermission?: boolean) => Promise<SyncResult | null>;
 }
 const DataCtx = createContext<Ctx | null>(null);
 
@@ -89,11 +91,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const settingsRef = useRef<Settings | null>(null);
   const refreshReminders = useCallback(
-    async (askPermission = false) => {
+    async (askPermission = false, askAlarmPermission = false) => {
       if (!user || user.role !== 'owner') return null; // reminders are for the habit owner
       const s = settingsRef.current ?? defaultSettings();
       try {
-        const r = await syncReminders({ api: expoNotifApi, storage: asyncStorage, reminders: s.reminders, timezone: deviceTimezone(), askPermission });
+        const [modes, volumes] = await Promise.all([getReminderModes(user.id), getReminderVolumes(user.id)]);
+        const r = await syncReminders({ api: expoNotifApi, storage: asyncStorage, reminders: s.reminders, timezone: deviceTimezone(), askPermission, modes, volumes, alarmApi: nativeAlarmApi, askAlarmPermission });
         setReminderStatus(r);
         return r;
       } catch {

@@ -138,6 +138,7 @@ src/widgets/        Android home-screen widget (see "Android home-screen widget"
   survives backgrounding and app kill. Manual entry and multiple sessions per day are supported.
 - **Reminders.** Owner only. Stable notification identifiers (`bubu.reminder.<key>`) + a plan signature (incl. timezone)
   mean re-running never duplicates; a timezone change reschedules; denied permission shows an in-app explanation.
+  Each reminder can be a notification, an alarm tone, or a loud alarm (`modules/bloom-alarm`, needs a development or store build).
 - **Accessibility.** Labels/roles on interactive elements, 44 pt minimum touch targets, no color-only status,
   reduced-motion support for the mascot animation.
 
