@@ -46,7 +46,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
   const { theme } = useTheme();
   const c = theme.colors;
   const bg = variant === 'primary' ? c.primary : variant === 'danger' ? c.danger : variant === 'secondary' ? c.tint : 'transparent';
-  const fg = variant === 'primary' ? c.onPrimary : variant === 'danger' ? '#fff' : c.accent;
+  const fg = variant === 'primary' ? c.onPrimary : variant === 'danger' ? c.onDanger : c.accent;
   const off = disabled || loading;
   return (
     <Pressable
@@ -136,7 +136,7 @@ export function Loading({ label = 'Loading' }: { label?: string }) {
 export function ErrorBanner({ message, onRetry }: { message: string; onRetry?: () => void }) {
   const { theme } = useTheme();
   return (
-    <View accessibilityRole="alert" style={{ backgroundColor: '#FDECEF', borderRadius: radius.md, padding: spacing.md, gap: spacing.sm, borderWidth: 1, borderColor: theme.colors.danger }}>
+    <View accessibilityRole="alert" style={{ backgroundColor: theme.colors.dangerTint, borderRadius: radius.md, padding: spacing.md, gap: spacing.sm, borderWidth: 1, borderColor: theme.colors.danger }}>
       <AppText variant="bodyStrong" style={{ color: theme.colors.danger }}>{message}</AppText>
       {onRetry ? <Button title="Try again" variant="secondary" onPress={onRetry} /> : null}
     </View>

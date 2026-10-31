@@ -15,7 +15,7 @@ interface Props {
   size?: number;
 }
 
-/** 3x3 grid of the nine avatars. The selected one gets a ring in the theme accent. */
+/** Three-column grid of the avatars. The selected one gets a ring in the theme accent. */
 export function AvatarPicker({ value, onChange, disabled, size = 76 }: Props) {
   const { theme } = useTheme();
   const cell = Math.max(size, MIN_TOUCH);

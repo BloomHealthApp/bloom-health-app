@@ -3,7 +3,7 @@ import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { mascotBody, COLOR_LAYER, GOLD, heart, INK, limb, PEACH, sparkle, type MascotPalette } from '@/components/mascotArt';
 import { isAvatarId, type AvatarId } from './avatarCatalog';
 
-/** The 9 Bloom avatars in a 200x200 viewBox. Only Circle/Ellipse/G/Path/Rect/Line are used, so they can be serialised to SVG. */
+/** The 15 Bloom avatars in a 200x200 viewBox. Only Circle/Ellipse/G/Path/Rect/Line are used, so they can be serialised to SVG. */
 export const PINK = '#F8D7E8';
 export const PINK_DEEP = '#D65B98';
 export const BLUE = '#CFE8F7';
@@ -18,6 +18,21 @@ const BLUE_DEEP = '#8CC6EA';
 const LILAC_DEEP = '#B9A7E8';
 const SW = 3.6;
 
+const NAVY = '#1F3A5F';
+const STEEL = '#B9CDE0';
+const SLATE = '#AEB9C6';
+const SAND = '#E8DCC4';
+const TEAL = '#A9D5CF';
+const TEAL_DEEP = '#2A7F78';
+const OLIVE = '#C5CFA3';
+const GREY = '#E1E5EA';
+const BEARD = '#6B4A32';
+const CHARCOAL = '#27313D';
+const STEEL_DEEP = '#7E8C9A';
+/** For bubu-10 onward: no pink in the body colours. */
+const BOLD_PALETTE: MascotPalette = { cheek: '#D9A77F', primary: NAVY, soft: STEEL, accent: '#2B5A8C', leaf: '#5E8F5E', cheekOpacity: 0.5 };
+const BOLD_IDS: readonly AvatarId[] = ['bubu-10', 'bubu-11', 'bubu-12', 'bubu-13', 'bubu-14', 'bubu-15'];
+
 const BACKGROUNDS: Record<AvatarId, string> = {
   'bubu-01': PINK,
   'bubu-02': BLUE,
@@ -28,6 +43,12 @@ const BACKGROUNDS: Record<AvatarId, string> = {
   'bubu-07': LILAC,
   'bubu-08': BLUE,
   'bubu-09': PINK,
+  'bubu-10': STEEL,
+  'bubu-11': SLATE,
+  'bubu-12': SAND,
+  'bubu-13': TEAL,
+  'bubu-14': OLIVE,
+  'bubu-15': GREY,
 };
 
 const ink = { stroke: INK, strokeWidth: SW, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
@@ -221,6 +242,89 @@ function artFor(id: AvatarId, p: MascotPalette): Art {
           </G>
         ),
       };
+    case 'bubu-10': // navy baseball cap with a side brim
+      return {
+        sprout: false,
+        face: [eye(74, 112, 'el'), eye(126, 112, 'er'), <Path key="m" d="M92 124 Q100 131 108 124" {...line} strokeWidth={3.2} />],
+        front: (
+          <G key="cap">
+            <Path d="M54 72 Q56 28 100 28 Q144 28 146 72 Q100 58 54 72Z" fill={NAVY} {...ink} />
+            <Path d="M138 62 Q168 60 184 76 Q160 82 142 74Z" fill={STEEL_DEEP} {...ink} />
+            <Path d="M100 30 L100 62 M76 36 Q72 50 72 64 M124 36 Q128 50 128 64" {...line} stroke="#fff" strokeWidth={2} opacity={0.35} />
+            <Circle cx={100} cy={28} r={4} fill={STEEL} {...ink} strokeWidth={2.4} />
+          </G>
+        ),
+      };
+    case 'bubu-11': // square dark sunglasses, smirk
+      return {
+        face: [
+          <Path key="m" d="M90 126 Q102 132 112 122" {...line} strokeWidth={3.2} />,
+          <G key="shades">
+            <Path d="M50 106 L60 110 M150 106 L140 110 M92 110 Q100 106 108 110" {...line} strokeWidth={3.4} />
+            <Rect x={60} y={102} width={32} height={21} rx={5} fill={CHARCOAL} {...ink} />
+            <Rect x={108} y={102} width={32} height={21} rx={5} fill={CHARCOAL} {...ink} />
+            <Path d="M66 116 L76 107 M114 116 L124 107" {...line} stroke="#fff" strokeWidth={3} opacity={0.7} />
+          </G>,
+        ],
+      };
+    case 'bubu-12': // full beard and moustache
+      return {
+        face: [
+          eye(74, 104, 'el'),
+          eye(126, 104, 'er'),
+          <G key="beard">
+            <Path d="M47 112 C44 160 76 180 100 180 C124 180 156 160 153 112 C146 126 130 128 118 122 Q100 114 82 122 C70 128 54 126 47 112Z" fill={BEARD} {...ink} />
+            <Path d="M100 124 C90 118 78 124 76 132 C86 136 96 134 100 128 C104 134 114 136 124 132 C122 124 110 118 100 124Z" fill={BEARD} {...ink} strokeWidth={2.6} />
+            <Path d="M92 142 Q100 149 108 142" {...line} stroke="#fff" strokeWidth={3} />
+          </G>,
+        ],
+      };
+    case 'bubu-13': // over-ear headphones, happy eyes
+      return {
+        sprout: false,
+        face: [happyEye(74, 114, 'el'), happyEye(126, 114, 'er'), <Path key="m" d="M92 124 Q100 133 108 124" {...line} strokeWidth={3.2} />],
+        front: (
+          <G key="phones">
+            <Path d="M42 104 Q42 26 100 26 Q158 26 158 104" fill="none" stroke={INK} strokeWidth={13} strokeLinecap="round" />
+            <Path d="M42 104 Q42 26 100 26 Q158 26 158 104" fill="none" stroke={TEAL_DEEP} strokeWidth={6.5} strokeLinecap="round" />
+            <Rect x={30} y={94} width={24} height={46} rx={10} fill={TEAL_DEEP} {...ink} />
+            <Rect x={146} y={94} width={24} height={46} rx={10} fill={TEAL_DEEP} {...ink} />
+          </G>
+        ),
+      };
+    case 'bubu-14': // headband and dumbbell, determined brows
+      return {
+        dx: -12,
+        sprout: false,
+        face: [
+          eye(74, 114, 'el'),
+          eye(126, 114, 'er'),
+          <Path key="brows" d="M62 100 L84 105 M138 100 L116 105" {...line} strokeWidth={4} />,
+          <Path key="m" d="M92 126 Q100 132 108 126" {...line} strokeWidth={3.2} />,
+        ],
+        front: (
+          <G key="gym">
+            <Path d="M50 76 Q100 58 150 76 L150 90 Q100 72 50 90Z" fill={NAVY} {...ink} />
+            {limb(COLOR_LAYER, 'arm', 148, 146, 164, 132, 14)}
+            <Rect x={150} y={124} width={46} height={8} rx={3} fill={STEEL_DEEP} {...ink} strokeWidth={2.6} />
+            <Rect x={146} y={108} width={12} height={40} rx={4} fill={CHARCOAL} {...ink} />
+            <Rect x={188} y={108} width={12} height={40} rx={4} fill={CHARCOAL} {...ink} />
+          </G>
+        ),
+      };
+    case 'bubu-15': // navy bow tie and a side-parted hair tuft
+      return {
+        sprout: false,
+        face: [eye(74, 112, 'el'), eye(126, 112, 'er'), <Path key="m" d="M92 124 Q100 131 108 124" {...line} strokeWidth={3.2} />],
+        front: (
+          <G key="smart">
+            <Path d="M72 62 C76 40 104 30 130 42 C126 52 112 60 96 58 C88 57 80 58 72 62Z" fill={BEARD} {...ink} />
+            <Path d="M100 156 L72 142 L72 170Z" fill={NAVY} {...ink} />
+            <Path d="M100 156 L128 142 L128 170Z" fill={NAVY} {...ink} />
+            <Circle cx={100} cy={156} r={6} fill={STEEL} {...ink} strokeWidth={2.8} />
+          </G>
+        ),
+      };
     default: // bubu-01 classic: pink bow, shy smile
       return {
         face: [
@@ -244,7 +348,8 @@ const FALLBACK_BG = '#EEEAF6';
 /** Square 200x200 avatar art; returns SVG elements to place inside a viewBox="0 0 200 200" <Svg>. */
 export function avatarArt(id: string | null | undefined): React.ReactElement {
   const known = isAvatarId(id);
-  const art = known ? artFor(id, PALETTE) : fallbackArt(PALETTE);
+  const palette = known && BOLD_IDS.includes(id) ? BOLD_PALETTE : PALETTE;
+  const art = known ? artFor(id, palette) : fallbackArt(palette);
   const bg = known ? BACKGROUNDS[id] : FALLBACK_BG;
   return (
     <G>
@@ -253,7 +358,7 @@ export function avatarArt(id: string | null | undefined): React.ReactElement {
       <Circle cx={168} cy={170} r={36} fill="#fff" opacity={0.3} />
       <G transform={`translate(${100 + (art.dx ?? 0)} 106) scale(0.97) translate(-100 -100)`}>
         {art.behind}
-        {mascotBody(COLOR_LAYER, PALETTE, { feet: false, sprout: art.sprout !== false })}
+        {mascotBody(COLOR_LAYER, palette, { feet: false, sprout: art.sprout !== false })}
         {art.face}
         {art.front}
       </G>

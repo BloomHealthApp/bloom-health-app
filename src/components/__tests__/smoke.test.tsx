@@ -52,5 +52,7 @@ describe('component smoke renders', () => {
     expect(by.cottonCandy).toMatchObject({ tint: '#F8D7E8', primary: '#D65B98', bg: '#FFF9F5' });
     expect(by.lavenderDream).toMatchObject({ tint: '#E9E2FF', primary: '#B9A7E8', text: '#51436B' });
     expect(by.mintPeach).toMatchObject({ tint: '#DDF3E7', secondary: '#FFE3D6', primary: '#6E9D88' });
+    expect(by.forestTrail).toMatchObject({ tint: '#BFD8C2', primary: '#1E5B3A', bg: '#EEF3EA' });
+    expect(by.midnightNavy).toMatchObject({ tint: '#B8CBE4', primary: '#12305A', bg: '#E9EEF6' });
   });
 });

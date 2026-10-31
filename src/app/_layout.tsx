@@ -76,5 +76,6 @@ export default function RootLayout() {
 }
 
 function ThemedStatusBar() {
-  return <StatusBar style="dark" />;
+  const { theme } = useTheme();
+  return <StatusBar style={theme.isDark ? 'light' : 'dark'} />;
 }

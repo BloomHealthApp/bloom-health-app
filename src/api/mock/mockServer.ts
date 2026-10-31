@@ -6,6 +6,7 @@ import { isValidLocalDate, validatePeriod, type PeriodRange } from '@/lib/period
 import { effectiveRestDays, evaluateStatus, summarize, type HabitRule } from '@/lib/scoring';
 import { uuid } from '@/lib/ids';
 import { isAvatarId } from '@/avatars/avatarCatalog';
+import { DEFAULT_THEME } from '@/theme/themes';
 import { GenderSchema, type DailyLog, type Gender, type Habit, type Period, type Settings, type ThemeName, type User, type Workout } from '@/types/api';
 
 export const MOCK_OTP = '123456';
@@ -68,7 +69,7 @@ class MockDb {
   /** Creates a fresh owner account with its own empty space. */
   createOwner(p: { name: string; phone: string; email: string; avatar?: string | null; gender?: Gender | null }): MockUser {
     const id = `u-${uuid()}`;
-    const user: MockUser = { id, email: p.email, phone: p.phone, displayName: p.name, avatar: p.avatar ?? null, timezone: 'Asia/Kolkata', theme: 'cottonCandy', role: 'owner', sharedSpaceId: `space-${id}`, ownerDisplayName: p.name, gender: p.gender ?? null };
+    const user: MockUser = { id, email: p.email, phone: p.phone, displayName: p.name, avatar: p.avatar ?? null, timezone: 'Asia/Kolkata', theme: DEFAULT_THEME, role: 'owner', sharedSpaceId: `space-${id}`, ownerDisplayName: p.name, gender: p.gender ?? null };
     this.users.push(user);
     this.space = user.sharedSpaceId;
     this.seedDefaults();

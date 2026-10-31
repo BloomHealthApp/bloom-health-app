@@ -1,4 +1,4 @@
-import { THEMES } from '@/theme/themes';
+import { DEFAULT_THEME, THEMES } from '@/theme/themes';
 import type { ThemeName } from '@/types/api';
 
 export type Hex = `#${string}`;
@@ -20,7 +20,7 @@ export interface WidgetPalette {
 
 /** Maps the user's active app theme (src/theme/themes.ts) to widget colours. */
 export function widgetPalette(name: ThemeName): WidgetPalette {
-  const c = (THEMES[name] ?? THEMES.cottonCandy).colors;
+  const c = (THEMES[name] ?? THEMES[DEFAULT_THEME]).colors;
   return {
     background: c.tint as Hex,
     card: c.bg as Hex,
