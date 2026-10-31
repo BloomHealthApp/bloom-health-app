@@ -9,7 +9,7 @@
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "ios": { "simulator": false },
-      "env": { "EXPO_PUBLIC_USE_MOCK_API": "false", "EXPO_PUBLIC_API_BASE_URL": "https://bubu-bloom-service.vercel.app" }
+      "env": { "EXPO_PUBLIC_USE_MOCK_API": "false", "EXPO_PUBLIC_API_BASE_URL": "https://bloom-health-service.vercel.app" }
     },
     "preview-android": {
       "extends": "preview",
@@ -20,7 +20,8 @@
       "ios": { "simulator": false }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": { "EXPO_PUBLIC_USE_MOCK_API": "false", "EXPO_PUBLIC_API_BASE_URL": "https://bloom-health-service.vercel.app" }
     }
   },
   "submit": { "production": {} }
