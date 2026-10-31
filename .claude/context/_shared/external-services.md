@@ -39,4 +39,3 @@
 - **Production API URL:** the `production` EAS profile sets no `EXPO_PUBLIC_API_BASE_URL`, unlike `preview`. Unless it's set in EAS, a production build falls back to `http://localhost:8080`.
 - **Local port mismatch:** `.env.example` and the fallback in `src/config.ts` use port 8080, but the service defaults to 3000.
 - **Old names:** database `bubu-bloom.db` and storage keys `bubu.*` keep an older project name. Renaming the storage names would lose local data. The Expo project slug is now `bloom-health-app`, the bundle id is `com.bloomhealthapp.app` and the scheme is `bloomhealth`; `bubu-bloom-service.vercel.app` stays up for older builds.
-- **README version:** `README.md` says Expo SDK 58, but `package.json` has `expo ~57`.

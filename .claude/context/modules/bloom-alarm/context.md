@@ -3,6 +3,8 @@
 ## Purpose
 Local Expo module behind Loud alarm. It's autolinked, and needs a development or store build. `requireOptionalNativeModule` returns null elsewhere, such as Expo Go, so the app falls back to the Alarm tone.
 
+It imports `requireOptionalNativeModule` from `expo`, because `expo-modules-core` is no longer installed at the top level on SDK 58.
+
 ## Android
 - `AlarmManager.setAlarmClock` fires once, so `AlarmFireReceiver` books the next day. A snooze (fixed 10 minutes) doesn't touch the daily schedule.
 - The schedule is also kept in SharedPreferences, so `AlarmRestoreReceiver` can restore it after a reboot, time change or permission grant without React Native.
