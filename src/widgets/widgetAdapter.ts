@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { resolveForDay, type WidgetSnapshot } from './widgetData';
 
 type WidgetLib = typeof import('react-native-android-widget');
-type Widgets = typeof import('./BubuWidgets');
+type Widgets = typeof import('./HealthWidgets');
 
 let lib: WidgetLib | null | undefined;
 let widgets: Widgets | null = null;
@@ -17,7 +17,7 @@ function load(): { lib: WidgetLib; widgets: Widgets } | null {
     try {
       /* eslint-disable @typescript-eslint/no-require-imports */
       lib = require('react-native-android-widget') as WidgetLib;
-      widgets = require('./BubuWidgets') as Widgets;
+      widgets = require('./HealthWidgets') as Widgets;
       /* eslint-enable @typescript-eslint/no-require-imports */
     } catch (e) {
       console.warn('[widget] android widget module is unavailable in this runtime (needs a dev/preview build).', e);
@@ -27,7 +27,7 @@ function load(): { lib: WidgetLib; widgets: Widgets } | null {
   return lib && widgets ? { lib, widgets } : null;
 }
 
-/** Redraw every placed Bubu widget from `snapshot`. Safe to call anywhere; resolves without doing anything off-Android / in Expo Go. */
+/** Redraw every placed Bloom widget from `snapshot`. Safe to call anywhere; resolves without doing anything off-Android / in Expo Go. */
 export async function requestWidgetRefresh(snapshot: WidgetSnapshot): Promise<void> {
   const m = load();
   if (!m) return;
@@ -37,7 +37,7 @@ export async function requestWidgetRefresh(snapshot: WidgetSnapshot): Promise<vo
       m.widgets.WIDGET_NAMES.map((widgetName) =>
         m.lib.requestWidgetUpdate({
           widgetName,
-          renderWidget: (info) => m.widgets.renderBubuWidget(widgetName, resolved, { width: info.width, height: info.height }),
+          renderWidget: (info) => m.widgets.renderHealthWidget(widgetName, resolved, { width: info.width, height: info.height }),
         }),
       ),
     );
@@ -54,7 +54,7 @@ export function registerWidgetTask(): void {
   if (!m) return;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    (require('./widgetTaskHandler') as typeof import('./widgetTaskHandler')).registerBubuWidgetTaskHandler();
+    (require('./widgetTaskHandler') as typeof import('./widgetTaskHandler')).registerHealthWidgetTaskHandler();
   } catch (e) {
     console.warn('[widget] could not register widget task handler', e);
   }

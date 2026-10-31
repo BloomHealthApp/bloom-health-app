@@ -2,7 +2,7 @@ import { Redirect, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
 import { ApiError, NetworkError } from '@/api/errors';
-import { BubuMascot } from '@/components/BubuMascot';
+import { Mascot } from '@/components/Mascot';
 import { AppText, Button, ErrorBanner, Screen } from '@/components/ui';
 import { USE_MOCK_API } from '@/config';
 import { authErrorMessage } from '@/lib/authForm';
@@ -73,7 +73,7 @@ export default function OtpScreen() {
 
   return (
     <Screen>
-      <BubuMascot mood="thinking" size={110} />
+      <Mascot mood="thinking" size={110} />
       <AppText variant="title">Enter your code</AppText>
       <AppText muted>
         {isSignUp

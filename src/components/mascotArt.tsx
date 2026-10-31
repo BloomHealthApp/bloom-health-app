@@ -4,7 +4,7 @@ import type { ThemeColors } from '@/theme/themes';
 import type { MascotMood } from './mascotTypes';
 
 /**
- * Original "Bubu": a chubby mochi bunny-bear bean with two small rounded ears (soft peach inside),
+ * Original "Bloom": a chubby mochi bunny-bear bean with two small rounded ears (soft peach inside),
  * a little head sprout, stubby arms and tiny feet. Sticker look: thick brown outline, flat pastel fills,
  * a white die-cut border and a soft drop shadow. Everything is drawn in a 200x200 viewBox.
  * Body stays cream-white; cheeks, props and accents follow the active theme.
@@ -246,8 +246,8 @@ function face(mood: MascotMood, p: MascotPalette) {
   return out;
 }
 
-/** feet, ears, head sprout and the cream body: the shared Bubu silhouette (everything except face, arms and props) */
-export function bubuBody(L: Layer, p: MascotPalette, opts: { feet?: boolean; sprout?: boolean } = {}) {
+/** feet, ears, head sprout and the cream body: the shared Bloom silhouette (everything except face, arms and props) */
+export function mascotBody(L: Layer, p: MascotPalette, opts: { feet?: boolean; sprout?: boolean } = {}) {
   const color = isColor(L);
   return (
     <G>
@@ -271,7 +271,7 @@ function figure(L: Layer, mood: MascotMood, p: MascotPalette) {
   return (
     <G>
       {(pose.back ?? []).map((a, i) => limb(L, `b${i}`, a[0], a[1], a[2], a[3]))}
-      {bubuBody(L, p)}
+      {mascotBody(L, p)}
       {color ? face(mood, p) : null}
       {props(L, mood, p)}
       {(pose.front ?? []).map((a, i) => limb(L, `f${i}`, a[0], a[1], a[2], a[3]))}

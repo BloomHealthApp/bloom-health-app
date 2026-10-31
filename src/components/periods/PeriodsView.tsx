@@ -2,7 +2,7 @@
 // can be rendered in tests and previews without providers.
 import React, { useMemo, useState } from 'react';
 import { Pressable, Switch, TextInput, View } from 'react-native';
-import { BubuMascot } from '../BubuMascot';
+import { Mascot } from '../Mascot';
 import { ConfirmationDialog } from '../ConfirmationDialog';
 import { EmptyState } from '../EmptyState';
 import { AppText, Button, Card, ErrorBanner, Loading, Row } from '../ui';
@@ -107,7 +107,7 @@ export function PeriodsView({ periods, today, loading, error, onStart, onEnd, on
 
       <Card tint>
         <Row style={{ gap: spacing.md }}>
-          <BubuMascot mood={summary.mood} size={84} />
+          <Mascot mood={summary.mood} size={84} />
           <View style={{ flex: 1, gap: 2 }} accessible accessibilityLabel={`${summary.title}. ${summary.subtitle}`}>
             <AppText variant="heading">{summary.title}</AppText>
             <AppText variant="caption" muted>{summary.subtitle}</AppText>

@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 import { Avatar } from '@/avatars/Avatar';
-import { BubuMascot } from '@/components/BubuMascot';
+import { Mascot } from '@/components/Mascot';
 import { CycleCard } from '@/components/CycleCard';
 import { EmptyState } from '@/components/EmptyState';
 import { HabitCard } from '@/components/HabitCard';
@@ -92,7 +92,7 @@ export default function Home() {
               <ProgressRing percent={d.todayScore.completionPercent} size={120} stroke={12} sublabel="today" />
               <View style={{ flex: 1, gap: spacing.sm }}>
                 <Row style={{ gap: spacing.sm }}>
-                  <BubuMascot mood={msg.mood} size={72} />
+                  <Mascot mood={msg.mood} size={72} />
                   <AppText variant="bodyStrong" style={{ flex: 1 }}>{msg.text}</AppText>
                 </Row>
                 <AppText variant="caption" muted>

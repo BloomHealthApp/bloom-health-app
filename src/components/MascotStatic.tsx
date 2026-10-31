@@ -4,8 +4,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { MascotArt, mascotPalette } from './mascotArt';
 import type { MascotMood } from './mascotTypes';
 
-/** Original Bubu sticker (mochi bunny-bear blob). Pure SVG, no animation: also the reduced-motion render. */
-export function BubuMascotStatic({ mood = 'happy', size = 120 }: { mood?: MascotMood; size?: number }) {
+/** Original Bloom sticker (mochi bunny-bear blob). Pure SVG, no animation: also the reduced-motion render. */
+export function MascotStatic({ mood = 'happy', size = 120 }: { mood?: MascotMood; size?: number }) {
   const { theme } = useTheme();
   return (
     <Svg width={size} height={size} viewBox="0 0 200 200">

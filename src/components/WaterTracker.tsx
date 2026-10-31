@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { formatNumber } from '@/lib/format';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
-import { BubuMascot } from './BubuMascot';
+import { Mascot } from './Mascot';
 import { AppText, Button, Card, Row } from './ui';
 
 export function WaterTracker({ ml, goal, readOnly, onAdd }: { ml: number; goal: number; readOnly?: boolean; onAdd?: (delta: number) => void }) {
@@ -12,7 +12,7 @@ export function WaterTracker({ ml, goal, readOnly, onAdd }: { ml: number; goal: 
   return (
     <Card>
       <Row style={{ gap: spacing.md }}>
-        <BubuMascot mood="hydrate" size={80} />
+        <Mascot mood="hydrate" size={80} />
         <AppText variant="heading" style={{ flex: 1 }}>💧 Water</AppText>
         <AppText variant="bodyStrong" accent accessibilityLabel={`${formatNumber(ml)} of ${formatNumber(goal)} millilitres`}>
           {formatNumber(ml)} / {formatNumber(goal)} ml

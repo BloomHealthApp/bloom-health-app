@@ -1,10 +1,10 @@
 import React from 'react';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
-import { bubuBody, COLOR_LAYER, GOLD, heart, INK, limb, PEACH, sparkle, type MascotPalette } from '@/components/mascotArt';
+import { mascotBody, COLOR_LAYER, GOLD, heart, INK, limb, PEACH, sparkle, type MascotPalette } from '@/components/mascotArt';
 import { isAvatarId, type AvatarId } from './avatarCatalog';
 
 /**
- * The 9 cotton-candy Bubu avatars. Same original bunny-bear as the mascot (shared silhouette from mascotArt.tsx), each with its own
+ * The 9 cotton-candy Bloom avatars. Same original bunny-bear as the mascot (shared silhouette from mascotArt.tsx), each with its own
  * accessory, on a soft round pastel background. 200x200 viewBox; the background fills the square and the host crops it to a circle.
  * The palette is fixed (not theme-dependent) so avatars look the same everywhere. Only Circle/Ellipse/G/Path/Rect/Line are used,
  * so these trees can also be serialised to SVG strings (see widgets/svg.ts).
@@ -239,7 +239,7 @@ function artFor(id: AvatarId, p: MascotPalette): Art {
   }
 }
 
-/** Neutral, accessory-free Bubu face on a grey-lilac disc: shown when the avatar is not set or the id is unknown. */
+/** Neutral, accessory-free Bloom face on a grey-lilac disc: shown when the avatar is not set or the id is unknown. */
 function fallbackArt(p: MascotPalette): Art {
   return { face: [...cheeks(p), eye(74, 114, 'el'), eye(126, 114, 'er'), <Path key="smile" d="M94 124 Q100 130 106 124" {...line} strokeWidth={3.2} />] };
 }
@@ -258,7 +258,7 @@ export function avatarArt(id: string | null | undefined): React.ReactElement {
       <Circle cx={168} cy={170} r={36} fill="#fff" opacity={0.3} />
       <G transform={`translate(${100 + (art.dx ?? 0)} 106) scale(0.97) translate(-100 -100)`}>
         {art.behind}
-        {bubuBody(COLOR_LAYER, PALETTE, { feet: false, sprout: art.sprout !== false })}
+        {mascotBody(COLOR_LAYER, PALETTE, { feet: false, sprout: art.sprout !== false })}
         {art.face}
         {art.front}
       </G>

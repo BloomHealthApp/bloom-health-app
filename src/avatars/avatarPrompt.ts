@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import type { User } from '@/types/api';
 
-// The "Choose your Bubu" screen is shown once per account on this device: while the user has no avatar and the flag below is unset.
+// The "Choose your Bloom" screen is shown once per account on this device: while the user has no avatar and the flag below is unset.
 // Continue and Skip both set the flag, so it never comes back after a skip (the avatar stays changeable in Settings).
 export const avatarPromptKey = (userId: string) => `bubu.avatarPrompted.${userId}`;
 

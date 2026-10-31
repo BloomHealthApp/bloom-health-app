@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { BubuMascot } from '@/components/BubuMascot';
+import { Mascot } from '@/components/Mascot';
 import { Field } from '@/components/Field';
 import { AppText, Button, ErrorBanner, Screen } from '@/components/ui';
 import { USE_MOCK_API } from '@/config';
@@ -34,7 +34,7 @@ export default function SignInScreen() {
 
   return (
     <Screen>
-      <BubuMascot mood="happy" size={110} />
+      <Mascot mood="happy" size={110} />
       <AppText variant="title">Sign in</AppText>
       <AppText muted>Enter your phone number or email. We will send a 6-digit code to the email on your account.</AppText>
       <Field

@@ -26,7 +26,7 @@ describe('avatar catalog', () => {
     for (const id of AVATAR_IDS) expect(isAvatarId(id)).toBe(true);
     for (const bad of ['bubu-00', 'bubu-10', 'evil', '', null, undefined, 1]) expect(isAvatarId(bad)).toBe(false);
     expect(avatarLabel('bubu-03')).toBe('Candy Stick');
-    expect(avatarLabel('nope')).toBe('Bubu');
+    expect(avatarLabel('nope')).toBe('Bloom');
   });
 });
 

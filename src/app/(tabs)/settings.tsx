@@ -165,7 +165,7 @@ export default function SettingsTab() {
         <Section title="Reminders">
           {reminderStatus?.status === 'denied' ? (
             <View accessibilityRole="alert" style={{ gap: spacing.sm }}>
-              <AppText style={{ color: theme.colors.danger }} variant="bodyStrong">Notifications are turned off for Bubu Bloom.</AppText>
+              <AppText style={{ color: theme.colors.danger }} variant="bodyStrong">Notifications are turned off for Bloom Health.</AppText>
               <AppText variant="caption" muted>Reminders will not appear until you allow notifications.</AppText>
               <Button title={reminderStatus.canAskAgain ? 'Allow notifications' : 'Open system settings'} variant="secondary" onPress={() => (reminderStatus.canAskAgain ? void refreshReminders(true) : void Linking.openSettings())} />
             </View>
@@ -195,7 +195,7 @@ export default function SettingsTab() {
       <Modal visible={pickingAvatar} animationType="slide" transparent onRequestClose={() => setPickingAvatar(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
           <View accessibilityViewIsModal style={{ backgroundColor: theme.colors.bg, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, gap: spacing.md }}>
-            <AppText variant="heading" accessibilityRole="header">Choose your Bubu</AppText>
+            <AppText variant="heading" accessibilityRole="header">Choose your Bloom</AppText>
             <AvatarPicker
               value={user?.avatar}
               disabled={savingAvatar}
