@@ -3,12 +3,7 @@ import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { mascotBody, COLOR_LAYER, GOLD, heart, INK, limb, PEACH, sparkle, type MascotPalette } from '@/components/mascotArt';
 import { isAvatarId, type AvatarId } from './avatarCatalog';
 
-/**
- * The 9 cotton-candy Bloom avatars. Same original bunny-bear as the mascot (shared silhouette from mascotArt.tsx), each with its own
- * accessory, on a soft round pastel background. 200x200 viewBox; the background fills the square and the host crops it to a circle.
- * The palette is fixed (not theme-dependent) so avatars look the same everywhere. Only Circle/Ellipse/G/Path/Rect/Line are used,
- * so these trees can also be serialised to SVG strings (see widgets/svg.ts).
- */
+/** The 9 Bloom avatars in a 200x200 viewBox. Only Circle/Ellipse/G/Path/Rect/Line are used, so they can be serialised to SVG. */
 export const PINK = '#F8D7E8';
 export const PINK_DEEP = '#D65B98';
 export const BLUE = '#CFE8F7';

@@ -1,9 +1,4 @@
-// Pure derivation of today's score + streaks from cached entities. Shared by the Home screen hook
-// (features/derived.ts) and the home-screen widget snapshot so scoring rules live in one place (scoring.ts).
-//
-// Owner: everything is computed locally from synced logs (+ the owner's own period days as `neutralDates`).
-// Viewer: never receives period data, so streaks and per-day success/rest flags come from the server's
-// GET /stats/summary (`serverSummary`, cached for offline); the local scoring only fills in the habit counts.
+// Pure derivation of today's score and streaks from cached entities.
 import { addDays } from './dates';
 import { computeStreaks, effectiveRestDays, scoreDay, scoreRange, type DayContext, type DayScore, type HabitRule, type LogLike, type RestDayMode } from './scoring';
 

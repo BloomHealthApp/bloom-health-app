@@ -1,10 +1,4 @@
-// In-memory implementation of docs/api-contract.md used when EXPO_PUBLIC_USE_MOCK_API=true.
-// Exposes a fetch-compatible function so the real ApiClient (refresh-on-401, zod parsing) is exercised too.
-// Demo accounts: anu@example.com / +919876543210 (owner), aman@example.com / +919876543211 (viewer). OTP is always 123456.
-// Users get an `ownerAvatar` on every response (the space owner's avatar); avatars are validated against the allowlist.
-// Gender + private period tracker: periods are owner-only (viewers get no period rows in /sync/pull, 403 on /periods) while
-// /stats/summary counts the owner's period days as neutral days for everyone (days[].restDay never says why).
-// Sign-up creates a new owner with their own empty space (default habits/settings, no history).
+// In-memory implementation of docs/api-contract.md, used when EXPO_PUBLIC_USE_MOCK_API=true.
 import { DEFAULT_HABIT_DEFS, defaultSettings } from '@/lib/defaults';
 import { addDays, localDateInTz, weekdayOf } from '@/lib/dates';
 import { periodNeutralDates } from '@/lib/cycle';
@@ -200,7 +194,6 @@ export function resetMockServer() {
   db = new MockDb();
 }
 
-// ---------------- helpers ----------------
 function json(status: number, body: unknown, headers: Record<string, string> = {}): Response {
   return new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 }
@@ -359,7 +352,6 @@ function inRange(date: string, from: string | null, to: string | null) {
 }
 
 function route(method: string, path: string, query: URLSearchParams, body: Record<string, unknown>, req: { headers: Headers }): Response {
-  // ---- public ----
   if (method === 'GET' && path === '/health') return json(200, { status: 'ok', time: new Date().toISOString(), version: 'mock' });
   if (method === 'POST' && path === '/auth/signup/request') {
     const bad = Object.keys(body).filter((k) => !['name', 'phone', 'email', 'avatar', 'gender'].includes(k));
@@ -422,7 +414,6 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
     return json(204, null);
   }
 
-  // ---- authenticated ----
   const u = authUser(req);
   if (u instanceof Response) return u;
   const user = u;
@@ -544,7 +535,6 @@ function periodsRoute(method: string, path: string, body: Record<string, unknown
   return err(404, 'not_found', `no route ${method} ${path}`);
 }
 
-/** fetch-compatible entry point. */
 export async function mockFetch(url: string, init: RequestInit = {}): Promise<Response> {
   await new Promise((r) => setTimeout(r, 120)); // feel like a network
   const u = new URL(url);
@@ -562,5 +552,4 @@ export async function mockFetch(url: string, init: RequestInit = {}): Promise<Re
   return route(method, path, u.searchParams, body, { headers });
 }
 
-// Exported for tests.
 export const __test = { weekdayOf };

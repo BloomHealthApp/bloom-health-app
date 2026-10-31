@@ -40,8 +40,6 @@ const ramp = (tint: string, strong: string): ThemeColors['heat'] => [
   strong,
 ];
 
-// Spec palettes: Cotton Candy #F8D7E8 / #D65B98 / #FFF9F5, Lavender Dream #E9E2FF / #B9A7E8 / #51436B,
-// Mint Peach #DDF3E7 / #FFE3D6 / #6E9D88. Remaining roles (text, border, status) are derived for contrast.
 export const cottonCandy: Theme = {
   name: 'cottonCandy',
   label: 'Cotton Candy',

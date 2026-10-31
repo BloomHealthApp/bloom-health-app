@@ -1,8 +1,4 @@
-// Pure cycle math for the private period tracker. No React / RN imports; estimates only, never medical advice.
-//  - a "cycle" is one start-to-start gap between two consecutive logged periods;
-//  - the average cycle length uses up to the last 6 gaps; the average period length uses the last 6 finished periods;
-//  - the next-start estimate needs >= 2 cycles (3 logged periods), otherwise there is no estimate;
-//  - the predicted window is the estimate +/- PREDICTION_WINDOW_DAYS.
+// Pure cycle math for the private period tracker. Estimates only, never medical advice.
 import { addDays, dateRange, diffDays } from './dates';
 
 export const MAX_CYCLES_AVERAGED = 6;
