@@ -73,7 +73,8 @@ export function ReminderRow(props: {
           style={{ flexDirection: 'row', gap: spacing.xs, opacity: reminder.enabled ? 1 : 0.55 }}
         >
           {MODES.map((m) => {
-            const on = m.mode === mode;
+            // A reminder saved in the older plain `alarm` mode shows under the alarm icon and still rings as saved.
+            const on = m.mode === mode || (mode === 'alarm' && m.mode === 'loudAlarm');
             return (
               <Pressable
                 key={m.mode}
