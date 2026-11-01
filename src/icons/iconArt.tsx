@@ -13,16 +13,23 @@ export function isIconName(v: unknown): v is IconName {
   return typeof v === 'string' && (ICON_NAMES as readonly string[]).includes(v);
 }
 
-const SW = 2;
-const BORDER = 1.6;
+const SW = 1.8;
+const BORDER = 1.5;
 const WHITE = '#FFFFFF';
-const STEEL = '#AEB9C6';
-const CHARCOAL = '#3B4652';
-const SKY = '#8CC6EA';
-const LEAF = '#7CC48F';
-const FLAME = '#F2803A';
-const RED = '#D9534F';
-const WOOD = '#B9835A';
+const STEEL = '#C3CEDA';
+const STEEL_DARK = '#94A3B3';
+const CHARCOAL = '#465563';
+const SKY = '#9AD4F2';
+const SKY_DARK = '#6DB4DE';
+const LEAF = '#8FD3A1';
+const LEAF_DARK = '#5FB07A';
+const FLAME = '#F78F4B';
+const RED = '#EC6A67';
+const RED_DARK = '#C94F52';
+const WOOD = '#C99A73';
+const WOOD_DARK = '#A97B58';
+const CREAM_SHADE = '#EBDCC6';
+const GOLD_SHADE = '#E5A93B';
 const round = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
 
 interface Draw {
@@ -34,190 +41,251 @@ interface Draw {
   line: (d: string, color?: string, width?: number) => void;
   /** a thick outlined stroke, for arms, legs and handles */
   limb: (d: string, color: string, width?: number) => void;
+  /** flat shading inside a shape, with no outline or border */
+  tone: (d: string, color: string, opacity?: number) => void;
+  /** a white highlight stroke inside a shape */
+  glint: (d: string, width?: number) => void;
+  /** a small solid dot with no outline or border */
+  dot: (cx: number, cy: number, r: number, color?: string) => void;
 }
+
+/** Bloom's round head, used by the activity icons. */
+const bloomHead = (d: Draw, cx: number, cy: number) => {
+  d.circle(cx - 5, cy - 5.5, 2.6, CREAM);
+  d.circle(cx + 5, cy - 5.5, 2.6, CREAM);
+  d.circle(cx, cy, 7, CREAM);
+  d.dot(cx - 2.6, cy - 0.4, 1, INK);
+  d.dot(cx + 2.6, cy - 0.4, 1, INK);
+  d.dot(cx - 4.4, cy + 2, 1.3, '#F2B8A6');
+  d.dot(cx + 4.4, cy + 2, 1.3, '#F2B8A6');
+};
 
 const ART: Record<IconName, (d: Draw, accent: string) => void> = {
   home: (d, a) => {
-    d.rect(12, 22, 24, 18, 3, CREAM);
-    d.rect(21, 29, 7, 11, 1.5, WOOD);
-    d.path('M7 24 L24 8 L41 24 Z', a);
+    d.rect(11.5, 21, 25, 20, 3.5, CREAM);
+    d.tone('M31 22 H35.6 V37 A3 3 0 0 1 33 40 H31 Z', CREAM_SHADE);
+    d.rect(20, 28, 8, 12.5, 2, WOOD);
+    d.dot(25.8, 34.5, 0.9, INK);
+    d.path('M6.5 23.5 L21.8 9.2 A3.2 3.2 0 0 1 26.2 9.2 L41.5 23.5 A1.7 1.7 0 0 1 40.3 26.4 H7.7 A1.7 1.7 0 0 1 6.5 23.5 Z', a);
+    d.glint('M13.5 22 L22.5 13.6', 1.8);
   },
   chart: (d, a) => {
-    d.rect(8, 8, 32, 32, 5, WHITE);
-    d.rect(14, 26, 5, 9, 1, LEAF);
-    d.rect(21.5, 20, 5, 15, 1, a);
-    d.rect(29, 14, 5, 21, 1, GOLD);
+    d.rect(7, 7, 34, 34, 7, WHITE);
+    d.rect(13, 26, 6, 10, 2, LEAF);
+    d.rect(21, 19, 6, 17, 2, a);
+    d.rect(29, 12, 6, 24, 2, GOLD);
   },
   calendar: (d, a) => {
-    d.rect(8, 11, 32, 29, 5, CREAM);
-    d.path('M8 21 V16 A5 5 0 0 1 13 11 H35 A5 5 0 0 1 40 16 V21 Z', a);
-    d.line('M16 7 V14 M32 7 V14');
-    d.circle(17, 28, 2, GOLD);
-    d.circle(24, 28, 2, LEAF);
-    d.circle(31, 28, 2, SKY);
-    d.circle(17, 34.5, 2, SKY);
-    d.circle(24, 34.5, 2, GOLD);
+    d.rect(7, 10.5, 34, 30, 6.5, CREAM);
+    d.path('M7 21 V17 A6.5 6.5 0 0 1 13.5 10.5 H34.5 A6.5 6.5 0 0 1 41 17 V21 Z', a);
+    d.limb('M16 7.5 V13.5', STEEL, 2.2);
+    d.limb('M32 7.5 V13.5', STEEL, 2.2);
+    d.dot(16, 27, 2.1, GOLD);
+    d.dot(24, 27, 2.1, RED);
+    d.dot(32, 27, 2.1, SKY_DARK);
+    d.dot(16, 34, 2.1, LEAF_DARK);
+    d.dot(24, 34, 2.1, GOLD);
   },
   gear: (d) => {
-    for (const rot of [0, 45, 90, 135]) d.rect(20.5, 6.5, 7, 35, 2, STEEL, rot);
-    d.circle(24, 24, 12, STEEL);
-    d.circle(24, 24, 5, CREAM);
+    for (const rot of [0, 45, 90, 135]) d.rect(19.5, 5.5, 9, 37, 3, STEEL, rot);
+    d.circle(24, 24, 13, STEEL);
+    d.tone('M24 37 A13 13 0 0 0 37 24 A15 15 0 0 1 24 37 Z', STEEL_DARK, 0.7);
+    d.circle(24, 24, 5.5, CREAM);
   },
   sunrise: (d) => {
-    d.line('M24 7 V11 M10 15 L13 18 M38 15 L35 18');
-    d.path('M12 31 A12 12 0 0 1 36 31 Z', GOLD);
-    d.rect(6, 31, 36, 7, 3.5, SKY);
+    d.line('M24 5.5 V9.5 M9.5 13 L12.5 16 M38.5 13 L35.5 16', GOLD_SHADE, 2.4);
+    d.path('M11 31 A13 13 0 0 1 37 31 Z', GOLD);
+    d.glint('M16 28 A8.5 8.5 0 0 1 21 21', 1.8);
+    d.rect(5.5, 30.5, 37, 9, 4.5, SKY);
+    d.line('M12 35 H22 M28 35 H35', WHITE, 1.8);
   },
   dumbbell: (d) => {
-    d.rect(14, 21, 20, 6, 2, STEEL);
-    d.rect(10, 13, 6, 22, 2, CHARCOAL);
-    d.rect(32, 13, 6, 22, 2, CHARCOAL);
-    d.rect(5, 17, 5, 14, 2, CHARCOAL);
-    d.rect(38, 17, 5, 14, 2, CHARCOAL);
+    d.rect(13, 20.5, 22, 7, 2.5, STEEL);
+    d.rect(9.5, 12, 7.5, 24, 3, CHARCOAL);
+    d.rect(31, 12, 7.5, 24, 3, CHARCOAL);
+    d.rect(4.5, 16.5, 5, 15, 2.5, STEEL_DARK);
+    d.rect(38.5, 16.5, 5, 15, 2.5, STEEL_DARK);
+    d.glint('M12 16 V24', 1.6);
+    d.glint('M33.5 16 V24', 1.6);
   },
   'candy-off': (d, a) => {
-    d.path('M15 24 L6 17 V31 Z', GOLD);
-    d.path('M33 24 L42 17 V31 Z', GOLD);
-    d.circle(24, 24, 10, a);
-    d.limb('M11 37 L37 11', RED, 3);
+    d.path('M15 24 L6 16.5 Q4.5 24 6 31.5 Z', GOLD);
+    d.path('M33 24 L42 16.5 Q43.5 24 42 31.5 Z', GOLD);
+    d.circle(24, 24, 11, a);
+    d.glint('M17.5 22 A7 7 0 0 1 22 17.5', 2);
+    d.limb('M10.5 37.5 L37.5 10.5', RED, 3.2);
   },
   salad: (d) => {
-    d.circle(15, 20, 6, LEAF);
-    d.circle(24, 15, 7, LEAF);
-    d.circle(33, 20, 6, LEAF);
-    d.circle(27, 21, 3, RED);
-    d.path('M7 24 H41 C41 34 33 41 24 41 C15 41 7 34 7 24 Z', CREAM);
+    d.circle(14.5, 20, 6.5, LEAF);
+    d.circle(33.5, 20, 6.5, LEAF_DARK);
+    d.circle(24, 15, 8, LEAF);
+    d.circle(27, 20.5, 3.4, RED);
+    d.circle(18.5, 21, 2.6, GOLD);
+    d.path('M6.5 24 H41.5 C41.5 34.5 33 41.5 24 41.5 C15 41.5 6.5 34.5 6.5 24 Z', CREAM);
+    d.tone('M33 25 H40.3 C39.5 33 32.5 40.3 25 40.3 C30 37 33 31 33 25 Z', CREAM_SHADE);
   },
   utensils: (d) => {
-    d.line('M11 8 V17 M16 8 V17 M21 8 V17');
-    d.path('M11 16 H21 C21 22 19 24 16 24 C13 24 11 22 11 16 Z', STEEL);
-    d.limb('M16 24 V40', STEEL, 3.5);
-    d.path('M31 8 C37 11 37 22 37 25 H31 Z', STEEL);
-    d.limb('M33 25 V40', STEEL, 3.5);
+    d.line('M11 7 V15 M16 7 V15 M21 7 V15', STEEL_DARK, 2);
+    d.path('M9.8 14 H22.2 C22.2 21 20 24.5 16 24.5 C12 24.5 9.8 21 9.8 14 Z', STEEL);
+    d.limb('M16 24.5 V40', STEEL, 3.4);
+    d.path('M31 7 C38 10 38.5 21 38 26 H31 Z', STEEL);
+    d.tone('M34.5 9.6 C37 13 37.3 21 36.9 24.9 H34.5 Z', STEEL_DARK, 0.6);
+    d.limb('M33 26 V40', WOOD, 3.4);
   },
   droplet: (d) => {
-    d.path('M24 6 C24 6 38 21 38 29.5 A14 14 0 0 1 10 29.5 C10 21 24 6 24 6 Z', SKY);
-    d.line('M16 30 A8 8 0 0 0 22 37', WHITE, 2.4);
+    d.path('M24 5.5 C24 5.5 38.5 20.5 38.5 29.5 A14.5 14.5 0 0 1 9.5 29.5 C9.5 20.5 24 5.5 24 5.5 Z', SKY);
+    d.tone('M33 18.5 C35.5 22 37.3 26.5 37.3 29.5 A13.3 13.3 0 0 1 24 42.8 C31 40 35 30 33 18.5 Z', SKY_DARK, 0.75);
+    d.glint('M15.5 30 A8.5 8.5 0 0 0 21 37.2', 2.4);
+    d.dot(17.5, 24.5, 1.3, WHITE);
   },
   footprints: (d, a) => {
-    d.path('M7 25 C12 25 18 21 21 13 L30 17 C31 23 36 26 41 28 C42 31 41 36 41 36 H7 Z', a);
-    d.line('M22 20 L26 22 M20 24 L24 26', WHITE, 1.8);
-    d.rect(6, 34, 36, 6, 2.5, WHITE);
+    d.path('M6.5 24.5 C12 24.5 17.5 20.5 20.5 12.5 A2 2 0 0 1 23 11.5 L29.5 14.5 A2 2 0 0 1 30.6 16.2 C31 22 36 25 40.5 27 A3 3 0 0 1 42 29.5 V35 H6.5 Z', a);
+    d.line('M21.5 19 L26 21 M19.5 23 L24 25', WHITE, 2);
+    d.rect(5.5, 33.5, 37.5, 6.5, 3, WHITE);
+    d.line('M11 36.8 H14 M19 36.8 H22 M27 36.8 H30', STEEL_DARK, 1.6);
   },
   moon: (d) => {
-    d.path('M31 7 A18 18 0 1 0 41 31 A15 15 0 0 1 31 7 Z', GOLD);
-    d.path(sparkle(36, 15, 4), WHITE);
+    d.path('M30 6.5 A18.5 18.5 0 1 0 41.5 31 A15.5 15.5 0 0 1 30 6.5 Z', GOLD);
+    d.tone('M13 34 A16 16 0 0 0 39 32.8 C30 37 20 37 13 34 Z', GOLD_SHADE, 0.75);
+    d.dot(13.5, 22, 1.8, GOLD_SHADE);
+    d.dot(19, 29, 1.3, GOLD_SHADE);
+    d.path(sparkle(36.5, 14, 4.5), WHITE);
   },
   sparkles: (d) => {
-    d.path(sparkle(21, 26, 15), GOLD);
-    d.path(sparkle(37, 12, 7), WHITE);
+    d.path(sparkle(21, 26.5, 15.5), GOLD);
+    d.path(sparkle(37.5, 11.5, 6.5), WHITE);
+    d.path(sparkle(38, 36.5, 4), GOLD);
   },
   flame: (d) => {
-    d.path('M25 5 C27 13 38 18 38 29 A14 14 0 0 1 10 29 C10 22 15 19 17 13 C20 17 23 15 25 5 Z', FLAME);
-    d.path('M24 23 C25 27 30 29 30 34 A6 6 0 0 1 18 34 C18 30 22 28 24 23 Z', GOLD);
+    d.path('M25 4.5 C27 13 38.5 18 38.5 29 A14.5 14.5 0 0 1 9.5 29 C9.5 22 14.5 19 16.5 12.5 C19.5 16.5 23 15 25 4.5 Z', FLAME);
+    d.path('M24 21.5 C25.5 26.5 31 28.5 31 34 A7 7 0 0 1 17 34 C17 29.5 22 27.5 24 21.5 Z', GOLD);
+    d.dot(23.5, 35.5, 2.4, WHITE);
   },
   lock: (d) => {
-    d.line('M16 22 V15 A8 8 0 0 1 32 15 V22', STEEL, 5);
-    d.line('M16 22 V15 A8 8 0 0 1 32 15 V22', INK, 1);
-    d.rect(10, 21, 28, 20, 4, GOLD);
-    d.circle(24, 29, 2.6, INK);
-    d.line('M24 30 V35');
+    d.limb('M16 22 V15 A8 8 0 0 1 32 15 V22', STEEL, 3.4);
+    d.rect(9.5, 20.5, 29, 21, 5.5, GOLD);
+    d.tone('M31 21.6 H33 A4.4 4.4 0 0 1 37.4 26 V36 A4.4 4.4 0 0 1 33 40.4 H31 Z', GOLD_SHADE, 0.75);
+    d.dot(24, 29, 3, INK);
+    d.line('M24 30 V35.5', INK, 2.6);
   },
   eyes: (d) => {
-    d.ellipse(15, 24, 9, 12, WHITE);
-    d.ellipse(33, 24, 9, 12, WHITE);
-    d.circle(17, 26, 4, INK);
-    d.circle(35, 26, 4, INK);
+    d.ellipse(14.5, 24, 9.5, 13, WHITE);
+    d.ellipse(33.5, 24, 9.5, 13, WHITE);
+    d.dot(16.5, 26, 4.8, CHARCOAL);
+    d.dot(35.5, 26, 4.8, CHARCOAL);
+    d.dot(18, 24, 1.6, WHITE);
+    d.dot(37, 24, 1.6, WHITE);
   },
   run: (d, a) => {
-    d.limb('M22 28 L14 34 L8 32', CHARCOAL);
-    d.limb('M22 28 L30 34 L28 42', CHARCOAL);
-    d.limb('M24 18 L34 22 L39 18', CREAM);
-    d.limb('M24 18 L14 20 L11 26', CREAM);
-    d.limb('M25 16 L22 28', a, 6);
-    d.circle(29, 10, 5.5, CREAM);
+    d.limb('M21 31 L13 34 L7.5 31', CREAM);
+    d.limb('M23 31 L31 35 L29 42', CREAM);
+    d.limb('M25 22 L34 25 L39.5 21', CREAM);
+    d.ellipse(23.5, 26, 6.5, 8, a, 15);
+    d.limb('M22 22 L14 22 L10.5 27', CREAM);
+    bloomHead(d, 27, 11.5);
   },
   walk: (d, a) => {
-    d.limb('M24 28 L19 42', CHARCOAL);
-    d.limb('M24 28 L30 42', CHARCOAL);
-    d.limb('M24 18 L17 26', CREAM);
-    d.limb('M24 18 L31 26', CREAM);
-    d.limb('M24 17 V28', a, 6);
-    d.circle(24, 9.5, 5.5, CREAM);
+    d.limb('M20.5 32 L18 42', CREAM);
+    d.limb('M27.5 32 L31 42', CREAM);
+    d.limb('M18.5 23 L13.5 30', CREAM);
+    d.limb('M29.5 23 L34.5 30', CREAM);
+    d.ellipse(24, 27, 7, 8.5, a);
+    bloomHead(d, 24, 12);
   },
   yoga: (d, a) => {
-    d.limb('M10 38 Q24 44 38 38', CHARCOAL);
-    d.limb('M24 19 L12 31', CREAM);
-    d.limb('M24 19 L36 31', CREAM);
-    d.limb('M24 18 V32', a, 7);
-    d.circle(24, 10, 5.5, CREAM);
+    d.ellipse(24, 39.5, 18, 3.6, STEEL);
+    d.limb('M19 34 L9 37 M29 34 L39 37', CREAM);
+    d.limb('M19 24 L10 32', CREAM);
+    d.limb('M29 24 L38 32', CREAM);
+    d.ellipse(24, 29, 7.5, 8.5, a);
+    bloomHead(d, 24, 13.5);
   },
   badminton: (d, a) => {
-    d.limb('M20 28 L9 41', WOOD, 3);
-    d.ellipse(28, 18, 11, 13, WHITE, 40);
-    d.line('M22 11 L35 25 M18 16 L31 30 M31 9 L20 26 M36 14 L25 31', a, 1.3);
-    d.circle(9, 12, 3, GOLD);
+    d.limb('M20 28.5 L9 41', WOOD, 3.2);
+    d.ellipse(28.5, 17.5, 11.5, 13.5, WHITE, 40);
+    d.line('M21.5 11 L35 25 M18 16.5 L31 30.5 M30 7.5 L20 26 M36.5 12.5 L25.5 31', a, 1.2);
+    d.ellipse(9.5, 11, 3.6, 3.6, GOLD);
+    d.dot(8.5, 10, 1, WHITE);
   },
   book: (d, a) => {
-    d.path('M24 13 C19 9 12 9 7 11 V37 C12 35 19 35 24 39 Z', a);
-    d.path('M24 13 C29 9 36 9 41 11 V37 C36 35 29 35 24 39 Z', WHITE);
-    d.line('M29 18 H36 M29 24 H36', INK, 1.6);
+    d.path('M24 12.5 C19 8.5 12 8 6.5 10 A1.5 1.5 0 0 0 5.5 11.4 V36.5 A1.5 1.5 0 0 0 7.5 38 C12.5 36 19 36 24 40 Z', a);
+    d.path('M24 12.5 C29 8.5 36 8 41.5 10 A1.5 1.5 0 0 1 42.5 11.4 V36.5 A1.5 1.5 0 0 1 40.5 38 C35.5 36 29 36 24 40 Z', WHITE);
+    d.line('M29 18 C32 16.8 34.5 16.5 37.5 17 M29 24 C32 22.8 34.5 22.5 37.5 23 M29 30 C32 28.8 34.5 28.5 37.5 29', STEEL_DARK, 1.7);
+    d.glint('M10 15 C13 14 15.5 14 18 15', 1.8);
   },
-  heart: (d, a) => {
-    d.path(heart(24, 25, 15), a);
+  heart: (d) => {
+    d.path(heart(24, 25, 16), RED);
+    d.glint('M12.5 18.5 C13.5 15.5 16 14 18.5 14.5', 2.4);
   },
   apple: (d) => {
-    d.line('M24 16 C24 11 26 8 29 7');
-    d.ellipse(32, 11, 5, 2.8, LEAF, -25);
-    d.path('M24 17 C30 12 41 15 40 27 C39 36 32 42 28 41 C26 40.5 22 40.5 20 41 C16 42 9 36 8 27 C7 15 18 12 24 17 Z', RED);
+    d.limb('M24 16 C24 11.5 25.5 9 28 7.5', WOOD_DARK, 1.8);
+    d.ellipse(33, 10.5, 5.5, 3, LEAF, -25);
+    d.path('M24 16.5 C30 11 42 14.5 40.5 27 C39.5 36.5 32.5 43 28 41.5 C26 41 22 41 20 41.5 C15.5 43 8.5 36.5 7.5 27 C6 14.5 18 11 24 16.5 Z', RED);
+    d.tone('M34 16.7 C38 18.5 40 22 39.3 27 C38.3 35.5 32 41.5 28.2 40.3 C32.5 36.5 36 26 34 16.7 Z', RED_DARK, 0.6);
+    d.glint('M13 23 C13.5 20.5 15.5 19 17.5 18.8', 2.2);
   },
   coffee: (d, a) => {
-    d.line('M17 6 Q20 10 17 14 M26 6 Q29 10 26 14');
-    d.limb('M35 24 H38 A4 4 0 0 1 38 33 H35', a, 2.8);
-    d.path('M9 18 H36 V33 A7 7 0 0 1 29 40 H16 A7 7 0 0 1 9 33 Z', a);
+    d.line('M16.5 5.5 Q20 9.5 16.5 13.5 M26 5.5 Q29.5 9.5 26 13.5', STEEL_DARK, 2);
+    d.limb('M35 23.5 H38 A4.5 4.5 0 0 1 38 32.5 H34.5', a, 2.8);
+    d.path('M8.5 17.5 H36.5 V33.5 A7.5 7.5 0 0 1 29 41 H16 A7.5 7.5 0 0 1 8.5 33.5 Z', a);
+    d.glint('M13 22 V32', 2.2);
   },
   bed: (d, a) => {
-    d.rect(6, 12, 5, 28, 2, WOOD);
-    d.rect(37, 22, 5, 18, 2, WOOD);
-    d.rect(9, 27, 31, 8, 2, CREAM);
-    d.rect(12, 21, 11, 7, 3, WHITE);
-    d.path('M23 23 H36 A3 3 0 0 1 39 26 V30 H23 Z', a);
+    d.rect(5.5, 11, 6, 30, 2.5, WOOD);
+    d.rect(36.5, 21, 6, 20, 2.5, WOOD);
+    d.rect(9, 27, 30, 9, 2.5, CREAM);
+    d.rect(12, 19.5, 11.5, 8, 3.5, WHITE);
+    d.path('M23.5 22 H35 A4 4 0 0 1 39 26 V31 H23.5 Z', a);
+    d.glint('M28 25.5 H34', 1.6);
   },
   pencil: (d, a) => {
-    d.path('M31 8 L40 17 L18 39 L8 40 L9 30 Z', a);
-    d.path('M9 30 L18 39 L8 40 Z', CREAM);
-    d.path('M31 8 L40 17 L36 21 L27 12 Z', RED);
+    d.path('M31 8 A2.8 2.8 0 0 1 35 8 L40 13 A2.8 2.8 0 0 1 40 17 L18 39 L8 40.5 L9 30 Z', a);
+    d.path('M9 30 L18 39 L8 40.5 Z', CREAM);
+    d.dot(9.6, 38.8, 1.4, INK);
+    d.path('M31 8 A2.8 2.8 0 0 1 35 8 L40 13 A2.8 2.8 0 0 1 40 17 L36.5 20.5 L27.5 11.5 Z', RED);
+    d.glint('M14 28.5 L27 15.5', 1.8);
   },
   bike: (d, a) => {
-    d.circle(12, 31, 8, WHITE);
-    d.circle(36, 31, 8, WHITE);
-    d.limb('M12 31 L20 18 H32 L36 31 M20 18 L26 31 L32 18 M26 31 H12', a, 2.2);
-    d.limb('M18 14 H23', CHARCOAL, 2.6);
-    d.limb('M32 18 L31 12 H36', CHARCOAL, 2.2);
+    d.circle(12, 31, 8.5, WHITE);
+    d.circle(36, 31, 8.5, WHITE);
+    d.dot(12, 31, 1.6, CHARCOAL);
+    d.dot(36, 31, 1.6, CHARCOAL);
+    d.limb('M12 31 L20 18 H32 L36 31 M20 18 L26 31 L32 18 M26 31 H12', a, 2);
+    d.limb('M17.5 14 H23', CHARCOAL, 2.6);
+    d.limb('M32 18 L31 11.5 H36', CHARCOAL, 2.2);
   },
   leaf: (d) => {
-    d.path('M9 39 C5 20 20 7 41 7 C42 28 29 43 9 39 Z', LEAF);
-    d.line('M9 39 C16 30 24 22 32 16', INK, 1.6);
+    d.path('M8.5 39.5 C4.5 20 20 6.5 41.5 6.5 C42.5 28 29 43.5 8.5 39.5 Z', LEAF);
+    d.tone('M12 38.5 C24 32 33 22 39.5 9 C39.5 26 28 41 12 38.5 Z', LEAF_DARK, 0.6);
+    d.line('M8.5 39.5 C16 30 24 22 32 16 M21 26.5 V18.5 M26 22.5 H33', INK, 1.5);
   },
   sun: (d) => {
-    d.line('M24 5 V10 M24 38 V43 M5 24 H10 M38 24 H43 M10.5 10.5 L14 14 M34 34 L37.5 37.5 M37.5 10.5 L34 14 M14 34 L10.5 37.5');
-    d.circle(24, 24, 11, GOLD);
+    d.line('M24 4.5 V9.5 M24 38.5 V43.5 M4.5 24 H9.5 M38.5 24 H43.5 M10.2 10.2 L13.7 13.7 M34.3 34.3 L37.8 37.8 M37.8 10.2 L34.3 13.7 M13.7 34.3 L10.2 37.8', GOLD_SHADE, 2.8);
+    d.circle(24, 24, 11.5, GOLD);
+    d.glint('M17.5 22.5 A7 7 0 0 1 22 17.5', 2.2);
   },
   pill: (d, a) => {
-    d.rect(7, 17, 34, 14, 7, WHITE, -35);
-    d.path('M24 24 L18 15.4 L12.7 19.1 C8.8 21.8 7.8 27.2 10.6 31.1 C13.3 35 18.7 36 22.6 33.2 L29.7 28.3 Z', a);
+    d.rect(6.5, 16, 35, 16, 8, WHITE, -35);
+    d.path('M24 24 L18.1 15.6 L12.3 19.7 A8 8 0 0 0 21.5 32.8 L29.9 26.9 L24 24 Z', a);
+    d.glint('M12.5 24.5 L17.5 21', 2);
   },
   music: (d, a) => {
-    d.path('M19 13 L39 8 V15 L19 20 Z', a);
-    d.line('M19 14 V34 M39 9 V30');
-    d.ellipse(14, 35, 6, 4.5, a);
-    d.ellipse(34, 31, 6, 4.5, a);
+    d.path('M18.5 12.5 L39.5 7.5 V15 L18.5 20 Z', a);
+    d.limb('M18.5 14 V34', CHARCOAL, 1.8);
+    d.limb('M39.5 9 V30', CHARCOAL, 1.8);
+    d.ellipse(13.5, 35, 6.5, 5, a, -12);
+    d.ellipse(34.5, 31, 6.5, 5, a, -12);
+    d.glint('M10.5 34 L13.5 32.8', 1.5);
+    d.glint('M31.5 30 L34.5 28.8', 1.5);
   },
   smile: (d) => {
-    d.circle(24, 24, 17, GOLD);
-    d.circle(18, 20, 2.3, INK);
-    d.circle(30, 20, 2.3, INK);
-    d.line('M15 28 Q24 37 33 28');
+    d.circle(24, 24, 17.5, GOLD);
+    d.tone('M36 15 A15.5 15.5 0 0 1 24 40.3 C32 38 37.5 26 36 15 Z', GOLD_SHADE, 0.6);
+    d.dot(17.5, 20, 2.4, INK);
+    d.dot(30.5, 20, 2.4, INK);
+    d.dot(13.5, 27, 2.6, '#F2A08E');
+    d.dot(34.5, 27, 2.6, '#F2A08E');
+    d.line('M17 28 Q24 36 31 28', INK, 2);
   },
 };
 
@@ -227,6 +295,9 @@ function render(name: IconName, accent: string, halo: boolean): React.ReactNode[
   const key = () => `${halo ? 'h' : 'c'}${k++}`;
   const filled = (fill: string) => (halo ? { fill: WHITE, stroke: WHITE, strokeWidth: SW + 2 * BORDER, ...round } : { fill, stroke: INK, strokeWidth: SW, ...round });
   const stroke = (color: string, width: number) => ({ fill: 'none', stroke: halo ? WHITE : color, strokeWidth: halo ? width + 2 * BORDER : width, ...round });
+  const colorOnly = (node: () => React.ReactNode) => {
+    if (!halo) out.push(node());
+  };
   const draw: Draw = {
     path: (d, fill) => out.push(<Path key={key()} d={d} {...filled(fill)} />),
     circle: (cx, cy, r, fill) => out.push(<Circle key={key()} cx={cx} cy={cy} r={r} {...filled(fill)} />),
@@ -237,6 +308,9 @@ function render(name: IconName, accent: string, halo: boolean): React.ReactNode[
       out.push(<Path key={key()} d={d} {...stroke(INK, width + 2 * SW)} />);
       out.push(<Path key={key()} d={d} {...stroke(color, width)} />);
     },
+    tone: (d, color, opacity = 1) => colorOnly(() => <Path key={key()} d={d} fill={color} opacity={opacity} />),
+    glint: (d, width = 2) => colorOnly(() => <Path key={key()} d={d} fill="none" stroke={WHITE} strokeWidth={width} opacity={0.8} {...round} />),
+    dot: (cx, cy, r, color = INK) => colorOnly(() => <Circle key={key()} cx={cx} cy={cy} r={r} fill={color} />),
   };
   ART[name](draw, accent);
   return out;
