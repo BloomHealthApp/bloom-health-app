@@ -3,10 +3,13 @@ import type { NotifApi, OneOffReminder, PlannedReminder } from './scheduler';
 
 type NotificationsModule = typeof import('expo-notifications');
 
-const CHANNEL_ID = 'reminders';
-// Android freezes a channel's sound and importance once created, so alarms need their own channel.
+// Android freezes a channel's sound and importance once created, so a new sound needs a new channel ID.
+const CHANNEL_ID = 'reminders_sound';
+const OLD_CHANNEL_ID = 'reminders';
+const NOTIFICATION_SOUND = 'notification.wav';
 const ALARM_CHANNEL_ID = 'alarms';
-const ALARM_SOUND = 'alarm.wav';
+// iOS plays its default sound instead of any notification sound over 30 seconds.
+const ALARM_SOUND = Platform.OS === 'ios' ? 'alarm_ios.wav' : 'alarm.wav';
 
 let cached: NotificationsModule | null | undefined;
 
@@ -31,8 +34,14 @@ export function configureNotifications() {
   const N = notifications();
   if (!N) return;
   N.setNotificationHandler({
-    handleNotification: async (n) => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: n.request.content.data?.mode === 'alarm', shouldSetBadge: false }),
+    handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
   });
+}
+
+async function ensureReminderChannel(N: NotificationsModule) {
+  if (Platform.OS !== 'android') return;
+  await N.setNotificationChannelAsync(CHANNEL_ID, { name: 'Reminders', importance: N.AndroidImportance.DEFAULT, sound: NOTIFICATION_SOUND });
+  await N.deleteNotificationChannelAsync(OLD_CHANNEL_ID);
 }
 
 async function ensureAlarmChannel(N: NotificationsModule) {
@@ -57,12 +66,7 @@ export const expoNotifApi: NotifApi = {
   async requestPermissions() {
     const N = notifications();
     if (!N) return { granted: false };
-    if (Platform.OS === 'android') {
-      await N.setNotificationChannelAsync(CHANNEL_ID, {
-        name: 'Reminders',
-        importance: N.AndroidImportance.DEFAULT,
-      });
-    }
+    await ensureReminderChannel(N);
     const p = await N.requestPermissionsAsync();
     return { granted: p.granted };
   },
@@ -76,12 +80,10 @@ export const expoNotifApi: NotifApi = {
     if (!N) return;
     const alarm = p.mode === 'alarm';
     if (alarm) await ensureAlarmChannel(N);
-    else if (Platform.OS === 'android') {
-      await N.setNotificationChannelAsync(CHANNEL_ID, { name: 'Reminders', importance: N.AndroidImportance.DEFAULT });
-    }
+    else await ensureReminderChannel(N);
     await N.scheduleNotificationAsync({
       identifier: p.identifier,
-      content: alarm ? { title: p.title, body: p.body, sound: ALARM_SOUND, data: { mode: 'alarm' } } : { title: p.title, body: p.body },
+      content: alarm ? { title: p.title, body: p.body, sound: ALARM_SOUND, data: { mode: 'alarm' } } : { title: p.title, body: p.body, sound: NOTIFICATION_SOUND },
       trigger: {
         type: N.SchedulableTriggerInputTypes.DAILY,
         hour: p.hour,
@@ -93,12 +95,10 @@ export const expoNotifApi: NotifApi = {
   async scheduleAt(p: OneOffReminder) {
     const N = notifications();
     if (!N) return;
-    if (Platform.OS === 'android') {
-      await N.setNotificationChannelAsync(CHANNEL_ID, { name: 'Reminders', importance: N.AndroidImportance.DEFAULT });
-    }
+    await ensureReminderChannel(N);
     await N.scheduleNotificationAsync({
       identifier: p.identifier,
-      content: { title: p.title, body: p.body },
+      content: { title: p.title, body: p.body, sound: NOTIFICATION_SOUND },
       trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: p.date, channelId: CHANNEL_ID },
     });
   },

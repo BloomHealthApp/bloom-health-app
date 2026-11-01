@@ -29,3 +29,6 @@ Snapshot states: `ready`, `noHabits`, `signedOut`, `unopened`.
 
 ## Related
 `README.md` (Android home-screen widget), `../components/context.md` (Mascot)
+
+## Android release builds
+R8 is off (`enableMinifyInReleaseBuilds: false` through `expo-build-properties` in `app.json`). `react-native-android-widget` brings in WorkManager 2.8.1, and R8 removed the constructor of `WorkDatabase_Impl`, which WorkManager creates by reflection. The app then crashed at launch, before any JS ran, and only in release builds. Before turning R8 back on, add keep rules and test a release build on a device.

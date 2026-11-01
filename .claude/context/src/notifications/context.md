@@ -12,7 +12,7 @@ Each daily reminder has a mode: `notification` (default), `alarm` (bundled tone,
 - Loud alarm falls back to `alarm` when it's unavailable, not permitted, or native scheduling throws. `SyncResult.loudAlarmFallback` says why, and Settings shows it. Denied notification permission cancels loud alarms too.
 - `askAlarmPermission` is only for a user's tap on Loud alarm or Allow alarms, because on Android it opens a system settings screen.
 - Volume only reaches Android loud alarms, because the app controls that stream. Alarm-mode tones follow the phone's notification volume and AlarmKit has no volume API, so don't offer a slider for them. Volume is in the plan signature only for loud alarms.
-- Android channel sound and importance are frozen once created, so changing the `alarms` channel needs a new channel ID. It deliberately doesn't use the ALARM audio usage, which would ring through silent mode.
+- Android channel sound and importance are frozen once created, so changing a channel's sound needs a new channel ID. It deliberately doesn't use the ALARM audio usage, which would ring through silent mode.
 - The period reminder has its own identifier outside `ID_PREFIX`, so `syncReminders` never touches it. Its text stays generic.
 
 ## Why
@@ -20,3 +20,9 @@ Each daily reminder has a mode: `notification` (default), `alarm` (bundled tone,
 
 ## Related
 `_shared/privacy-invariants.md`
+
+## Notification sound
+`assets/sounds/notification.wav` (about 2 seconds) plays for every reminder in `notification` mode and for the period reminder, including while the app is open. Android uses the `reminders_sound` channel, which replaced the silent `reminders` channel. Renaming the signature keys makes existing installs reschedule once, because reminders already scheduled stay on the channel they were created with.
+
+## Alarm tone
+`assets/sounds/alarm.wav` plays the tone twice (about 39 seconds). Android alarm notifications, Loud alarm on Android and the Settings preview all use it. `alarm_ios.wav` is a single play (about 19.5 seconds) for iOS notifications, because iOS plays its default sound instead of any notification sound over 30 seconds. Keep both as WAV, because iOS notification sounds don't support MP3. Keep the name `alarm.wav`: Android channels store the sound by name, so this also updates the frozen `alarms` channel on existing installs. A native rebuild is needed.
