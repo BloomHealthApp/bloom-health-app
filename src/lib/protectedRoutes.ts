@@ -16,6 +16,7 @@ export const SIGNED_IN_ROUTES = [
   'settings/daily-goal',
   'settings/index',
   'settings/reminders',
+  'settings/steps',
   'settings/sync',
   'sync-issues',
   'workout',

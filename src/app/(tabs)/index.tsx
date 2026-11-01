@@ -14,6 +14,7 @@ import { ViewerBanner } from '@/components/ViewerBanner';
 import { WaterTracker } from '@/components/WaterTracker';
 import { AppText, Button, Card, ErrorBanner, Loading, Row, Screen } from '@/components/ui';
 import { useActions } from '@/features/actions';
+import { useAutoSteps } from '@/features/useAutoSteps';
 import { useDerived, useWorkoutsByDate } from '@/features/derived';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
 import { prettyDate } from '@/lib/dates';
@@ -50,6 +51,7 @@ export default function Home() {
 
   const water = d.activeHabits.find((h) => h.id === HABIT_IDS.water);
   const steps = d.activeHabits.find((h) => h.id === HABIT_IDS.steps);
+  const autoSteps = useAutoSteps(steps);
   const rest = d.activeHabits.filter((h) => h.id !== HABIT_IDS.water && h.id !== HABIT_IDS.steps);
   const valueOf = (id: string) => d.logIndex.get(`${id}:${d.today}`)?.value ?? null;
   const msg = dailyMessage(d.today, d.todayScore.completionPercent, d.currentStreak);
@@ -59,7 +61,10 @@ export default function Home() {
   const offlineEmpty = sync.state === 'offline' && d.habits.length === 0;
 
   return (
-    <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
+    <Screen onRefresh={() => {
+      void autoSteps.refresh();
+      void syncNow();
+    }} refreshing={sync.state === 'syncing'}>
       <Row style={{ justifyContent: 'space-between', gap: spacing.md }}>
         <Avatar id={isOwner ? user?.avatar : user?.ownerAvatar} size={40} name={name} />
         <View style={{ flex: 1 }}>
@@ -103,7 +108,7 @@ export default function Home() {
 
 
           {water ? <WaterTracker ml={valueOf(water.id) ?? 0} goal={water.target} readOnly={!isOwner} onAdd={(ml) => run(() => actions.addWater(water, d.today, ml))} /> : null}
-          {steps ? <StepsCard steps={valueOf(steps.id) ?? 0} goal={steps.target} goalMax={steps.targetMax} readOnly={!isOwner} onSave={(n) => run(() => actions.setSteps(steps, d.today, n))} /> : null}
+          {steps ? <StepsCard steps={valueOf(steps.id) ?? 0} goal={steps.target} goalMax={steps.targetMax} readOnly={!isOwner} onSave={(n) => run(() => actions.setSteps(steps, d.today, n))} source={d.logIndex.get(`${steps.id}:${d.today}`)?.source} autoTracking={autoSteps.enabled} onUsePhoneCount={() => run(autoSteps.applyPhoneCount)} /> : null}
 
           <AppText variant="heading" accessibilityRole="header">Today&apos;s habits</AppText>
           <View style={{ gap: spacing.sm }}>

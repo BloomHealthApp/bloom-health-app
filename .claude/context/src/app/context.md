@@ -25,6 +25,7 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 | `settings/appearance.tsx` | signed in | Light, dark and theme |
 | `settings/daily-goal.tsx` | signed in | Goal and rest days; read-only for viewers |
 | `settings/reminders.tsx` | owner | Reminder times and alert types; viewers are redirected |
+| `settings/steps.tsx` | owner | Auto-track steps opt-in; viewers are redirected |
 | `settings/sync.tsx` | signed in | Sync now and sync issues |
 | `choose-avatar.tsx` | signed in | One-time, skippable avatar choice |
 | `day/[date].tsx` | signed in | One day's habits; read-only list |

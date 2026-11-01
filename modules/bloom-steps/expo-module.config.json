@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["BloomStepsModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.bloomsteps.BloomStepsModule"]
+  }
+}

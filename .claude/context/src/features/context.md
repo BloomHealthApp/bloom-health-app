@@ -13,4 +13,6 @@ Hooks and small mounted components joining the store, sync and pure logic.
 | `useAlarmPreview.ts` | Plays the alarm tone for the Settings preview; lazy-loads `expo-audio`, stops after 15 seconds or when backgrounded | |
 | `PeriodReminderSync.tsx` | Keeps that reminder in step with the estimate; renders nothing | |
 | `useActiveWorkout.ts` | Running workout state, persisted in SQLite `meta` | |
+| `autoSteps.ts` | Auto-track opt-in, stored per user on this device, and safe wrappers around `modules/bloom-steps` | |
+| `useAutoSteps.ts` | Fills the Steps habit on Home focus, foreground and pull-to-refresh; rules are in `lib/deviceSteps.ts` | |
 | `useSyncOnFocus.ts` | Sync on focus, with optional polling | |
