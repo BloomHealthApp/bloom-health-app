@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="purple" gradientUnits="userSpaceOnUse" cx="60" cy="60" r="760">
+      <stop offset="0" stop-color="#8A4DF5"/><stop offset="1" stop-color="#8A4DF5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blue" gradientUnits="userSpaceOnUse" cx="980" cy="40" r="800">
+      <stop offset="0" stop-color="#2A7FE6"/><stop offset="1" stop-color="#2A7FE6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pink" gradientUnits="userSpaceOnUse" cx="40" cy="990" r="780">
+      <stop offset="0" stop-color="#EE5FA7"/><stop offset="1" stop-color="#EE5FA7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orange" gradientUnits="userSpaceOnUse" cx="1000" cy="1000" r="760">
+      <stop offset="0" stop-color="#F98A25"/><stop offset="1" stop-color="#F98A25" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="#7A55D8"/>
+  <rect width="1024" height="1024" fill="url(#blue)"/>
+  <rect width="1024" height="1024" fill="url(#purple)"/>
+  <rect width="1024" height="1024" fill="url(#pink)"/>
+  <rect width="1024" height="1024" fill="url(#orange)"/>
+</svg>
