@@ -18,7 +18,11 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 | `(tabs)/progress.tsx` | signed in | Charts |
 | `(tabs)/calendar.tsx` | signed in | Month view; also the private period tracker, for owners with it on |
 | `(tabs)/profile.tsx` | signed in | Your profile and private details; opens Settings from the gear |
-| `settings.tsx` | signed in | Appearance, goals, reminders and account; pushed from Profile |
+| `settings/index.tsx` | signed in | List of settings, opened from Profile's menu icon; sign out |
+| `settings/appearance.tsx` | signed in | Light, dark and theme |
+| `settings/daily-goal.tsx` | signed in | Goal and rest days; read-only for viewers |
+| `settings/reminders.tsx` | owner | Reminder times and alert types; viewers are redirected |
+| `settings/sync.tsx` | signed in | Sync now and sync issues |
 | `choose-avatar.tsx` | signed in | One-time, skippable avatar choice |
 | `day/[date].tsx` | signed in | One day's habits; read-only list |
 | `habit/[id].tsx` | signed in | Log a value; read-only for viewers and future dates |
@@ -38,3 +42,6 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 
 ## System bars
 On tablets (`lib/device.ts`, 600dp or more on the shorter side), `_layout.tsx` hides the status and navigation bars; a swipe from the edge brings them back. Phones keep both. The tab bar is `FloatingTabBar`, which floats over the tab screens with a transparent surround. `(tabs)/_layout.tsx` provides `TabBarSpaceContext`, so `Screen` adds room for it. A tab screen that doesn't use `Screen` must add `tabBarSpace` itself. `expo-navigation-bar` is native, so a new build is needed.
+
+## Transitions
+The root `Stack` uses `slide_from_right`, so every pushed page, including each setting, slides in from the right on iOS and Android. Add settings as a page under `settings/` plus a `SettingsRow` in the list, rather than as a section on the list.

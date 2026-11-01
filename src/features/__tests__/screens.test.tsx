@@ -2,7 +2,9 @@ import { StyleSheet } from 'react-native';
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import ProfileTab from '@/app/(tabs)/profile';
-import SettingsTab from '@/app/settings';
+import DailyGoalScreen from '@/app/settings/daily-goal';
+import SettingsScreen from '@/app/settings';
+import RemindersScreen from '@/app/settings/reminders';
 import { toPublicProfile } from '@/lib/publicProfile';
 import { ReminderRow, showsVolumeSlider } from '@/components/reminders/ReminderRow';
 import SignUpScreen from '@/app/(auth)/signup';
@@ -118,7 +120,7 @@ describe('Profile: public view', () => {
     expect(text(t)).toContain('Display name');
   });
   it('Settings no longer holds profile details', () => {
-    const json = text(render(<SettingsTab />));
+    const json = text(render(<SettingsScreen />));
     expect(json).not.toContain('Display name');
     expect(json).not.toContain('a@b.co');
   });
@@ -180,7 +182,7 @@ describe('Profile: gender and period tracker', () => {
 describe('Settings: Sunday switch', () => {
   it("Sundays don't break my streak: on by default, absent means on, toggling saves sundayRest", async () => {
     mockData.settings = { ...defaultSettings(), sundayRest: undefined };
-    const t = render(<SettingsTab />);
+    const t = render(<DailyGoalScreen />);
     expect(sw(t, "Sundays don't break my streak").props.value).toBe(true);
     await act(async () => { await sw(t, "Sundays don't break my streak").props.onValueChange(false); });
     expect(mockActions.saveSettings).toHaveBeenCalledWith({ sundayRest: false }, mockData.settings);
@@ -189,15 +191,40 @@ describe('Settings: Sunday switch', () => {
   it('viewers cannot change the Sunday switch', () => {
     mockAuth.user = user({ role: 'viewer', gender: 'male' });
     mockAuth.isOwner = false;
-    const t = render(<SettingsTab />);
+    const t = render(<DailyGoalScreen />);
     expect(sw(t, "Sundays don't break my streak").props.disabled).toBe(true);
+  });
+});
+
+describe('Settings list', () => {
+  const rows = (t: renderer.ReactTestRenderer) => t.root.findAll((x) => typeof x.type === 'string' && x.props.accessibilityRole === 'button' && typeof x.props.accessibilityLabel === 'string').map((x) => x.props.accessibilityLabel as string);
+  it('lists each setting and opens its own page', async () => {
+    const t = render(<SettingsScreen />);
+    expect(text(t)).not.toContain('Count a day as successful at');
+    expect(text(t)).not.toContain('Choose your rest days');
+    await press(t, 'Daily goal, 80%');
+    expect(mockPush).toHaveBeenLastCalledWith('/settings/daily-goal');
+    expect(rows(t).some((l) => l.startsWith('Appearance'))).toBe(true);
+    expect(rows(t).some((l) => l.startsWith('Reminders'))).toBe(true);
+  });
+  it('hides Reminders from viewers and keeps them off its page', () => {
+    mockAuth.user = user({ role: 'viewer' });
+    mockAuth.isOwner = false;
+    expect(rows(render(<SettingsScreen />)).some((l) => l.startsWith('Reminders'))).toBe(false);
+    expect(render(<RemindersScreen />).root.findAllByType('Redirect' as never)).toHaveLength(1);
+  });
+  it('asks before signing out', async () => {
+    const t = render(<SettingsScreen />);
+    await press(t, 'Sign out');
+    expect(mockAuth.signOut).not.toHaveBeenCalled();
+    expect(text(t)).toContain('Sign out?');
   });
 });
 
 describe('Settings: daily goal row', () => {
   it('keeps the steppers inside the card by letting the label wrap', () => {
     mockAuth.user = user();
-    const t = render(<SettingsTab />);
+    const t = render(<DailyGoalScreen />);
     const flat = (x: renderer.ReactTestInstance) => StyleSheet.flatten(x.props.style);
     const label = t.root.findAll((x) => typeof x.type === 'string' && x.props.children === 'Count a day as successful at')[0];
     expect(flat(label).flex).toBe(1);
@@ -213,7 +240,7 @@ describe('Settings: reminder alert types', () => {
 
   it('offers owners two alert types per reminder, defaulting to notification', () => {
     mockAuth.user = user();
-    const t = render(<SettingsTab />);
+    const t = render(<RemindersScreen />);
     expect(radios(t)).toHaveLength(10);
     const wake = radios(t).filter((x) => x.props.accessibilityLabel.startsWith('Good morning:'));
     expect(wake.map((x) => x.props.accessibilityLabel)).toEqual(['Good morning: Notification', 'Good morning: Loud alarm']);
@@ -221,7 +248,7 @@ describe('Settings: reminder alert types', () => {
   });
   it('tapping an option shows its preview, and tapping it again hides it', async () => {
     mockAuth.user = user();
-    const t = render(<SettingsTab />);
+    const t = render(<RemindersScreen />);
     const previews = () => t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview');
     expect(previews()).toHaveLength(0);
     await press(t, 'Good morning: Notification');
@@ -232,7 +259,7 @@ describe('Settings: reminder alert types', () => {
   });
   it('choosing another option closes the preview, and tapping it again previews Loud alarm with a play button', async () => {
     mockAuth.user = user();
-    const t = render(<SettingsTab />);
+    const t = render(<RemindersScreen />);
     await press(t, 'Good morning: Notification');
     expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview')).toHaveLength(1);
     await press(t, 'Hydration check: Loud alarm');
@@ -244,7 +271,7 @@ describe('Settings: reminder alert types', () => {
   it('is hidden from viewers', () => {
     mockAuth.user = user({ role: 'viewer' });
     mockAuth.isOwner = false;
-    expect(radios(render(<SettingsTab />))).toHaveLength(0);
+    expect(radios(render(<RemindersScreen />))).toHaveLength(0);
   });
   it('shows the alert options as named icons, after the on/off button', () => {
     const reminder = { key: Object.keys(REMINDER_LABELS)[0], enabled: true, time: '07:00' } as unknown as Reminder;

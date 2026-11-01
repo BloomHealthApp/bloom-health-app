@@ -39,11 +39,10 @@ function Shell() {
     );
   }
   const stack = (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }}>
+    <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: theme.colors.bg } }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="choose-avatar" />
-      <Stack.Screen name="settings" />
     </Stack>
   );
   // Data layer (SQLite + sync engine) only exists for a signed-in user.

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Modal, Switch, View } from 'react-native';
+import { Path, Svg } from 'react-native-svg';
 import { AvatarPicker } from '@/avatars/AvatarPicker';
 import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
 import { Field } from '@/components/Field';
@@ -9,13 +10,20 @@ import { ViewerBanner } from '@/components/ViewerBanner';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { AppText, Button, Card, ErrorBanner, IconButton, PageHeader, Row, Screen } from '@/components/ui';
 import { useDerived } from '@/features/derived';
-import { AppIcon } from '@/icons/AppIcon';
 import { genderPatch, isPeriodTrackerOn, showTrackerSwitch } from '@/lib/profile';
 import { toPublicProfile } from '@/lib/publicProfile';
 import { useAuth } from '@/providers/AuthProvider';
 import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Gender } from '@/types/api';
+
+function MenuIcon({ color }: { color: string }) {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" accessibilityElementsHidden importantForAccessibility="no">
+      <Path d="M4 6.5h16M4 12h16M4 17.5h16" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
+    </Svg>
+  );
+}
 
 export default function ProfileTab() {
   const router = useRouter();
@@ -49,7 +57,7 @@ export default function ProfileTab() {
     <Screen>
       <PageHeader
         title="Profile"
-        right={<IconButton label="Settings" onPress={() => router.push('/settings')}><AppIcon name="gear" size={26} /></IconButton>}
+        right={<IconButton label="Settings" onPress={() => router.push('/settings')}><MenuIcon color={theme.colors.text} /></IconButton>}
       />
       <ViewerBanner />
       {err ? <ErrorBanner message={err} /> : null}
