@@ -4,7 +4,7 @@ import { CREAM, GOLD, heart, INK, sparkle } from '@/components/mascotArt';
 
 /** Bloom's sticker icons in a 48x48 viewBox: mascot-style outlines over a white die-cut border. */
 export const ICON_NAMES = [
-  'home', 'chart', 'calendar', 'gear', 'sunrise', 'dumbbell', 'candy-off', 'salad', 'utensils', 'droplet', 'footprints', 'moon', 'sparkles',
+  'home', 'chart', 'calendar', 'gear', 'sunrise', 'dumbbell', 'candy-off', 'salad', 'utensils', 'droplet', 'footprints', 'moon', 'sparkles', 'bell', 'bell-off', 'volume', 'alarm-clock', 'notification', 'check', 'close',
   'flame', 'lock', 'eyes', 'run', 'walk', 'yoga', 'badminton', 'book', 'heart', 'apple', 'coffee', 'bed', 'pencil', 'bike', 'leaf', 'sun', 'pill', 'music', 'smile',
 ] as const;
 export type IconName = (typeof ICON_NAMES)[number];
@@ -286,6 +286,46 @@ const ART: Record<IconName, (d: Draw, accent: string) => void> = {
     d.dot(13.5, 27, 2.6, '#F2A08E');
     d.dot(34.5, 27, 2.6, '#F2A08E');
     d.line('M17 28 Q24 36 31 28', INK, 2);
+  },
+  bell: (d, a) => {
+    d.path('M24 6.5 C16.5 6.5 12 12.5 12 20 V27 C12 31 9.5 34 7 36.5 H41 C38.5 34 36 31 36 27 V20 C36 12.5 31.5 6.5 24 6.5 Z', a);
+    d.tone('M27 8 C32 10 35 15 35 21 V27 C35 31 37 34 39 36 H27 Z', GOLD_SHADE, 0.45);
+    d.path('M18.5 38 A5.5 5.5 0 0 0 29.5 38 Z', GOLD);
+    d.glint('M16.5 17 C17.5 12.5 20 10.5 23 10', 1.8);
+  },
+  'bell-off': (d, a) => {
+    d.path('M24 6.5 C16.5 6.5 12 12.5 12 20 V27 C12 31 9.5 34 7 36.5 H41 C38.5 34 36 31 36 27 V20 C36 12.5 31.5 6.5 24 6.5 Z', a);
+    d.path('M18.5 38 A5.5 5.5 0 0 0 29.5 38 Z', GOLD);
+    d.line('M10 10 L38 38', RED_DARK, 4);
+  },
+  volume: (d, a) => {
+    d.path('M6 18 H15 L26 10 V38 L15 30 H6 Z', a);
+    d.tone('M20 14 L26 10 V38 L20 34 Z', GOLD_SHADE, 0.45);
+    d.line('M31 18 Q39 24 31 30', STEEL_DARK, 2.6);
+    d.line('M34 12 Q46 24 34 36', a, 2.4);
+    d.glint('M9 21 H14', 1.5);
+  },
+  'alarm-clock': (d, a) => {
+    d.line('M15 9 L10 5 M33 9 L38 5', WOOD_DARK, 3);
+    d.circle(24, 25, 16, a);
+    d.tone('M27 10 A16 16 0 0 1 27 40 A18 18 0 0 0 27 10 Z', GOLD_SHADE, 0.42);
+    d.line('M24 15 V25 L31 29', WHITE, 2.8);
+    d.circle(24, 25, 2.2, GOLD);
+    d.glint('M16 15 A11 11 0 0 1 22 12', 1.8);
+    d.limb('M18 39 L15 43 M30 39 L33 43', WOOD, 2.6);
+  },
+  notification: (d, a) => {
+    d.line('M18 8 A6 6 0 0 1 30 8 M24 8 C13 8 9.5 17 9.5 26.5 V31 C9.5 36.5 7.5 40.5 4.5 42 H43.5 C40.5 40.5 38.5 36.5 38.5 31 V26.5 C38.5 17 35 8 24 8', '#000000', 4.8);
+    d.line('M14 20 C15 15 18.5 12 23 11', '#000000', 4.8);
+    d.line('M19 42 C20 48 28 48 29 42', '#000000', 4.8);
+  },
+  check: (d) => {
+    d.circle(24, 24, 18, LEAF);
+    d.line('M14 24 L21 31 L35 16.5', WHITE, 3.5);
+  },
+  close: (d) => {
+    d.circle(24, 24, 18, RED);
+    d.line('M17 17 L31 31 M31 17 L17 31', WHITE, 3.5);
   },
 };
 

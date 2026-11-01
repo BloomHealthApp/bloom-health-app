@@ -5,7 +5,7 @@ import { CalendarDayCell } from '@/components/CalendarDayCell';
 import { EmptyState } from '@/components/EmptyState';
 import { SyncStatusChip } from '@/components/SyncStatusChip';
 import { ViewerBanner } from '@/components/ViewerBanner';
-import { AppText, Button, Card, Loading, Row, Screen } from '@/components/ui';
+import { AppText, Button, Card, Loading, PageHeader, Row, Screen } from '@/components/ui';
 import { useDerived } from '@/features/derived';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
 import { chunkWeeks, monthBounds, monthName, prettyDate, WEEKDAY_SHORT, weekdayOf } from '@/lib/dates';
@@ -37,10 +37,7 @@ export default function CalendarTab() {
 
   return (
     <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
-      <Row style={{ justifyContent: 'space-between' }}>
-        <AppText variant="title" accessibilityRole="header">Calendar</AppText>
-        <SyncStatusChip onPress={() => router.push('/sync-issues')} />
-      </Row>
+      <PageHeader title="Calendar" subtitle="Your month, at a glance" right={<SyncStatusChip onPress={() => router.push('/sync-issues')} />} />
       <ViewerBanner />
       <Row style={{ justifyContent: 'space-between' }}>
         <Button title="‹" variant="secondary" onPress={() => setOffset((o) => o - 1)} accessibilityLabel="Previous month" style={{ paddingHorizontal: spacing.lg }} />
