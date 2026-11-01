@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { HABIT_ICON_CHOICES, ICON_LABELS, resolveHabitIcon } from '@/lib/habitIcon';
+import { GlassEdge } from '@/components/GlassEdge';
 import { AppText } from '@/components/ui';
 import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -25,6 +26,7 @@ export function IconPicker({ value, onChange }: { value: string; onChange: (icon
           const selected = current.kind === 'icon' && current.name === name;
           return (
             <Pressable key={name} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={ICON_LABELS[name]} onPress={() => onChange(name)} style={cell(selected)}>
+              {selected ? <GlassEdge radius={radius.sm} onFill /> : null}
               <AppIcon name={name} size={32} />
             </Pressable>
           );

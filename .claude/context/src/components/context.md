@@ -16,3 +16,4 @@ Reusable UI. `ui.tsx` holds the basic primitives, and `periods/` holds the track
 - `Mascot.tsx` animates and disables idle animation when the OS asks for reduced motion, using `MascotStatic`.
 - `mascotAsset.ts` is where to swap in custom art (see `assets/mascot/README.md`).
 - Widgets reuse this art through `widgets/svg.ts`, so changing it changes them too. Don't duplicate artwork.
+- `GlassEdge` is the shiny diagonal border. Shared surfaces use it: `Card`, `Button`, `FloatingTabBar`, `ThemePicker`, reminder options, `Field` and the selected `IconPicker` cell. Selected items keep a solid accent border too, because the shine alone doesn't show selection clearly. Calendar cells, chips, avatars and stickers stay flat: there are many of them, or they have their own border.

@@ -1,3 +1,4 @@
+import { GlassEdge } from './GlassEdge';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { describeTarget, formatHabitValue } from '@/lib/format';
@@ -44,7 +45,8 @@ export function HabitCard({ habit, value, status, readOnly, onToggle, onPress }:
   );
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: c.border, paddingRight: spacing.sm }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.glass, borderRadius: radius.lg, paddingRight: spacing.sm }}>
+      <GlassEdge radius={radius.lg} />
       <Pressable
         onPress={onPress}
         accessibilityRole="button"

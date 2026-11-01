@@ -1,8 +1,10 @@
 import type { BottomTabBarProps } from 'expo-router/build/layouts/TabsClient';
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Circle, Path, Rect, Svg } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassEdge } from './GlassEdge';
 import { radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -60,8 +62,10 @@ export function FloatingTabBar({ state, descriptors, emitter, navigateToTab }: T
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: spacing.lg, paddingBottom: Math.max(insets.bottom, BAR_GAP) }}>
       <View
         accessibilityRole="tablist"
-        style={{ flexDirection: 'row', height: BAR_HEIGHT, width: BAR_WIDTH, maxWidth: '100%', padding: 4, gap: 2, borderRadius: radius.pill, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, elevation: 10, shadowColor: '#000000', shadowOpacity: theme.isDark ? 0.4 : 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } }}
+        style={{ flexDirection: 'row', height: BAR_HEIGHT, width: BAR_WIDTH, maxWidth: '100%', padding: 4, gap: 2, borderRadius: radius.pill, overflow: 'hidden', backgroundColor: Platform.OS === 'ios' ? theme.glass : `${c.surface}E6`, boxShadow: `0 6px 16px rgba(0,0,0,${theme.isDark ? 0.4 : 0.12})` }}
       >
+        {Platform.OS === 'ios' ? <BlurView intensity={40} tint={theme.isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} /> : null}
+        <GlassEdge radius={radius.pill} />
         {state.routes.map((route, i) => {
           const focused = state.index === i;
           const { title, tabBarAccessibilityLabel } = descriptors[route.key].options;
@@ -78,6 +82,7 @@ export function FloatingTabBar({ state, descriptors, emitter, navigateToTab }: T
               accessibilityLabel={tabBarAccessibilityLabel ?? title ?? route.name}
               style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill, backgroundColor: focused ? c.tint : 'transparent' }}
             >
+              {focused ? <GlassEdge radius={radius.pill} onFill /> : null}
               <TabIcon name={ROUTE_ICONS[route.name] ?? 'home'} color={focused ? c.accent : c.textMuted} focused={focused} />
             </Pressable>
           );

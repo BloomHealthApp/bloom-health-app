@@ -1,6 +1,7 @@
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, TextInput, View } from 'react-native';
+import { GlassEdge } from '@/components/GlassEdge';
 import { AppText, Button, Row } from '@/components/ui';
 import { AppIcon } from '@/icons/AppIcon';
 import { useAlarmPreview } from '@/features/useAlarmPreview';
@@ -84,8 +85,9 @@ export function ReminderRow(props: {
               accessibilityState={{ checked: on, expanded: on && previewing }}
               accessibilityLabel={`${label}: ${m.label}`}
               accessibilityHint={on ? 'Tap again to show or hide the preview' : 'Select this alert type'}
-              style={{ flex: 1, minHeight: MIN_TOUCH + 12, paddingVertical: spacing.xs, gap: 2, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 2 : 1, borderColor: on ? theme.colors.accent : theme.colors.border, backgroundColor: on ? theme.colors.tint : theme.colors.surface }}
+              style={{ flex: 1, minHeight: MIN_TOUCH + 12, paddingVertical: spacing.xs, gap: 2, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? theme.colors.accent : 'transparent', backgroundColor: on ? theme.colors.tint : theme.glass }}
             >
+              <GlassEdge radius={radius.sm} />
               <AppIcon name={m.icon} size={24} />
               <AppText variant="caption" numberOfLines={1} adjustsFontSizeToFit style={{ color: theme.colors.text }}>{m.label}</AppText>
             </Pressable>

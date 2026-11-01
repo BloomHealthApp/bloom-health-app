@@ -4,6 +4,7 @@ import { THEME_LIST } from '@/theme/themes';
 import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme, type AppearanceMode } from '@/theme/ThemeProvider';
 import type { ThemeName } from '@/types/api';
+import { GlassEdge } from './GlassEdge';
 import { AppText, Row } from './ui';
 
 const MODES: { mode: AppearanceMode; label: string }[] = [
@@ -25,8 +26,9 @@ function AppearancePicker() {
             accessibilityRole="radio"
             accessibilityState={{ selected }}
             accessibilityLabel={`${label} appearance`}
-            style={{ flex: 1, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 2, borderColor: selected ? theme.colors.accent : theme.colors.border, backgroundColor: selected ? theme.colors.tint : theme.colors.surface }}
+            style={{ flex: 1, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 2, borderColor: selected ? theme.colors.accent : 'transparent', backgroundColor: selected ? theme.colors.tint : theme.glass }}
           >
+            <GlassEdge radius={radius.md} />
             <AppText variant="bodyStrong">{label}</AppText>
           </Pressable>
         );
@@ -54,8 +56,9 @@ export function ThemePicker({ onPick }: { onPick?: (n: ThemeName) => void }) {
               accessibilityRole="radio"
               accessibilityState={{ selected }}
               accessibilityLabel={`${t.label} theme`}
-              style={{ flex: 1, minHeight: MIN_TOUCH, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', gap: 3, borderRadius: radius.sm, backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: selected ? theme.colors.accent : theme.colors.border }}
+              style={{ flex: 1, minHeight: MIN_TOUCH, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', gap: 3, borderRadius: radius.sm, backgroundColor: theme.glass, borderWidth: 2, borderColor: selected ? theme.colors.accent : 'transparent' }}
             >
+              <GlassEdge radius={radius.sm} />
               {[[swatch.tint, swatch.primary], [swatch.secondary, swatch.bg]].map((pair, r) => (
                 <Row key={r} style={{ gap: 3 }}>
                   {pair.map((col, i) => (

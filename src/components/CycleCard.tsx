@@ -1,3 +1,4 @@
+import { GlassEdge } from './GlassEdge';
 import { AppIcon } from '@/icons/AppIcon';
 import React from 'react';
 import { Pressable, View } from 'react-native';
@@ -18,8 +19,9 @@ export function CycleCard({ prediction, hasPeriods, onPress }: { prediction: Pre
       accessibilityRole="button"
       accessibilityLabel={`Period tracker. ${s.title}. ${s.subtitle}`}
       accessibilityHint="Opens your private period tracker"
-      style={({ pressed }) => ({ minHeight: MIN_TOUCH, backgroundColor: theme.colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: spacing.md, opacity: pressed ? 0.85 : 1 })}
+      style={({ pressed }) => ({ minHeight: MIN_TOUCH, backgroundColor: theme.glass, borderRadius: radius.lg, padding: spacing.md, opacity: pressed ? 0.85 : 1 })}
     >
+      <GlassEdge radius={radius.lg} />
       <Row style={{ gap: spacing.md }}>
         <Mascot mood={s.mood} size={56} />
         <View style={{ flex: 1 }}>

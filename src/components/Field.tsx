@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
+import { GlassEdge } from './GlassEdge';
 import { AppText } from './ui';
 
 export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string | null }) {
@@ -9,15 +10,18 @@ export function Field({ label, error, ...props }: TextInputProps & { label: stri
   return (
     <View style={{ gap: 6 }}>
       <AppText variant="label" muted>{label}</AppText>
-      <TextInput
-        accessibilityLabel={label}
-        placeholderTextColor={theme.colors.textMuted}
-        {...props}
-        style={[
-          { minHeight: MIN_TOUCH + 8, borderRadius: radius.md, borderWidth: 1, borderColor: error ? theme.colors.danger : theme.colors.border, backgroundColor: theme.colors.surface, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text },
-          props.style,
-        ]}
-      />
+      <View>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={theme.colors.textMuted}
+          {...props}
+          style={[
+            { minHeight: MIN_TOUCH + 8, borderRadius: radius.md, borderWidth: 1, borderColor: error ? theme.colors.danger : 'transparent', backgroundColor: theme.glass, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text },
+            props.style,
+          ]}
+        />
+        {error ? null : <GlassEdge radius={radius.md} />}
+      </View>
       {error ? <AppText variant="caption" style={{ color: theme.colors.danger }} accessibilityRole="alert">{error}</AppText> : null}
     </View>
   );

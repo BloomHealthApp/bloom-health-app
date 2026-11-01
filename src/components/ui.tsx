@@ -1,3 +1,5 @@
+import { GlassBackdrop } from './GlassBackdrop';
+import { GlassEdge } from './GlassEdge';
 import React from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, type StyleProp, type TextProps, type ViewProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,16 +19,15 @@ export function Card({ children, style, tint, ...rest }: ViewProps & { children:
       {...rest}
       style={[
         {
-          backgroundColor: tint ? theme.colors.tint : theme.colors.surface,
+          backgroundColor: tint ? theme.colors.tint : theme.glass,
           borderRadius: radius.lg,
           padding: spacing.lg,
-          borderWidth: tint ? 0 : 1,
-          borderColor: theme.colors.border,
-          ...(theme.isDark ? null : { shadowColor: '#26352C', shadowOpacity: tint ? 0 : 0.035, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: tint ? 0 : 1 }),
+          ...(tint ? null : { boxShadow: theme.isDark ? '0 6px 18px rgba(0,0,0,0.28)' : '0 5px 14px rgba(38,53,44,0.06)' }),
         },
         style,
       ]}
     >
+      <GlassEdge radius={StyleSheet.flatten(style)?.borderRadius as number | undefined ?? radius.lg} onFill={tint} />
       {children}
     </View>
   );
@@ -62,6 +63,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
         style,
       ]}
     >
+      {variant !== 'ghost' ? <GlassEdge radius={radius.pill} onFill /> : null}
       {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 16 }}>{title}</AppText>}
     </Pressable>
   );
@@ -109,6 +111,7 @@ export function Screen({
   const body = { padding: padded ? spacing.lg : 0, paddingBottom: spacing.xxxl + tabBarSpace, gap: spacing.lg };
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg, paddingTop: insets.top }}>
+      <GlassBackdrop />
       {header}
       {scroll ? (
         <ScrollView
