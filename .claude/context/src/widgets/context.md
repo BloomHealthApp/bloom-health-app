@@ -20,6 +20,10 @@ Android home-screen widgets.
 - `svg.ts` serialises the real artwork, so no art is duplicated. An unsupported primitive throws, because it's a programming error.
 - Viewer accounts see the owner's cached data, so they publish the same snapshot, read-only.
 
+- Widgets use a simpler glass than the app: a see-through diagonal gradient with no border, from `widgetGlass`. `GlassLayer` can't be used because layouts have no React Native views. There's no blur, as the wallpaper can't be blurred.
+- A widget sits on any wallpaper, so `WIDGET_GLASS_ALPHA` is higher than the app panels, and muted text is darker than in the app. A test checks text contrast on the panel over black and white for every theme and appearance.
+- The snapshot stores `dark` as saved by the app, so a widget changes appearance the next time the app publishes, not when the phone changes while the app is closed.
+
 ## Why
 - `widgetAdapter.ts` loads the library lazily, because importing it needs a native module that Expo Go and non-Android runtimes don't ship.
 - The app may be closed for days when the OS asks for a redraw, so a stored snapshot is re-expressed for the current day: a new day starts at 0%, and the streak only survives if the stored day counted or was neutral, and no whole day was skipped.

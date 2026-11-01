@@ -19,10 +19,8 @@ export interface ThemeColors {
   onDanger: string;
   /** background of error banners */
   dangerTint: string;
-  /** the diagonal shine on glass surfaces: top-left, middle, bottom-right */
-  edgeHighlight: string;
-  edgeShade: string;
-  edgeGlow: string;
+  /** the soft inner glow on glass surfaces */
+  glassGlow: string;
   /** mascot cheek colour; when unset, it is the primary mixed with pink */
   blush?: string;
   /** 5-step heatmap ramp, index 0 = no data */
@@ -55,7 +53,7 @@ export const resolveTheme = (name: ThemeName, isDark: boolean): ActiveTheme => {
   return { ...t, isDark, colors, glass: glassColor(colors.surface, isDark) };
 };
 
-function mix(a: string, b: string, t: number): string {
+export function mix(a: string, b: string, t: number): string {
   const pa = parseInt(a.slice(1), 16);
   const pb = parseInt(b.slice(1), 16);
   const ch = (s: number) => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t);
@@ -83,9 +81,7 @@ export const cottonCandy: Theme = {
     text: '#4A2B3C',
     textMuted: '#7D5C6D',
     border: '#F1D3E2',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#F1D3E2',
-    edgeGlow: mix('#F1D3E2', '#D65B98', 0.35),
+    glassGlow: mix('#F1D3E2', '#D65B98', 0.35),
     success: '#4E9F7D',
     warning: '#C98A2B',
     danger: '#C23B4E',
@@ -104,9 +100,7 @@ export const cottonCandy: Theme = {
     text: '#FBE9F2',
     textMuted: '#C9A9BA',
     border: '#4A2E3F',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#4A2E3F',
-    edgeGlow: '#E56FAA',
+    glassGlow: '#E56FAA',
     success: '#5CC48C',
     warning: '#E0A94F',
     danger: '#F0716F',
@@ -130,9 +124,7 @@ export const lavenderDream: Theme = {
     text: '#51436B',
     textMuted: '#6F6389',
     border: '#DDD4F5',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#DDD4F5',
-    edgeGlow: mix('#DDD4F5', '#B9A7E8', 0.35),
+    glassGlow: mix('#DDD4F5', '#B9A7E8', 0.35),
     success: '#4E9F7D',
     warning: '#B97A1E',
     danger: '#B7364A',
@@ -151,9 +143,7 @@ export const lavenderDream: Theme = {
     text: '#EFEAFB',
     textMuted: '#B0A6CB',
     border: '#3A3256',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#3A3256',
-    edgeGlow: '#B9A7E8',
+    glassGlow: '#B9A7E8',
     success: '#5CC48C',
     warning: '#E0A94F',
     danger: '#F0716F',
@@ -177,9 +167,7 @@ export const mintPeach: Theme = {
     text: '#27453A',
     textMuted: '#587568',
     border: '#CFE8DB',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#CFE8DB',
-    edgeGlow: mix('#CFE8DB', '#6E9D88', 0.35),
+    glassGlow: mix('#CFE8DB', '#6E9D88', 0.35),
     success: '#3F8F6A',
     warning: '#C27B2D',
     danger: '#BF4A4A',
@@ -198,9 +186,7 @@ export const mintPeach: Theme = {
     text: '#E6F3ED',
     textMuted: '#A2B8AE',
     border: '#2F4239',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#2F4239',
-    edgeGlow: '#7FBFA3',
+    glassGlow: '#7FBFA3',
     success: '#5CC48C',
     warning: '#E0A94F',
     danger: '#F0716F',
@@ -224,9 +210,7 @@ export const forestTrail: Theme = {
     text: '#1F3329',
     textMuted: '#526257',
     border: '#AFC6B2',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#AFC6B2',
-    edgeGlow: mix('#AFC6B2', '#1E5B3A', 0.35),
+    glassGlow: mix('#AFC6B2', '#1E5B3A', 0.35),
     success: '#2F855A',
     warning: '#B5701F',
     danger: '#B23A3A',
@@ -246,9 +230,7 @@ export const forestTrail: Theme = {
     text: '#E7F1EA',
     textMuted: '#A3B8AB',
     border: '#2F4538',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#2F4538',
-    edgeGlow: '#4FB07E',
+    glassGlow: '#4FB07E',
     success: '#5CC48C',
     warning: '#E0A94F',
     danger: '#F0716F',
@@ -273,9 +255,7 @@ export const midnightNavy: Theme = {
     text: '#16263D',
     textMuted: '#4F5F75',
     border: '#B0C1D8',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#B0C1D8',
-    edgeGlow: mix('#B0C1D8', '#12305A', 0.35),
+    glassGlow: mix('#B0C1D8', '#12305A', 0.35),
     success: '#2F855A',
     warning: '#B7791F',
     danger: '#C53030',
@@ -295,9 +275,7 @@ export const midnightNavy: Theme = {
     text: '#E6EDF7',
     textMuted: '#A1B1C9',
     border: '#2B3D5C',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#2B3D5C',
-    edgeGlow: '#5B9BE6',
+    glassGlow: '#5B9BE6',
     success: '#5CC48C',
     warning: '#E0A94F',
     danger: '#F0716F',
@@ -322,9 +300,7 @@ export const sunsetEmber: Theme = {
     text: '#3A2213',
     textMuted: '#75503A',
     border: '#EFC7A8',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#EFC7A8',
-    edgeGlow: mix('#EFC7A8', '#B84A0E', 0.35),
+    glassGlow: mix('#EFC7A8', '#B84A0E', 0.35),
     success: '#2F855A',
     warning: '#B5701F',
     danger: '#B23A3A',
@@ -344,9 +320,7 @@ export const sunsetEmber: Theme = {
     text: '#FBEDE2',
     textMuted: '#C9AE9B',
     border: '#4A3324',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#4A3324',
-    edgeGlow: '#F08A3C',
+    glassGlow: '#F08A3C',
     success: '#5CC48C',
     warning: '#E0A94F',
     danger: '#F0716F',
@@ -371,9 +345,7 @@ export const graphiteGrey: Theme = {
     text: '#1F2328',
     textMuted: '#5A6068',
     border: '#C4C8CD',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#C4C8CD',
-    edgeGlow: mix('#C4C8CD', '#4A4F57', 0.35),
+    glassGlow: mix('#C4C8CD', '#4A4F57', 0.35),
     success: '#2F855A',
     warning: '#B5701F',
     danger: '#B23A3A',
@@ -393,9 +365,7 @@ export const graphiteGrey: Theme = {
     text: '#ECEEF0',
     textMuted: '#A9AEB5',
     border: '#3A3E43',
-    edgeHighlight: '#FFFFFF',
-    edgeShade: '#3A3E43',
-    edgeGlow: '#A8AEB6',
+    glassGlow: '#A8AEB6',
     success: '#5CC48C',
     warning: '#E0A94F',
     danger: '#F0716F',

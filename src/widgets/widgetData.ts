@@ -23,6 +23,8 @@ export interface WidgetSnapshot {
   version: number;
   state: WidgetState;
   theme: ThemeName;
+  /** the app's appearance when this was saved; absent on older snapshots, which show as light */
+  dark?: boolean;
   /** the local day (in `timezone`) that percent/completed/eligible describe */
   localDate: string;
   timezone: string;
@@ -43,6 +45,7 @@ export interface WidgetSnapshot {
 export interface SnapshotInput {
   role: Role;
   theme: ThemeName;
+  dark?: boolean;
   today: string;
   timezone: string;
   todayScore: Pick<DayScore, 'eligible' | 'completed' | 'completionPercent' | 'successful' | 'neutral'>;
@@ -68,6 +71,7 @@ export function buildSnapshot(i: SnapshotInput): WidgetSnapshot {
     version: SNAPSHOT_VERSION,
     state: eligible === 0 ? 'noHabits' : 'ready',
     theme: i.theme,
+    dark: !!i.dark,
     localDate: i.today,
     timezone: i.timezone,
     currentStreak: i.currentStreak,
@@ -83,11 +87,12 @@ export function buildSnapshot(i: SnapshotInput): WidgetSnapshot {
   };
 }
 
-function placeholder(state: 'signedOut' | 'unopened', theme: ThemeName, text: string, now: number): WidgetSnapshot {
+function placeholder(state: 'signedOut' | 'unopened', theme: ThemeName, text: string, now: number, dark = false): WidgetSnapshot {
   return {
     version: SNAPSHOT_VERSION,
     state,
     theme,
+    dark,
     localDate: '',
     timezone: 'UTC',
     currentStreak: 0,
@@ -103,8 +108,8 @@ function placeholder(state: 'signedOut' | 'unopened', theme: ThemeName, text: st
   };
 }
 
-export const signedOutSnapshot = (theme: ThemeName = FALLBACK_THEME, now = Date.now()) =>
-  placeholder('signedOut', theme, 'Open Bloom Health to sign in', now);
+export const signedOutSnapshot = (theme: ThemeName = FALLBACK_THEME, now = Date.now(), dark = false) =>
+  placeholder('signedOut', theme, 'Open Bloom Health to sign in', now, dark);
 export const unopenedSnapshot = (theme: ThemeName = FALLBACK_THEME, now = Date.now()) =>
   placeholder('unopened', theme, 'Open Bloom Health to get started', now);
 
@@ -206,8 +211,8 @@ export async function publishSnapshot(s: WidgetSnapshot, opts: Publisher & { for
 }
 
 /** Sign-out: replace progress with the signed-out placeholder (keeps the theme so the widget still looks right). */
-export function publishSignedOut(theme: ThemeName, opts: Publisher = {}): Promise<void> {
-  return publishSnapshot(signedOutSnapshot(theme), opts);
+export function publishSignedOut(theme: ThemeName, opts: Publisher = {}, dark = false): Promise<void> {
+  return publishSnapshot(signedOutSnapshot(theme, Date.now(), dark), opts);
 }
 
 export function __resetPublishState(): void {

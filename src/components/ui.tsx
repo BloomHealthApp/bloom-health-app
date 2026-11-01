@@ -1,5 +1,5 @@
 import { GlassBackdrop } from './GlassBackdrop';
-import { GlassEdge } from './GlassEdge';
+import { GlassLayer, glassShadow } from './GlassLayer';
 import React from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, type StyleProp, type TextProps, type ViewProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,12 +22,12 @@ export function Card({ children, style, tint, ...rest }: ViewProps & { children:
           backgroundColor: tint ? theme.colors.tint : theme.glass,
           borderRadius: radius.lg,
           padding: spacing.lg,
-          ...(tint ? null : { boxShadow: theme.isDark ? '0 6px 18px rgba(0,0,0,0.28)' : '0 5px 14px rgba(38,53,44,0.06)' }),
+          boxShadow: glassShadow(theme.isDark),
         },
         style,
       ]}
     >
-      <GlassEdge radius={StyleSheet.flatten(style)?.borderRadius as number | undefined ?? radius.lg} onFill={tint} />
+      <GlassLayer radius={StyleSheet.flatten(style)?.borderRadius as number | undefined ?? radius.lg} onFill={tint} />
       {children}
     </View>
   );
@@ -59,11 +59,11 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       style={({ pressed }) => [
-        { minHeight: MIN_TOUCH + 4, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, opacity: off ? 0.5 : pressed ? 0.88 : 1, transform: [{ scale: pressed && !off ? 0.985 : 1 }] },
+        { minHeight: MIN_TOUCH + 4, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, ...(variant === 'ghost' || off ? null : { boxShadow: glassShadow(theme.isDark) }), opacity: off ? 0.5 : pressed ? 0.88 : 1, transform: [{ scale: pressed && !off ? 0.985 : 1 }] },
         style,
       ]}
     >
-      {variant !== 'ghost' ? <GlassEdge radius={radius.pill} onFill /> : null}
+      {variant !== 'ghost' ? <GlassLayer radius={radius.pill} onFill /> : null}
       {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 16 }}>{title}</AppText>}
     </Pressable>
   );

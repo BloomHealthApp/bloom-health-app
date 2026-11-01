@@ -16,9 +16,9 @@ export function WidgetSync() {
   const role = user?.role ?? 'owner';
   useEffect(() => {
     if (loading) return;
-    latest.current = buildSnapshot({ role, theme: theme.name, today, timezone, todayScore, currentStreak, longestStreak });
+    latest.current = buildSnapshot({ role, theme: theme.name, dark: theme.isDark, today, timezone, todayScore, currentStreak, longestStreak });
     void publishSnapshot(latest.current);
-  }, [loading, role, theme.name, today, timezone, todayScore, currentStreak, longestStreak]);
+  }, [loading, role, theme.name, theme.isDark, today, timezone, todayScore, currentStreak, longestStreak]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
@@ -31,8 +31,8 @@ export function WidgetSync() {
 }
 
 /** Mounted in the root Shell: shows the "sign in" state on the widget as soon as the user is signed out. */
-export function useWidgetSignedOut(status: 'loading' | 'signedOut' | 'signedIn', themeName: Parameters<typeof publishSignedOut>[0]) {
+export function useWidgetSignedOut(status: 'loading' | 'signedOut' | 'signedIn', themeName: Parameters<typeof publishSignedOut>[0], dark: boolean) {
   useEffect(() => {
-    if (status === 'signedOut') void publishSignedOut(themeName);
-  }, [status, themeName]);
+    if (status === 'signedOut') void publishSignedOut(themeName, {}, dark);
+  }, [status, themeName, dark]);
 }

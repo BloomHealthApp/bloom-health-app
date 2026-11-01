@@ -23,7 +23,7 @@ function Shell() {
   const { status, user } = useAuth();
   const { theme, setThemeName } = useTheme();
 
-  useWidgetSignedOut(status, theme.name);
+  useWidgetSignedOut(status, theme.name, theme.isDark);
 
   // Server profile theme is the cross-device preference once signed in.
   useEffect(() => {

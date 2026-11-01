@@ -189,14 +189,39 @@ describe('persistence + publishing', () => {
 });
 
 describe('widgetPalette', () => {
-  it('maps each theme to the spec palette', () => {
-    expect(widgetPalette('cottonCandy')).toMatchObject({ background: '#F8D7E8', card: '#FFF9F5' });
-    expect(widgetPalette('lavenderDream')).toMatchObject({ background: '#E9E2FF', text: '#51436B' });
-    expect(widgetPalette('mintPeach')).toMatchObject({ background: '#DDF3E7', track: '#FFE3D6' });
+  const channels = (v: string) => (v.startsWith('rgba') ? v.slice(5, -1).split(', ').map(Number) : [1, 3, 5].map((i) => parseInt(v.slice(i, i + 2), 16)));
+  const over = (panel: string, wall: number) => {
+    const [r, g, b, a] = channels(panel);
+    return [r, g, b].map((x) => x * a + wall * (1 - a));
+  };
+  const lum = (rgb: number[]) => {
+    const [r, g, b] = rgb.map((x) => x / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a: number[], b: number[]) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  const names = Object.keys(THEMES) as (keyof typeof THEMES)[];
+
+  it('maps each theme and appearance to its colours', () => {
+    expect(widgetPalette('cottonCandy')).toMatchObject({ text: THEMES.cottonCandy.colors.text, glassFrom: 'rgba(255, 255, 255, 0.88)' });
+    expect(widgetPalette('midnightNavy', true)).toMatchObject({ text: THEMES.midnightNavy.darkColors.text, track: THEMES.midnightNavy.darkColors.secondary });
   });
-  it('only emits hex colours the widget library accepts', () => {
-    for (const name of Object.keys(THEMES) as (keyof typeof THEMES)[]) {
-      for (const v of Object.values(widgetPalette(name))) expect(v).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  it('only emits colours the widget library accepts', () => {
+    for (const name of names) for (const dark of [false, true]) {
+      for (const v of Object.values(widgetPalette(name, dark))) expect(v).toMatch(/^(#[0-9A-Fa-f]{6}|rgba\(\d+, \d+, \d+, [\d.]+\))$/);
+    }
+  });
+  it('keeps text readable on any wallpaper', () => {
+    for (const name of names) for (const dark of [false, true]) for (const wall of [0, 255]) {
+      const p = widgetPalette(name, dark);
+      for (const panel of [p.glassFrom, p.glassTo]) {
+        const bg = over(panel, wall);
+        const where = `${name} dark=${dark} wall=${wall} ${panel}`;
+        expect([where, contrast(channels(p.text), bg) >= 4.5]).toEqual([where, true]);
+        expect([where, contrast(channels(p.muted), bg) >= 4.5]).toEqual([where, true]);
+      }
     }
   });
 });
