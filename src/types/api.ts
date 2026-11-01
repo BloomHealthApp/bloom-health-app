@@ -1,7 +1,7 @@
 // Types + zod schemas mirroring docs/api-contract.md (v1). Keep in sync with the contract.
 import { z } from 'zod';
 
-export const ThemeNameSchema = z.enum(['forestTrail', 'midnightNavy', 'cottonCandy', 'lavenderDream', 'mintPeach']);
+export const ThemeNameSchema = z.enum(['forestTrail', 'midnightNavy', 'cottonCandy', 'lavenderDream', 'sunsetEmber', 'mintPeach']);
 export type ThemeName = z.infer<typeof ThemeNameSchema>;
 export const RoleSchema = z.enum(['owner', 'viewer']);
 export type Role = z.infer<typeof RoleSchema>;
