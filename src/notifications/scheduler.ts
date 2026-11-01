@@ -5,7 +5,8 @@ import { parseHHmm } from '@/lib/dates';
 import type { Reminder } from '@/types/api';
 
 export const ID_PREFIX = 'bubu.reminder.';
-export const SIGNATURE_KEY = 'reminderSignature';
+// Renamed when reminders must be rescheduled once on update (for example, a new notification channel).
+export const SIGNATURE_KEY = 'reminderSignatureSoundChannel';
 
 export type ReminderMode = 'notification' | 'alarm' | 'loudAlarm';
 export type ReminderModes = Partial<Record<Reminder['key'], ReminderMode>>;
@@ -178,7 +179,7 @@ export async function cancelAllReminders(api: NotifApi, storage: Storage, alarmA
 // Its own identifier (not under ID_PREFIX, so syncReminders never touches it). The text is deliberately generic:
 // notifications show on the lock screen, so the word "period" appears only inside the app.
 export const PERIOD_REMINDER_ID = 'bubu.cycle.heads-up';
-export const PERIOD_REMINDER_SIGNATURE_KEY = 'periodReminderSignature';
+export const PERIOD_REMINDER_SIGNATURE_KEY = 'periodReminderSignatureSoundChannel';
 export const PERIOD_REMINDER_LEAD_DAYS = 2;
 export const PERIOD_REMINDER_HOUR = 9;
 
