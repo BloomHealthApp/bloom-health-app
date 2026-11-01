@@ -265,6 +265,93 @@ export const midnightNavy: Theme = {
   },
 };
 
-export const THEMES: Record<ThemeName, Theme> = { forestTrail, midnightNavy, cottonCandy, lavenderDream, mintPeach };
-export const THEME_LIST: Theme[] = [forestTrail, midnightNavy, cottonCandy, lavenderDream, mintPeach];
+export const sunsetEmber: Theme = {
+  name: 'sunsetEmber',
+  label: 'Sunset Ember',
+  colors: {
+    bg: '#FFF6EE',
+    surface: '#FFFFFF',
+    tint: '#FFD9BC',
+    primary: '#B84A0E',
+    onPrimary: '#FFFFFF',
+    accent: '#9C3D0A',
+    secondary: '#F2C9A0',
+    text: '#3A2213',
+    textMuted: '#75503A',
+    border: '#EFC7A8',
+    success: '#2F855A',
+    warning: '#B5701F',
+    danger: '#B23A3A',
+    onDanger: '#FFFFFF',
+    dangerTint: '#FDECEF',
+    blush: '#E8A27A',
+    heat: ramp('#FFD9BC', '#B84A0E'),
+  },
+  darkColors: {
+    bg: '#1A120C',
+    surface: '#281B12',
+    tint: '#40291A',
+    primary: '#F08A3C',
+    onPrimary: '#241006',
+    accent: '#F7B27A',
+    secondary: '#4A3020',
+    text: '#FBEDE2',
+    textMuted: '#C9AE9B',
+    border: '#4A3324',
+    success: '#5CC48C',
+    warning: '#E0A94F',
+    danger: '#F0716F',
+    onDanger: '#2A0A0A',
+    dangerTint: '#3A1A1E',
+    blush: '#C9966E',
+    heat: ramp('#40291A', '#F08A3C'),
+  },
+};
+
+export const graphiteGrey: Theme = {
+  name: 'graphiteGrey',
+  label: 'Graphite Grey',
+  colors: {
+    bg: '#F2F3F4',
+    surface: '#FFFFFF',
+    tint: '#D5D8DC',
+    primary: '#4A4F57',
+    onPrimary: '#FFFFFF',
+    accent: '#3A3F46',
+    secondary: '#BFC4CA',
+    text: '#1F2328',
+    textMuted: '#5A6068',
+    border: '#C4C8CD',
+    success: '#2F855A',
+    warning: '#B5701F',
+    danger: '#B23A3A',
+    onDanger: '#FFFFFF',
+    dangerTint: '#FDECEF',
+    blush: '#C9B8AE',
+    heat: ramp('#D5D8DC', '#4A4F57'),
+  },
+  darkColors: {
+    bg: '#121315',
+    surface: '#1E2023',
+    tint: '#2E3135',
+    primary: '#A8AEB6',
+    onPrimary: '#15171A',
+    accent: '#C8CDD3',
+    secondary: '#383C41',
+    text: '#ECEEF0',
+    textMuted: '#A9AEB5',
+    border: '#3A3E43',
+    success: '#5CC48C',
+    warning: '#E0A94F',
+    danger: '#F0716F',
+    onDanger: '#2A0A0A',
+    dangerTint: '#3A1A1E',
+    blush: '#B09A8E',
+    heat: ramp('#2E3135', '#A8AEB6'),
+  },
+};
+
+export const THEMES: Record<ThemeName, Theme> = { forestTrail, midnightNavy, cottonCandy, lavenderDream, sunsetEmber, graphiteGrey, mintPeach };
+/** The themes offered in the picker. Mint Peach is left out but stays in THEMES for accounts already using it. */
+export const THEME_LIST: Theme[] = [forestTrail, midnightNavy, cottonCandy, lavenderDream, sunsetEmber, graphiteGrey];
 export const DEFAULT_THEME: ThemeName = 'forestTrail';

@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 import { MIN_TOUCH, spacing } from '@/theme/tokens';
 import { AppText } from './ui';
 
-export function ScreenHeader({ title, right }: { title: string; right?: React.ReactNode }) {
+export function ScreenHeader({ title, icon, right }: { title: string; icon?: React.ReactNode; right?: React.ReactNode }) {
   const router = useRouter();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm, minHeight: 52 }}>
@@ -16,6 +16,7 @@ export function ScreenHeader({ title, right }: { title: string; right?: React.Re
       >
         <AppText variant="heading" accent>‹</AppText>
       </Pressable>
+      {icon ? <View style={{ marginRight: spacing.sm }}>{icon}</View> : null}
       <AppText variant="heading" style={{ flex: 1 }} accessibilityRole="header" numberOfLines={1}>{title}</AppText>
       {right}
     </View>

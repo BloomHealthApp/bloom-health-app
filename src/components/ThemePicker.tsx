@@ -40,33 +40,34 @@ export function ThemePicker({ onPick }: { onPick?: (n: ThemeName) => void }) {
   return (
     <View style={{ gap: spacing.sm }}>
       <AppearancePicker />
-      <View accessibilityRole="radiogroup" accessibilityLabel="Theme" style={{ gap: spacing.sm }}>
-      {THEME_LIST.map((t) => {
-        const selected = t.name === theme.name;
-        const swatch = theme.isDark ? t.darkColors : t.colors;
-        return (
-          <Pressable
-            key={t.name}
-            onPress={() => {
-              setThemeName(t.name);
-              onPick?.(t.name);
-            }}
-            accessibilityRole="radio"
-            accessibilityState={{ selected }}
-            accessibilityLabel={`${t.label} theme`}
-            style={{ minHeight: MIN_TOUCH + 8, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 2, borderColor: selected ? theme.colors.accent : theme.colors.border, backgroundColor: theme.colors.surface }}
-          >
-            <Row style={{ gap: 4 }}>
-              {[swatch.tint, swatch.primary, swatch.secondary, swatch.bg].map((col, i) => (
-                <View key={i} style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: col, borderWidth: 1, borderColor: swatch.border }} />
+      <Row accessibilityRole="radiogroup" accessibilityLabel="Theme" style={{ gap: spacing.xs }}>
+        {THEME_LIST.map((t) => {
+          const selected = t.name === theme.name;
+          const swatch = theme.isDark ? t.darkColors : t.colors;
+          return (
+            <Pressable
+              key={t.name}
+              onPress={() => {
+                setThemeName(t.name);
+                onPick?.(t.name);
+              }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              accessibilityLabel={`${t.label} theme`}
+              style={{ flex: 1, minHeight: MIN_TOUCH, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', gap: 3, borderRadius: radius.sm, backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: selected ? theme.colors.accent : theme.colors.border }}
+            >
+              {[[swatch.tint, swatch.primary], [swatch.secondary, swatch.bg]].map((pair, r) => (
+                <Row key={r} style={{ gap: 3 }}>
+                  {pair.map((col, i) => (
+                    <View key={i} testID="theme-color" style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: col, borderWidth: 1, borderColor: swatch.border }} />
+                  ))}
+                </Row>
               ))}
-            </Row>
-            <AppText variant="bodyStrong" style={{ flex: 1 }}>{t.label}</AppText>
-            {selected ? <AppText variant="label" accent>Selected</AppText> : null}
-          </Pressable>
-        );
-      })}
-      </View>
+            </Pressable>
+          );
+        })}
+      </Row>
+      <AppText variant="caption" muted style={{ textAlign: 'center' }}>{theme.label}</AppText>
     </View>
   );
 }

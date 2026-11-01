@@ -35,6 +35,7 @@ src/features/       hooks joining the store, sync and pure logic
 src/lib/            pure logic: scoring, cycle, dates, rules
 src/components/     UI, mascot; periods/ = tracker UI
 src/avatars/        profile avatars
+src/icons/          custom sticker icons
 src/notifications/  local reminders
 src/theme/          themes
 src/widgets/        Android home-screen widgets

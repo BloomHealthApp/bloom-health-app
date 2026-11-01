@@ -1,3 +1,4 @@
+import { AppIcon } from '@/icons/AppIcon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
@@ -62,7 +63,10 @@ export default function DayDetail() {
         const meta = WORKOUT_TYPES.find((t) => t.type === w.type);
         return (
           <Card key={w.id} accessible accessibilityLabel={`${meta?.label}, ${formatDuration(w.durationSeconds)}`}>
-            <AppText variant="bodyStrong">{meta?.icon} {meta?.label} · {formatDuration(w.durationSeconds)}</AppText>
+            <Row style={{ gap: spacing.xs }}>
+              {meta ? <AppIcon name={meta.icon} size={22} /> : null}
+              <AppText variant="bodyStrong">{meta?.label} · {formatDuration(w.durationSeconds)}</AppText>
+            </Row>
             {w.notes ? <AppText variant="caption" muted>{w.notes}</AppText> : null}
           </Card>
         );

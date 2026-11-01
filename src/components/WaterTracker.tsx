@@ -1,3 +1,4 @@
+import { AppIcon } from '@/icons/AppIcon';
 import React from 'react';
 import { View } from 'react-native';
 import { formatNumber } from '@/lib/format';
@@ -13,7 +14,7 @@ export function WaterTracker({ ml, goal, readOnly, onAdd }: { ml: number; goal: 
     <Card>
       <Row style={{ gap: spacing.md }}>
         <Mascot mood="hydrate" size={80} />
-        <AppText variant="heading" style={{ flex: 1 }}>💧 Water</AppText>
+        <Row style={{ flex: 1, gap: spacing.sm }}><AppIcon name="droplet" size={28} /><AppText variant="heading">Water</AppText></Row>
         <AppText variant="bodyStrong" accent accessibilityLabel={`${formatNumber(ml)} of ${formatNumber(goal)} millilitres`}>
           {formatNumber(ml)} / {formatNumber(goal)} ml
         </AppText>

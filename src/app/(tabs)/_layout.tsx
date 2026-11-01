@@ -1,13 +1,15 @@
 import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
-import { Text } from 'react-native';
+import { View } from 'react-native';
 import { useAvatarPrompt } from '@/avatars/avatarPrompt';
+import { AppIcon } from '@/icons/AppIcon';
+import type { IconName } from '@/icons/iconArt';
 import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/tokens';
 
-function TabIcon({ glyph, focused }: { glyph: string; focused: boolean }) {
-  return <Text accessibilityElementsHidden importantForAccessibility="no" style={{ fontSize: 22, opacity: focused ? 1 : 0.55 }}>{glyph}</Text>;
+function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
+  return <View style={{ opacity: focused ? 1 : 0.55 }}><AppIcon name={name} size={28} /></View>;
 }
 
 export default function TabsLayout() {
@@ -30,10 +32,10 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: theme.colors.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ focused }) => <TabIcon glyph="🏡" focused={focused} />, tabBarAccessibilityLabel: 'Home tab' }} />
-      <Tabs.Screen name="progress" options={{ title: 'Progress', tabBarIcon: ({ focused }) => <TabIcon glyph="📈" focused={focused} />, tabBarAccessibilityLabel: 'Progress tab' }} />
-      <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: ({ focused }) => <TabIcon glyph="🗓️" focused={focused} />, tabBarAccessibilityLabel: 'Calendar tab' }} />
-      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ focused }) => <TabIcon glyph="⚙️" focused={focused} />, tabBarAccessibilityLabel: 'Settings tab' }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />, tabBarAccessibilityLabel: 'Home tab' }} />
+      <Tabs.Screen name="progress" options={{ title: 'Progress', tabBarIcon: ({ focused }) => <TabIcon name="chart" focused={focused} />, tabBarAccessibilityLabel: 'Progress tab' }} />
+      <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} />, tabBarAccessibilityLabel: 'Calendar tab' }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ focused }) => <TabIcon name="gear" focused={focused} />, tabBarAccessibilityLabel: 'Settings tab' }} />
     </Tabs>
   );
 }

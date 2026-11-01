@@ -1,18 +1,20 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
+import { AppIcon } from '@/icons/AppIcon';
+import type { IconName } from '@/icons/iconArt';
 import { elapsedSeconds, formatClock, isPaused, type TimerState } from '@/lib/workoutTimer';
 import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { WorkoutType } from '@/types/api';
 import { AppText, Button, Card, Row } from './ui';
 
-export const WORKOUT_TYPES: { type: WorkoutType; label: string; icon: string }[] = [
-  { type: 'strength', label: 'Strength', icon: '🏋️' },
-  { type: 'cardio', label: 'Cardio', icon: '🏃' },
-  { type: 'yoga', label: 'Yoga', icon: '🧘' },
-  { type: 'walking', label: 'Walking', icon: '🚶' },
-  { type: 'badminton', label: 'Badminton', icon: '🏸' },
-  { type: 'other', label: 'Other', icon: '✨' },
+export const WORKOUT_TYPES: { type: WorkoutType; label: string; icon: IconName }[] = [
+  { type: 'strength', label: 'Strength', icon: 'dumbbell' },
+  { type: 'cardio', label: 'Cardio', icon: 'run' },
+  { type: 'yoga', label: 'Yoga', icon: 'yoga' },
+  { type: 'walking', label: 'Walking', icon: 'walk' },
+  { type: 'badminton', label: 'Badminton', icon: 'badminton' },
+  { type: 'other', label: 'Other', icon: 'sparkles' },
 ];
 
 export function TypeChips({ value, onChange }: { value: WorkoutType; onChange: (t: WorkoutType) => void }) {
@@ -30,7 +32,10 @@ export function TypeChips({ value, onChange }: { value: WorkoutType; onChange: (
             accessibilityLabel={w.label}
             style={{ minHeight: MIN_TOUCH, paddingHorizontal: spacing.md, borderRadius: radius.pill, justifyContent: 'center', backgroundColor: sel ? theme.colors.primary : theme.colors.tint }}
           >
-            <AppText variant="label" style={{ color: sel ? theme.colors.onPrimary : theme.colors.text }}>{w.icon} {w.label}</AppText>
+            <Row style={{ gap: spacing.xs }}>
+              <AppIcon name={w.icon} size={22} />
+              <AppText variant="label" style={{ color: sel ? theme.colors.onPrimary : theme.colors.text }}>{w.label}</AppText>
+            </Row>
           </Pressable>
         );
       })}
@@ -75,7 +80,10 @@ export function WorkoutTimer({
   const meta = WORKOUT_TYPES.find((w) => w.type === state.type);
   return (
     <Card tint>
-      <AppText variant="label" accent>{meta?.icon} {meta?.label} {paused ? '· paused' : '· in progress'}</AppText>
+      <Row style={{ gap: spacing.xs }}>
+        {meta ? <AppIcon name={meta.icon} size={22} /> : null}
+        <AppText variant="label" accent>{meta?.label} {paused ? '· paused' : '· in progress'}</AppText>
+      </Row>
       <AppText variant="big" style={{ fontSize: 56, lineHeight: 64, textAlign: 'center', marginVertical: spacing.md }} accessibilityLiveRegion="none" accessibilityLabel={`Elapsed ${Math.floor(secs / 60)} minutes ${secs % 60} seconds`}>
         {formatClock(secs)}
       </AppText>

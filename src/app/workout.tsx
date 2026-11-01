@@ -1,3 +1,4 @@
+import { AppIcon } from '@/icons/AppIcon';
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
@@ -102,7 +103,10 @@ export default function WorkoutScreen() {
           <Card key={w.id}>
             <Row style={{ justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }} accessible accessibilityLabel={`${meta?.label} on ${prettyDate(w.localDate)}, ${formatDuration(w.durationSeconds)}${w.notes ? ', note: ' + w.notes : ''}`}>
-                <AppText variant="bodyStrong">{meta?.icon} {meta?.label} · {formatDuration(w.durationSeconds)}</AppText>
+                <Row style={{ gap: spacing.xs }}>
+              {meta ? <AppIcon name={meta.icon} size={22} /> : null}
+              <AppText variant="bodyStrong">{meta?.label} · {formatDuration(w.durationSeconds)}</AppText>
+            </Row>
                 <AppText variant="caption" muted>{prettyDate(w.localDate)}{w.pausedSeconds ? ` · paused ${formatDuration(w.pausedSeconds)}` : ''}</AppText>
                 {w.notes ? <AppText variant="caption">{w.notes}</AppText> : null}
               </View>

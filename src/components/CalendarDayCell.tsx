@@ -32,7 +32,7 @@ export function CalendarDayCell({ day, percent, threshold, isToday, isFuture, re
   const strong = lvl >= 3 && !soft;
   const a11y = isFuture ? `${label}, upcoming` : `${label}, ${percent === null ? 'no data' : Math.round(percent) + ' percent'}${restDay ? ', rest day' : ''}${percent !== null && percent >= threshold ? ', goal met' : ''}`;
   return (
-    <View style={{ width: `${100 / 7}%`, padding: 2 }}>
+    <View style={{ flex: 1, padding: 2 }}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"

@@ -123,3 +123,13 @@ export function shortDate(localDate: string): string {
 }
 export const WEEKDAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** Splits a month's cells into rows of exactly seven, padding the last row so its days keep their column width. */
+export function chunkWeeks<T>(cells: (T | null)[]): (T | null)[][] {
+  const weeks: (T | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    const week = cells.slice(i, i + 7);
+    weeks.push([...week, ...Array<null>(7 - week.length).fill(null)]);
+  }
+  return weeks;
+}

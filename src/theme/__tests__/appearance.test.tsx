@@ -1,6 +1,7 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { resolveTheme, THEME_LIST } from '../themes';
+import { ThemePicker } from '@/components/ThemePicker';
+import { resolveTheme, THEME_LIST, THEMES } from '../themes';
 import { ThemeProvider, useTheme } from '../ThemeProvider';
 
 const mockStore = new Map<string, string>();
@@ -40,7 +41,7 @@ beforeEach(() => {
 });
 
 describe('dark palettes', () => {
-  it.each(THEME_LIST.map((t) => [t.label, t.darkColors] as const))('%s is readable', (_label, c) => {
+  it.each(Object.values(THEMES).map((t) => [t.label, t.darkColors] as const))('%s is readable', (_label, c) => {
     expect(contrast(c.text, c.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.textMuted, c.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.textMuted, c.surface)).toBeGreaterThanOrEqual(4.5);
@@ -78,5 +79,30 @@ describe('appearance setting', () => {
     await mount();
     expect(ctx.appearance).toBe('system');
     expect(ctx.theme.isDark).toBe(true);
+  });
+});
+
+describe('theme picker', () => {
+  const radios = (t: renderer.ReactTestRenderer) => t.root.findAll((n) => typeof n.type === 'string' && n.props.accessibilityRole === 'radio' && String(n.props.accessibilityLabel).endsWith('theme'));
+  it('offers one square per theme, with Sunset Ember in place of Mint Peach', async () => {
+    let t!: renderer.ReactTestRenderer;
+    await act(async () => {
+      t = renderer.create(<ThemeProvider><ThemePicker /></ThemeProvider>);
+    });
+    expect(radios(t).map((n) => n.props.accessibilityLabel)).toEqual(['Forest Trail theme', 'Midnight Navy theme', 'Cotton Candy theme', 'Lavender Dream theme', 'Sunset Ember theme', 'Graphite Grey theme']);
+    expect(radios(t).map((n) => n.props.accessibilityState.selected)).toEqual([true, false, false, false, false, false]);
+    for (const square of radios(t)) expect(square.findAll((n) => typeof n.type === 'string' && n.props.testID === 'theme-color')).toHaveLength(4);
+  });
+  it('still shows Mint Peach for an account already using it', async () => {
+    mockStore.set('bubu.theme', 'mintPeach');
+    await mount();
+    expect(ctx.theme.name).toBe('mintPeach');
+  });
+  it.each(['sunsetEmber', 'graphiteGrey'] as const)('keeps %s readable in light mode', (name) => {
+    const c = THEMES[name].colors;
+    expect(contrast(c.text, c.bg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.textMuted, c.bg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.onPrimary, c.primary)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.accent, c.surface)).toBeGreaterThanOrEqual(4.5);
   });
 });

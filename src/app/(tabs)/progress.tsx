@@ -1,4 +1,4 @@
-import { habitGlyph } from '@/lib/habitIcon';
+import { HabitIcon } from '@/icons/HabitIcon';
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
@@ -108,8 +108,9 @@ export default function Progress() {
           <Card style={{ gap: spacing.md }}>
             {perHabit.map(({ h, pct }) => (
               <View key={h.id} accessible accessibilityLabel={`${h.title}: ${pct === null ? 'no data' : pct + ' percent'}`}>
-                <Row style={{ justifyContent: 'space-between' }}>
-                  <AppText variant="bodyStrong" style={{ flex: 1 }} numberOfLines={1}>{habitGlyph(h.icon)} {h.title}</AppText>
+                <Row style={{ justifyContent: 'space-between', gap: spacing.sm }}>
+                  <HabitIcon icon={h.icon} size={24} />
+                  <AppText variant="bodyStrong" style={{ flex: 1 }} numberOfLines={1}>{h.title}</AppText>
                   <AppText variant="label" accent>{pct === null ? '—' : `${pct}%`}</AppText>
                 </Row>
                 <View style={{ height: 8, borderRadius: 4, backgroundColor: theme.colors.tint, marginTop: 6, overflow: 'hidden' }}>

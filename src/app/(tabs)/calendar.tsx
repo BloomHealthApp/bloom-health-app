@@ -8,7 +8,7 @@ import { ViewerBanner } from '@/components/ViewerBanner';
 import { AppText, Button, Card, Loading, Row, Screen } from '@/components/ui';
 import { useDerived } from '@/features/derived';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
-import { monthBounds, monthName, prettyDate, WEEKDAY_SHORT, weekdayOf } from '@/lib/dates';
+import { chunkWeeks, monthBounds, monthName, prettyDate, WEEKDAY_SHORT, weekdayOf } from '@/lib/dates';
 import { useData, useSyncStatus } from '@/providers/DataProvider';
 import { spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -22,7 +22,7 @@ export default function CalendarTab() {
   useSyncOnFocus();
   const [offset, setOffset] = useState(0);
 
-  const { year, month, cells } = useMemo(() => {
+  const { year, month, weeks } = useMemo(() => {
     const [y, m] = d.today.split('-').map(Number);
     const idx = y * 12 + (m - 1) + offset;
     const yy = Math.floor(idx / 12);
@@ -32,7 +32,7 @@ export default function CalendarTab() {
     const count = Number(to.slice(8));
     const out: ({ date: string; day: number } | null)[] = Array(lead).fill(null);
     for (let i = 1; i <= count; i++) out.push({ date: `${yy}-${String(mm).padStart(2, '0')}-${String(i).padStart(2, '0')}`, day: i });
-    return { year: yy, month: mm, cells: out };
+    return { year: yy, month: mm, weeks: chunkWeeks(out) };
   }, [d.today, offset]);
 
   return (
@@ -55,31 +55,33 @@ export default function CalendarTab() {
         <Card>
           <Row>
             {WEEKDAY_SHORT.map((w, i) => (
-              <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 6 }} accessibilityElementsHidden importantForAccessibility="no">
+              <View key={i} style={{ flex: 1, alignItems: 'center', paddingBottom: 6 }} accessibilityElementsHidden importantForAccessibility="no">
                 <AppText variant="caption" muted>{w}</AppText>
               </View>
             ))}
           </Row>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {cells.map((c, i) => {
-              if (!c) return <View key={`e${i}`} style={{ width: `${100 / 7}%` }} />;
-              const s = d.scoreFor(c.date);
-              return (
-                <CalendarDayCell
-                  key={c.date}
-                  date={c.date}
-                  day={c.day}
-                  percent={s.neutral && !s.restDay ? null : s.completionPercent}
-                  threshold={d.threshold}
-                  isToday={c.date === d.today}
-                  isFuture={c.date > d.today}
-                  restDay={s.restDay}
-                  label={prettyDate(c.date)}
-                  onPress={() => router.push({ pathname: '/day/[date]', params: { date: c.date } })}
-                />
-              );
-            })}
-          </View>
+          {weeks.map((week, w) => (
+            <Row key={w}>
+              {week.map((c, i) => {
+                if (!c) return <View key={`e${i}`} style={{ flex: 1 }} />;
+                const s = d.scoreFor(c.date);
+                return (
+                  <CalendarDayCell
+                    key={c.date}
+                    date={c.date}
+                    day={c.day}
+                    percent={s.neutral && !s.restDay ? null : s.completionPercent}
+                    threshold={d.threshold}
+                    isToday={c.date === d.today}
+                    isFuture={c.date > d.today}
+                    restDay={s.restDay}
+                    label={prettyDate(c.date)}
+                    onPress={() => router.push({ pathname: '/day/[date]', params: { date: c.date } })}
+                  />
+                );
+              })}
+            </Row>
+          ))}
         </Card>
       )}
       <Row style={{ gap: spacing.sm, justifyContent: 'center' }} accessibilityLabel="Legend: darker means more habits completed" accessible>

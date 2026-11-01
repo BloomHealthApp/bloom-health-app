@@ -1,7 +1,7 @@
 # src/theme/
 
 ## Purpose
-Tokens, five themes, and `ThemeProvider`. The server profile theme is the cross-device preference once signed in.
+Tokens, six offered themes, and `ThemeProvider`. The server profile theme is the cross-device preference once signed in.
 
 ## Rules
 Base palettes from the spec, with remaining roles (text, border, status) derived for contrast:
@@ -10,13 +10,18 @@ Base palettes from the spec, with remaining roles (text, border, status) derived
 |---|---|
 | Cotton Candy | `#F8D7E8`, `#D65B98`, `#FFF9F5` |
 | Lavender Dream | `#E9E2FF`, `#B9A7E8`, `#51436B` |
-| Mint Peach | `#DDF3E7`, `#FFE3D6`, `#6E9D88` |
+| Mint Peach (not offered) | `#DDF3E7`, `#FFE3D6`, `#6E9D88` |
+| Sunset Ember | `#FFD9BC`, `#B84A0E`, `#FFF6EE` |
+| Graphite Grey | `#D5D8DC`, `#4A4F57`, `#F2F3F4` |
 | Forest Trail (default) | `#DCE8D6`, `#2F6B4F`, `#F6F8F2` |
 | Midnight Navy | `#D9E2F0`, `#1F3A5F`, `#F4F6FA` |
 
 Forest Trail and Midnight Navy set `blush`, so the mascot's cheeks aren't mixed with pink.
 
 Signup has no theme field, so `AuthProvider.verifyOtp` sends the theme picked on the welcome screen with `PATCH /me` for a new account. Otherwise the server default would overwrite it. If that call fails, signup still succeeds on the default.
+
+## Picker
+`THEME_LIST` is what the picker offers, as one row of squares, each showing four of the theme's colours as small circles (tint, primary, secondary, background) for the current appearance. `THEMES` also holds Mint Peach, removed from the picker because it looked like Forest Trail. Keep it there and in the service enum: accounts may still have it saved, and an unknown theme fails `ThemeNameSchema`.
 
 ## Appearance
 Every theme has `colors` (light) and `darkColors`. `ThemeProvider` resolves one into `theme.colors`, so screens never choose. The Light / Dark / System choice is stored only on the device (`bubu.appearance`), is not part of the API, and defaults to System. Android widgets, avatars and the mascot body stay light on purpose. `userInterfaceStyle: automatic` in `app.json` needs `expo-system-ui` on Android development builds, so a native rebuild is required.

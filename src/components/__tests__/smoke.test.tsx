@@ -1,7 +1,7 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import { THEME_LIST } from '@/theme/themes';
+import { THEMES } from '@/theme/themes';
 import { MascotStatic } from '../MascotStatic';
 import { CalendarDayCell, heatLevel } from '../CalendarDayCell';
 import { HabitCard } from '../HabitCard';
@@ -48,7 +48,7 @@ describe('component smoke renders', () => {
     expect(heatLevel(10, 80)).toBe(1);
   });
   it('themes expose the spec palettes', () => {
-    const by = Object.fromEntries(THEME_LIST.map((t) => [t.name, t.colors]));
+    const by = Object.fromEntries(Object.values(THEMES).map((t) => [t.name, t.colors]));
     expect(by.cottonCandy).toMatchObject({ tint: '#F8D7E8', primary: '#D65B98', bg: '#FFF9F5' });
     expect(by.lavenderDream).toMatchObject({ tint: '#E9E2FF', primary: '#B9A7E8', text: '#51436B' });
     expect(by.mintPeach).toMatchObject({ tint: '#DDF3E7', secondary: '#FFE3D6', primary: '#6E9D88' });
