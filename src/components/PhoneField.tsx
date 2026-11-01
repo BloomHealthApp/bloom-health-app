@@ -43,7 +43,7 @@ export function PhoneField({ label = 'Phone', countryCode, number, onChangeCount
           placeholder="98765 43210"
           placeholderTextColor={c.textMuted}
           {...input}
-          style={{ ...box, flex: 1, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 14, color: c.text }}
+          style={{ ...box, flex: 1, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 13, color: c.text }}
         />
       </View>
       {error ? <AppText variant="caption" style={{ color: c.danger }} accessibilityRole="alert">{error}</AppText> : null}

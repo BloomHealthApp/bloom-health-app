@@ -17,7 +17,10 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 | `(tabs)/index.tsx` | signed in | Home; viewers poll every 30 seconds while focused |
 | `(tabs)/progress.tsx` | signed in | Charts |
 | `(tabs)/calendar.tsx` | signed in | Month view; also the private period tracker, for owners with it on |
-| `(tabs)/profile.tsx` | signed in | Your profile and private details; opens Settings from the gear |
+| `(tabs)/profile.tsx` | signed in | Your profile and private details on glass cards; edits on its own page; opens Settings from the menu icon |
+| `edit-profile/index.tsx` | signed in | Name, gender and tracker switch; Done saves the name |
+| `edit-profile/avatar.tsx` | signed in | Choose an avatar |
+| `edit-profile/phone.tsx` | signed in | Add or change the phone, with a code emailed to the account |
 | `settings/index.tsx` | signed in | List of settings, opened from Profile's menu icon; sign out |
 | `settings/appearance.tsx` | signed in | Light, dark and theme |
 | `settings/daily-goal.tsx` | signed in | Goal and rest days; read-only for viewers |
@@ -47,7 +50,7 @@ On tablets (`lib/device.ts`, 600dp or more on the shorter side), `_layout.tsx` h
 The root `Stack` uses `slide_from_right`, so every pushed page, including each setting, slides in from the right on iOS and Android. Add settings as a page under `settings/` plus a `SettingsRow` in the list, rather than as a section on the list.
 
 ## Sign-in
-Sign-in offers Phone (default, with a separate country code defaulting to +91) or Email. The code always goes to the account's email; there's no SMS. A phone with no matching account gets the same "sent" answer and no email, so the code screen words this as "If this number is on an account" and offers "Use email instead". Profile shows the phone under private details, and adding or changing it needs a code emailed to the account (`/me/phone/request` then `/me/phone/verify`). Never show it in `ProfileHeader`. Numbers are built with `composePhone`, so don't send what the user typed.
+Sign-in offers Phone (default, with a separate country code defaulting to +91) or Email. The code always goes to the account's email; there's no SMS. A phone with no matching account gets the same "sent" answer and no email, so the code screen words this as "If this number is on an account" and offers "Use email instead". Profile shows the phone in its details, and adding or changing it on `edit-profile/phone` needs a code emailed to the account (`/me/phone/request` then `/me/phone/verify`). Never show it in `ProfileHeader`. Numbers are built with `composePhone`, so don't send what the user typed.
 
 ## Protected routes
 Every screen outside `(auth)` and `index` needs the data layer, which `_layout.tsx` removes when signed out. `Stack.Protected` guards them using `lib/protectedRoutes.ts`, so a screen open at sign-out or session expiry goes to `index` rather than crashing. Add new routes to that list; a test fails if one is missing.

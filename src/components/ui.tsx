@@ -64,7 +64,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       ]}
     >
       {variant !== 'ghost' ? <GlassLayer radius={radius.pill} onFill /> : null}
-      {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 14 }}>{title}</AppText>}
+      {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 13 }}>{title}</AppText>}
     </Pressable>
   );
 }
@@ -80,8 +80,9 @@ export function IconButton({ label, onPress, children, disabled, style }: { labe
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
       hitSlop={4}
-      style={({ pressed }) => [{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.tint, paddingHorizontal: spacing.md, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 }, style]}
+      style={({ pressed }) => [{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.tint, paddingHorizontal: spacing.md, boxShadow: glassShadow(theme.isDark), opacity: disabled ? 0.4 : pressed ? 0.8 : 1 }, style]}
     >
+      <GlassLayer radius={radius.pill} onFill />
       {children}
     </Pressable>
   );

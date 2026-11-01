@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Switch, View } from 'react-native';
+import { GlassLayer } from '@/components/GlassLayer';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { AppText, Button, Card, ErrorBanner, Row, Screen } from '@/components/ui';
 import { ViewerBanner } from '@/components/ViewerBanner';
@@ -62,6 +63,7 @@ export default function DailyGoalScreen() {
                 accessibilityLabel={`${w} rest day`}
                 style={{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, paddingHorizontal: spacing.md, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? theme.colors.primary : theme.colors.tint, opacity: isOwner ? 1 : 0.6 }}
               >
+                <GlassLayer radius={radius.pill} onFill />
                 <AppText variant="label" style={{ color: on ? theme.colors.onPrimary : theme.colors.text }}>{w}</AppText>
               </Pressable>
             );

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { MIN_TOUCH, spacing } from '@/theme/tokens';
+import { GlassLayer, glassShadow } from './GlassLayer';
 import { AppText } from './ui';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -14,8 +15,9 @@ export function ScreenHeader({ title, icon, right }: { title: string; icon?: Rea
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
         accessibilityRole="button"
         accessibilityLabel="Go back"
-        style={({ pressed }) => ({ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: theme.colors.surface, opacity: pressed ? 0.7 : 1 })}
+        style={({ pressed }) => ({ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: theme.glass, boxShadow: glassShadow(theme.isDark), opacity: pressed ? 0.7 : 1 })}
       >
+        <GlassLayer radius={999} />
         <AppText variant="heading" accent>‹</AppText>
       </Pressable>
       {icon ? <View style={{ marginRight: spacing.sm }}>{icon}</View> : null}

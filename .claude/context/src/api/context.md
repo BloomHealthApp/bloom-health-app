@@ -19,8 +19,8 @@ All paths are under `/v1`. Auth means a bearer token is sent.
 | `logout` | `POST /auth/logout` | no | `AuthProvider` |
 | `getMe` | `GET /me` | yes | `AuthProvider` |
 | `patchMe` | `PATCH /me` | yes | settings screen, choose-avatar screen, `DataProvider` |
-| `requestPhoneChange` | `POST /me/phone/request` | yes | profile screen |
-| `verifyPhoneChange` | `POST /me/phone/verify` | yes | profile screen |
+| `requestPhoneChange` | `POST /me/phone/request` | yes | `edit-profile/phone` |
+| `verifyPhoneChange` | `POST /me/phone/verify` | yes | `edit-profile/phone` |
 | `getStats` | `GET /stats/summary` | yes | `features/serverSummary.ts` (viewers) |
 | `syncPush` | `POST /sync/push` | yes | `SyncEngine` |
 | `syncPull` | `GET /sync/pull` | yes | `SyncEngine` |
