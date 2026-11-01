@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
+import { ApiError } from '@/api/errors';
 import ProfileTab from '@/app/(tabs)/profile';
 import DailyGoalScreen from '@/app/settings/daily-goal';
 import SettingsScreen from '@/app/settings';
@@ -9,6 +10,8 @@ import { toPublicProfile } from '@/lib/publicProfile';
 import { ReminderRow, showsVolumeSlider } from '@/components/reminders/ReminderRow';
 import SignUpScreen from '@/app/(auth)/signup';
 import CalendarTab from '@/app/(tabs)/calendar';
+import OtpScreen from '@/app/(auth)/otp';
+import SignInScreen from '@/app/(auth)/signin';
 import { defaultSettings, REMINDER_LABELS } from '@/lib/defaults';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { Reminder, Settings, User } from '@/types/api';
@@ -22,8 +25,11 @@ jest.mock('react-native-reanimated', () => {
 });
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
+let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), canGoBack: () => true }),
+  useLocalSearchParams: () => mockParams,
+  useRouter: () => ({ push: mockPush, replace: mockReplace, back: jest.fn(), canGoBack: () => true }),
   useFocusEffect: () => {},
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   Redirect: ({ href }: { href: string }) => require('react').createElement('Redirect', { href }),
@@ -34,7 +40,7 @@ jest.mock('@/features/derived', () => ({
 }));
 jest.mock('expo-constants', () => ({ expoConfig: { version: '1.0.0' } }));
 
-const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { patchMe: jest.Mock }; updateUser: jest.Mock; signOut: jest.Mock; requestSignUp: jest.Mock } = {
+const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { patchMe: jest.Mock }; updateUser: jest.Mock; signOut: jest.Mock; requestSignUp: jest.Mock; requestSignIn: jest.Mock; verifyOtp: jest.Mock } = {
   status: 'signedIn',
   user: null,
   isOwner: true,
@@ -42,6 +48,8 @@ const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { pa
   updateUser: jest.fn(),
   signOut: jest.fn(),
   requestSignUp: jest.fn(),
+  requestSignIn: jest.fn(),
+  verifyOtp: jest.fn(),
 };
 jest.mock('@/providers/AuthProvider', () => ({ useAuth: () => mockAuth }));
 
@@ -92,6 +100,8 @@ beforeEach(() => {
   mockAuth.api.patchMe.mockReset();
   mockAuth.updateUser.mockReset();
   mockAuth.requestSignUp.mockReset();
+  mockAuth.requestSignIn.mockReset();
+  mockParams = {};
   mockActions.saveSettings.mockClear();
   mockData.settings = defaultSettings();
 });
@@ -294,6 +304,79 @@ describe('volume slider availability', () => {
     expect(showsVolumeSlider('loudAlarm', 'ios')).toBe(false);
     expect(showsVolumeSlider('alarm', 'android')).toBe(false);
     expect(showsVolumeSlider('notification', 'android')).toBe(false);
+  });
+});
+
+describe('phone or email sign-in', () => {
+  const enter = (t: renderer.ReactTestRenderer, label: string, v: string) => act(() => t.root.findAll((x) => x.props.accessibilityLabel === label && typeof x.props.onChangeText === 'function')[0].props.onChangeText(v));
+  beforeEach(() => mockAuth.requestSignIn.mockResolvedValue({ status: 'sent', challengeId: 'c' }));
+
+  it('defaults to phone with India, and sends the full number', async () => {
+    const t = render(<SignInScreen />);
+    expect(text(t)).toContain('+91');
+    enter(t, 'Phone', '098765 43210');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).toHaveBeenCalledWith('+919876543210');
+    expect(mockPush).toHaveBeenCalledWith(expect.objectContaining({ params: expect.objectContaining({ identifier: '+919876543210' }) }));
+  });
+  it('lets you pick another country code', async () => {
+    const t = render(<SignInScreen />);
+    await press(t, 'Country code +91. Tap to change.');
+    await press(t, 'USA and Canada +1');
+    enter(t, 'Phone', '4155550100');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).toHaveBeenCalledWith('+14155550100');
+  });
+  it('sends an email in Email mode', async () => {
+    const t = render(<SignInScreen />);
+    await press(t, 'Email');
+    enter(t, 'Email', 'mia@example.com');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).toHaveBeenCalledWith('mia@example.com');
+  });
+  it("doesn't send a short number", async () => {
+    const t = render(<SignInScreen />);
+    enter(t, 'Phone', '98765');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).not.toHaveBeenCalled();
+    expect(text(t)).toContain('10-digit');
+  });
+  it('opens on Email when asked to', () => {
+    mockParams = { mode: 'email' };
+    expect(render(<SignInScreen />).root.findAllByProps({ accessibilityLabel: 'Phone' }).filter((x) => x.props.onChangeText)).toHaveLength(0);
+  });
+  it('gives phone sign-in a way out on the code screen, without confirming the account', async () => {
+    mockParams = { challengeId: 'c', purpose: 'signin', identifier: '+919876543210' };
+    const t = render(<OtpScreen />);
+    expect(text(t)).toContain('If this number is on an account');
+    await press(t, 'Use email instead');
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/(auth)/signin', params: { mode: 'email' } });
+  });
+  it('has no such option after an email sign-in', () => {
+    mockParams = { challengeId: 'c', purpose: 'signin', identifier: 'mia@example.com' };
+    expect(text(render(<OtpScreen />))).not.toContain('Use email instead');
+  });
+});
+
+describe('Profile: phone number', () => {
+  const enter = (t: renderer.ReactTestRenderer, v: string) => act(() => t.root.findByProps({ accessibilityLabel: 'Phone' }).props.onChangeText(v));
+  it('prompts an account with no phone, and saves a new one', async () => {
+    mockAuth.user = user({ phone: null });
+    mockAuth.api.patchMe.mockResolvedValue(user({ phone: '+919876543210' }));
+    const t = render(<ProfileTab />);
+    expect(text(t)).toContain('Add your phone number');
+    enter(t, '9876543210');
+    await press(t, 'Save phone');
+    expect(mockAuth.api.patchMe).toHaveBeenCalledWith({ phone: '+919876543210' });
+    expect(mockAuth.updateUser).toHaveBeenCalled();
+  });
+  it('shows a clear message when the number is on another account', async () => {
+    mockAuth.user = user({ phone: null });
+    mockAuth.api.patchMe.mockRejectedValue(new ApiError(409, 'already_registered', 'taken'));
+    const t = render(<ProfileTab />);
+    enter(t, '9876543210');
+    await press(t, 'Save phone');
+    expect(text(t)).toContain('already exists');
   });
 });
 

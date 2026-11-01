@@ -218,7 +218,7 @@ export class ApiClient {
     return this.request('GET', '/me', { schema: UserSchema });
   }
   /** `gender` null clears it; `periodTrackerEnabled` null resets to the gender default (on for female). */
-  patchMe(body: { displayName?: string; avatar?: string | null; timezone?: string; theme?: ThemeName; gender?: Gender | null; periodTrackerEnabled?: boolean | null }): Promise<User> {
+  patchMe(body: { displayName?: string; phone?: string; avatar?: string | null; timezone?: string; theme?: ThemeName; gender?: Gender | null; periodTrackerEnabled?: boolean | null }): Promise<User> {
     return this.request('PATCH', '/me', { body, schema: UserSchema });
   }
   getSettings(): Promise<Settings> {

@@ -5,11 +5,13 @@ import { Path, Svg } from 'react-native-svg';
 import { AvatarPicker } from '@/avatars/AvatarPicker';
 import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
 import { Field } from '@/components/Field';
+import { PhoneField } from '@/components/PhoneField';
 import { GenderPicker } from '@/components/GenderPicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { AppText, Button, Card, ErrorBanner, IconButton, PageHeader, Row, Screen } from '@/components/ui';
 import { useDerived } from '@/features/derived';
+import { authErrorMessage, composePhone, splitPhone, validatePhoneParts } from '@/lib/authForm';
 import { genderPatch, isPeriodTrackerOn, showTrackerSwitch } from '@/lib/profile';
 import { toPublicProfile } from '@/lib/publicProfile';
 import { useAuth } from '@/providers/AuthProvider';
@@ -34,6 +36,12 @@ export default function ProfileTab() {
   const [editing, setEditing] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const savedPhone = splitPhone(user?.phone);
+  const [countryCode, setCountryCode] = useState(savedPhone.countryCode);
+  const [phoneNumber, setPhoneNumber] = useState(savedPhone.number);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const phoneErr = validatePhoneParts(countryCode, phoneNumber);
+  const newPhone = composePhone(countryCode, phoneNumber);
   const [pickingAvatar, setPickingAvatar] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
 
@@ -45,6 +53,18 @@ export default function ProfileTab() {
       await fn();
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Something went wrong.');
+    }
+  };
+
+  const savePhone = async () => {
+    setPhoneTouched(true);
+    if (phoneErr) return;
+    setErr(null);
+    try {
+      updateUser(await api.patchMe({ phone: newPhone }));
+      setMsg('Phone number updated.');
+    } catch (e) {
+      setErr(authErrorMessage(e, 'Could not save your phone number.'));
     }
   };
 
@@ -89,7 +109,15 @@ export default function ProfileTab() {
           <AppText variant="caption" muted>Only you can see this.</AppText>
         </View>
         {user.email ? <AppText>{user.email}</AppText> : null}
-        {user.phone ? <AppText>{user.phone}</AppText> : null}
+        {user.phone ? null : <AppText variant="caption" muted>Add your phone number so you can sign in with it.</AppText>}
+        <PhoneField
+          countryCode={countryCode}
+          number={phoneNumber}
+          onChangeCountryCode={setCountryCode}
+          onChangeNumber={setPhoneNumber}
+          error={phoneTouched ? phoneErr : null}
+        />
+        <Button title="Save phone" variant="secondary" disabled={!!phoneErr || newPhone === user.phone} onPress={savePhone} />
         <GenderPicker value={user.gender} onChange={(g: Gender | null) => guarded(async () => { updateUser(await api.patchMe(genderPatch(g))); setMsg('Profile updated.'); })} />
         {showTrackerSwitch(user) ? (
           <View style={{ gap: spacing.sm }}>
