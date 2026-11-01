@@ -12,9 +12,8 @@ import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Reminder } from '@/types/api';
 
-const MODES: { mode: ReminderMode; label: string; icon: 'notification' | 'bell' | 'alarm-clock' }[] = [
+const MODES: { mode: ReminderMode; label: string; icon: 'notification' | 'alarm-clock' }[] = [
   { mode: 'notification', label: 'Notification', icon: 'notification' },
-  { mode: 'alarm', label: 'Alarm', icon: 'bell' },
   { mode: 'loudAlarm', label: 'Loud alarm', icon: 'alarm-clock' },
 ];
 
@@ -69,31 +68,31 @@ export function ReminderRow(props: {
         >
           <AppIcon name={reminder.enabled ? 'check' : 'close'} size={24} />
         </Pressable>
+        <View
+          accessibilityRole="radiogroup"
+          accessibilityLabel={`${label} alert type`}
+          style={{ flexDirection: 'row', gap: spacing.xs, opacity: reminder.enabled ? 1 : 0.55 }}
+        >
+          {MODES.map((m) => {
+            // A reminder saved in the older plain `alarm` mode shows under the alarm icon and still rings as saved.
+            const on = m.mode === mode || (mode === 'alarm' && m.mode === 'loudAlarm');
+            return (
+              <Pressable
+                key={m.mode}
+                onPress={() => onChooseMode(m.mode)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: on, expanded: on && previewing }}
+                accessibilityLabel={`${label}: ${m.label}`}
+                accessibilityHint={on ? 'Tap again to show or hide the preview' : 'Select this alert type'}
+                style={{ width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? theme.colors.accent : 'transparent', backgroundColor: on ? theme.colors.tint : theme.glass }}
+              >
+                <GlassLayer radius={radius.pill} />
+                <AppIcon name={m.icon} size={24} />
+              </Pressable>
+            );
+          })}
+        </View>
       </Row>
-      <View
-        accessibilityRole="radiogroup"
-        accessibilityLabel={`${label} alert type`}
-        style={{ flexDirection: 'row', gap: spacing.xs, opacity: reminder.enabled ? 1 : 0.55 }}
-      >
-        {MODES.map((m) => {
-          const on = m.mode === mode;
-          return (
-            <Pressable
-              key={m.mode}
-              onPress={() => onChooseMode(m.mode)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on, expanded: on && previewing }}
-              accessibilityLabel={`${label}: ${m.label}`}
-              accessibilityHint={on ? 'Tap again to show or hide the preview' : 'Select this alert type'}
-              style={{ flex: 1, minHeight: MIN_TOUCH + 12, paddingVertical: spacing.xs, gap: 2, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? theme.colors.accent : 'transparent', backgroundColor: on ? theme.colors.tint : theme.glass }}
-            >
-              <GlassLayer radius={radius.sm} />
-              <AppIcon name={m.icon} size={24} />
-              <AppText variant="caption" numberOfLines={1} adjustsFontSizeToFit style={{ color: theme.colors.text }}>{m.label}</AppText>
-            </Pressable>
-          );
-        })}
-      </View>
       {previewing ? <ModePreview reminder={reminder} mode={mode} volume={volume} onVolumeChange={onVolumeChange} /> : null}
     </View>
   );
