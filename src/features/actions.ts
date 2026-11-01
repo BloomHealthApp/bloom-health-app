@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { deviceTimezone, localDateInTz } from '@/lib/dates';
 import { PeriodValidationError, validatePeriod } from '@/lib/periodRules';
 import type { PeriodDraft } from '@/lib/periodsView';
 import { HABIT_IDS } from '@/lib/defaults';
+import { nextStepTotal } from '@/lib/deviceSteps';
 import { logId, uuid } from '@/lib/ids';
 import { evaluateStatus, type HabitRule } from '@/lib/scoring';
 import type { FinishedWorkout } from '@/lib/workoutTimer';
@@ -48,6 +49,8 @@ export function habitPayload(h: Habit): Record<string, unknown> {
 export function useActions() {
   const { isOwner } = useAuth();
   const { store, engine, scheduleSync } = useData();
+  // Each step add must see the previous one's total, or quick taps would be lost
+  const stepAdds = useRef<Promise<unknown>>(Promise.resolve());
 
   return useMemo(() => {
     const guard = () => {
@@ -90,6 +93,16 @@ export function useActions() {
       const existing = await store.get<DailyLog>('dailyLog', logId(habitId, localDate));
       const next = Math.max(0, (existing?.value ?? 0) + delta);
       await setLog(rule as HabitRule & { id: string }, localDate, next);
+    }
+
+    function addSteps(rule: HabitRule & { id: string }, localDate: string, delta: number): Promise<void> {
+      const run = async () => {
+        const existing = await store.get<DailyLog>('dailyLog', logId(rule.id, localDate));
+        await setLog(rule, localDate, nextStepTotal(existing?.value, delta));
+      };
+      const next = stepAdds.current.then(run, run);
+      stepAdds.current = next.catch(() => undefined);
+      return next;
     }
 
     async function saveHabit(draft: HabitDraft, existing?: Habit): Promise<Habit> {
@@ -215,6 +228,7 @@ export function useActions() {
       toggleBoolean: (habit: HabitRule & { id: string }, date: string, on: boolean) => setLog(habit, date, on ? 1 : 0),
       addWater: (rule: HabitRule, date: string, ml: number) => addToLog(HABIT_IDS.water, rule, date, ml),
       setSteps: (rule: HabitRule & { id: string }, date: string, steps: number, source: 'manual' | 'device' = 'manual') => setLog(rule, date, Math.max(0, Math.round(steps)), { source }),
+      addSteps,
       saveHabit,
       archiveHabit,
       restoreHabit,

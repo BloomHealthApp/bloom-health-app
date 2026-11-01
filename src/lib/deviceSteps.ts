@@ -1,6 +1,12 @@
 import { addDays } from './dates';
 
 export const DEVICE_STEPS_DAYS = 7;
+export const MAX_DAILY_STEPS = 200000;
+
+/** The total after adding to it or undoing an add. */
+export function nextStepTotal(current: number | null | undefined, delta: number): number {
+  return Math.min(MAX_DAILY_STEPS, Math.max(0, Math.round((current ?? 0) + delta)));
+}
 
 export interface StepLogView {
   value: number | null;

@@ -17,5 +17,6 @@
 Transactions are serialised through `txChain`, because SQLite doesn't support nested or concurrent ones on one connection.
 
 ## Gotchas
+- Every `SqliteStore` method waits for the open and schema steps, because NetInfo, AppState and focus listeners can call in before `DataProvider` runs `init`. Add new methods through `connection()`, not `this.db`.
 - `clearAll` runs only when a different user signs in (`DataProvider`). Signing out doesn't clear SQLite, so the previous user's cache, including periods, stays on the device until then.
 - Change notifications are coalesced to one at the end of a transaction.

@@ -10,13 +10,29 @@ const isPeriod = (type: EntityType) => type === 'period';
 /** SQLite-backed cache + sync queue. Entities are stored as JSON blobs keyed by (type,id). */
 export class SqliteStore extends BaseStore implements Store {
   private db!: SQLite.SQLiteDatabase;
+  private opening: Promise<void> | null = null;
   private txChain: Promise<unknown> = Promise.resolve();
 
   constructor(private name = 'bubu-bloom.db') {
     super();
   }
 
-  async init() {
+  /** Safe to call repeatedly: callers share one open, and a failed open is retried by the next call. */
+  init(): Promise<void> {
+    this.opening ??= this.open().catch((e) => {
+      this.opening = null;
+      throw e;
+    });
+    return this.opening;
+  }
+
+  /** The database once its schema is ready. Sync and network listeners can call in before `DataProvider` has run `init`. */
+  private async connection(): Promise<SQLite.SQLiteDatabase> {
+    await this.init();
+    return this.db;
+  }
+
+  private async open() {
     this.db = await SQLite.openDatabaseAsync(this.name);
     await this.db.execAsync('PRAGMA journal_mode = WAL;');
     const row = await this.db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -50,43 +66,43 @@ export class SqliteStore extends BaseStore implements Store {
   }
 
   async clearAll() {
-    await this.db.execAsync('DELETE FROM entities; DELETE FROM periods; DELETE FROM sync_ops; DELETE FROM meta;');
+    await (await this.connection()).execAsync('DELETE FROM entities; DELETE FROM periods; DELETE FROM sync_ops; DELETE FROM meta;');
     this.emit();
   }
 
   async getAll<T>(type: EntityType): Promise<T[]> {
     if (isPeriod(type)) {
-      const rows = await this.db.getAllAsync<{ json: string }>('SELECT json FROM periods ORDER BY start_date ASC');
+      const rows = await (await this.connection()).getAllAsync<{ json: string }>('SELECT json FROM periods ORDER BY start_date ASC');
       return rows.map((r) => JSON.parse(r.json) as T);
     }
-    const rows = await this.db.getAllAsync<{ json: string }>('SELECT json FROM entities WHERE type = ?', type);
+    const rows = await (await this.connection()).getAllAsync<{ json: string }>('SELECT json FROM entities WHERE type = ?', type);
     return rows.map((r) => JSON.parse(r.json) as T);
   }
   async get<T>(type: EntityType, id: string): Promise<T | null> {
     if (isPeriod(type)) {
-      const r = await this.db.getFirstAsync<{ json: string }>('SELECT json FROM periods WHERE id = ?', id);
+      const r = await (await this.connection()).getFirstAsync<{ json: string }>('SELECT json FROM periods WHERE id = ?', id);
       return r ? (JSON.parse(r.json) as T) : null;
     }
-    const r = await this.db.getFirstAsync<{ json: string }>('SELECT json FROM entities WHERE type = ? AND id = ?', type, id);
+    const r = await (await this.connection()).getFirstAsync<{ json: string }>('SELECT json FROM entities WHERE type = ? AND id = ?', type, id);
     return r ? (JSON.parse(r.json) as T) : null;
   }
   async put(type: EntityType, id: string, entity: unknown) {
     if (isPeriod(type)) {
       const startDate = (entity as { startDate?: string }).startDate ?? '';
-      await this.db.runAsync('INSERT OR REPLACE INTO periods (id, start_date, json) VALUES (?, ?, ?)', id, startDate, JSON.stringify(entity));
+      await (await this.connection()).runAsync('INSERT OR REPLACE INTO periods (id, start_date, json) VALUES (?, ?, ?)', id, startDate, JSON.stringify(entity));
       this.emit();
       return;
     }
-    await this.db.runAsync('INSERT OR REPLACE INTO entities (type, id, json) VALUES (?, ?, ?)', type, id, JSON.stringify(entity));
+    await (await this.connection()).runAsync('INSERT OR REPLACE INTO entities (type, id, json) VALUES (?, ?, ?)', type, id, JSON.stringify(entity));
     this.emit();
   }
   async remove(type: EntityType, id: string) {
     if (isPeriod(type)) {
-      await this.db.runAsync('DELETE FROM periods WHERE id = ?', id);
+      await (await this.connection()).runAsync('DELETE FROM periods WHERE id = ?', id);
       this.emit();
       return;
     }
-    await this.db.runAsync('DELETE FROM entities WHERE type = ? AND id = ?', type, id);
+    await (await this.connection()).runAsync('DELETE FROM entities WHERE type = ? AND id = ?', type, id);
     this.emit();
   }
 
@@ -96,7 +112,7 @@ export class SqliteStore extends BaseStore implements Store {
       this.beginBatch();
       try {
         let result!: T;
-        await this.db.withTransactionAsync(async () => {
+        await (await this.connection()).withTransactionAsync(async () => {
           result = await fn();
         });
         return result;
@@ -110,31 +126,31 @@ export class SqliteStore extends BaseStore implements Store {
   }
 
   async listOps(): Promise<QueuedOp[]> {
-    const rows = await this.db.getAllAsync<{ seq: number; json: string }>('SELECT seq, json FROM sync_ops ORDER BY seq ASC');
+    const rows = await (await this.connection()).getAllAsync<{ seq: number; json: string }>('SELECT seq, json FROM sync_ops ORDER BY seq ASC');
     return rows.map((r) => ({ ...(JSON.parse(r.json) as QueuedOp), seq: r.seq }));
   }
   async insertOp(op: NewOp) {
-    await this.db.runAsync('INSERT INTO sync_ops (operationId, status, json) VALUES (?, ?, ?)', op.operationId, op.status, JSON.stringify(op));
+    await (await this.connection()).runAsync('INSERT INTO sync_ops (operationId, status, json) VALUES (?, ?, ?)', op.operationId, op.status, JSON.stringify(op));
     this.emit();
   }
   async updateOp(operationId: string, patch: Partial<QueuedOp>) {
-    const r = await this.db.getFirstAsync<{ json: string }>('SELECT json FROM sync_ops WHERE operationId = ?', operationId);
+    const r = await (await this.connection()).getFirstAsync<{ json: string }>('SELECT json FROM sync_ops WHERE operationId = ?', operationId);
     if (!r) return;
     const next = { ...(JSON.parse(r.json) as QueuedOp), ...patch };
-    await this.db.runAsync('UPDATE sync_ops SET status = ?, json = ? WHERE operationId = ?', next.status, JSON.stringify(next), operationId);
+    await (await this.connection()).runAsync('UPDATE sync_ops SET status = ?, json = ? WHERE operationId = ?', next.status, JSON.stringify(next), operationId);
     this.emit();
   }
   async deleteOp(operationId: string) {
-    await this.db.runAsync('DELETE FROM sync_ops WHERE operationId = ?', operationId);
+    await (await this.connection()).runAsync('DELETE FROM sync_ops WHERE operationId = ?', operationId);
     this.emit();
   }
 
   async getMeta(key: string) {
-    const r = await this.db.getFirstAsync<{ value: string | null }>('SELECT value FROM meta WHERE key = ?', key);
+    const r = await (await this.connection()).getFirstAsync<{ value: string | null }>('SELECT value FROM meta WHERE key = ?', key);
     return r?.value ?? null;
   }
   async setMeta(key: string, value: string | null) {
-    if (value === null) await this.db.runAsync('DELETE FROM meta WHERE key = ?', key);
-    else await this.db.runAsync('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', key, value);
+    if (value === null) await (await this.connection()).runAsync('DELETE FROM meta WHERE key = ?', key);
+    else await (await this.connection()).runAsync('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', key, value);
   }
 }
