@@ -36,6 +36,7 @@
 | `react-native-svg` | Mascot, avatars, rings |
 | `react-native-reanimated` | Mascot animation |
 | `jest-expo` | Tests |
+| `sharp` | Dev only: exports icons and splash from `assets/brand/` |
 
 ## Device health data
 | Service | Used for | Code |

@@ -20,14 +20,15 @@ const ROUTE_ICONS: Record<string, TabIconName> = { index: 'home', progress: 'cha
 
 type TabBarProps = Pick<BottomTabBarProps, 'state' | 'descriptors' | 'emitter' | 'navigateToTab'>;
 
-function TabIcon({ name, color, focused }: { name: TabIconName; color: string; focused: boolean }) {
+function TabIcon({ name, color }: { name: TabIconName; color: string }) {
   const common = { fill: 'none', stroke: color, strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   return (
     <Svg width={21} height={21} viewBox="0 0 28 28" accessibilityElementsHidden importantForAccessibility="no">
       {name === 'home' ? (
         <>
-          <Path d="M3.5 12.5 14 4l10.5 8.5" {...common} />
-          <Path d="M6.5 11.5V24h15V11.5M11 24v-7h6v7" {...common} />
+          <Circle cx="14" cy="6.2" r="2.2" {...common} strokeWidth={1.9} />
+          <Path d="M13.2 15.5C12.8 11 9 3.2 2.6 3.2 2 9.5 3 14.5 8 14.7c2 .1 4 .1 5.2.8ZM14.8 15.5C15.2 11 19 3.2 25.4 3.2 26 9.5 25 14.5 20 14.7c-2 .1-4 .1-5.2.8Z" {...common} strokeWidth={1.9} />
+          <Path d="M12.8 17.5c-1.8-1.9-6.8-2-9 .5-1.8 2.3-1.2 5 .8 7.4 2.4-1.6 6.9-.9 8.2-4.9.4-1.1.4-2.2 0-3ZM15.2 17.5c1.8-1.9 6.8-2 9 .5 1.8 2.3 1.2 5-.8 7.4-2.4-1.6-6.9-.9-8.2-4.9-.4-1.1-.4-2.2 0-3Z" {...common} strokeWidth={1.9} />
         </>
       ) : name === 'chart' ? (
         <>
@@ -47,7 +48,6 @@ function TabIcon({ name, color, focused }: { name: TabIconName; color: string; f
           <Path d="M4.5 24.5c.8-5.2 4.6-8 9.5-8s8.7 2.8 9.5 8" {...common} />
         </>
       )}
-      {focused && name === 'home' ? <Circle cx="14" cy="14" r="1.2" fill={color} /> : null}
     </Svg>
   );
 }
@@ -82,7 +82,7 @@ export function FloatingTabBar({ state, descriptors, emitter, navigateToTab }: T
               style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill, backgroundColor: focused ? c.tint : 'transparent' }}
             >
               {focused ? <GlassLayer radius={radius.pill} onFill /> : null}
-              <TabIcon name={ROUTE_ICONS[route.name] ?? 'home'} color={focused ? c.accent : c.textMuted} focused={focused} />
+              <TabIcon name={ROUTE_ICONS[route.name] ?? 'home'} color={focused ? c.accent : c.textMuted} />
             </Pressable>
           );
         })}
