@@ -70,7 +70,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       await engine.refreshStatus();
       if (!cancelled) setReady(true);
       void engine.sync();
-    })().catch(() => !cancelled && setReady(true));
+    })().catch((e) => {
+      console.warn('Could not open the local database', e);
+      if (!cancelled) setReady(true);
+    });
     return () => {
       cancelled = true;
     };
