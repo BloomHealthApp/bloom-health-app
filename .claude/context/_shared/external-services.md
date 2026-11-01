@@ -37,6 +37,11 @@
 | `react-native-reanimated` | Mascot animation |
 | `jest-expo` | Tests |
 
+## Device health data
+| Service | Used for | Code |
+|---|---|---|
+| HealthKit (iOS), Health Connect (Android) | Read-only daily step totals, on the device only | `modules/bloom-steps/` |
+
 ## Known issues
 - **Production API URL:** the `production` EAS profile sets no `EXPO_PUBLIC_API_BASE_URL`, unlike `preview`. Unless it's set in EAS, a production build falls back to `http://localhost:8080`.
 - **Local port mismatch:** `.env.example` and the fallback in `src/config.ts` use port 8080, but the service defaults to 3000.

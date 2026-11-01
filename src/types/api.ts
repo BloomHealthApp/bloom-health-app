@@ -114,6 +114,8 @@ export const DailyLogSchema = z.object({
   value: z.number().nullable(),
   status: LogStatusSchema,
   note: z.string().nullable(),
+  /** Absent on older records, which count as manual. */
+  source: z.enum(['manual', 'device']).optional(),
   version: z.number(),
   updatedAt: z.string(),
   createdAt: z.string().optional(),

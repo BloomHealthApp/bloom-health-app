@@ -243,7 +243,7 @@ function authUser(req: { headers: Headers }): MockUser | Response {
 }
 
 const HABIT_FIELDS = new Set(['title', 'icon', 'category', 'trackingType', 'target', 'targetMax', 'targetComparison', 'unit', 'schedule', 'reminder', 'isActive', 'sortOrder', 'isDefault']);
-const LOG_FIELDS = new Set(['value', 'status', 'note']);
+const LOG_FIELDS = new Set(['value', 'status', 'note', 'source']);
 const WORKOUT_FIELDS = new Set(['type', 'startedAt', 'endedAt', 'durationSeconds', 'pausedSeconds', 'notes', 'localDate']);
 const SETTINGS_FIELDS = new Set(['dailyThreshold', 'restDays', 'reminders', 'stepGoal', 'sundayRest']);
 const PERIOD_FIELDS = new Set(['startDate', 'endDate', 'flow', 'symptoms', 'mood', 'note']);
@@ -309,18 +309,20 @@ function applyOpInner(user: MockUser, op: PushOp): Record<string, unknown> {
     if (bad) return { ...base, status: 'rejected', reason: `validation_failed:${bad}` };
   }
 
+  // Mirrors the service: a log write that omits source is a manual entry
+  const payload = op.entityType === 'dailyLog' && op.op === 'upsert' ? { source: 'manual', ...op.payload } : op.payload;
   let rec: Rec;
   if (op.op === 'delete') {
     if (op.entityType === 'habit') rec = { ...existing!, isActive: false, version: existing!.version + 1, updatedAt: nowIso };
     else rec = { ...existing!, deletedAt: nowIso, version: existing!.version + 1, updatedAt: nowIso };
   } else if (existing) {
-    rec = { ...existing, ...op.payload, version: existing.version + 1, updatedAt: nowIso } as Rec;
+    rec = { ...existing, ...payload, version: existing.version + 1, updatedAt: nowIso } as Rec;
     rec.deletedAt = null; // upsert revives tombstones
   } else {
     const common = { id: op.entityId, version: 1, createdAt: nowIso, updatedAt: nowIso, deletedAt: null };
     if (op.entityType === 'dailyLog') {
       const [habitId, localDate] = [op.entityId.slice(0, op.entityId.lastIndexOf(':')), op.entityId.slice(-10)];
-      rec = { ...common, habitId, localDate, value: null, status: 'incomplete', note: null, ...op.payload } as Rec;
+      rec = { ...common, habitId, localDate, value: null, status: 'incomplete', note: null, ...payload } as Rec;
     } else if (op.entityType === 'habit') {
       rec = { ...common, schedule: { days: [] }, reminder: null, isActive: true, sortOrder: 99, isDefault: false, targetMax: null, unit: null, ...op.payload } as Rec;
     } else if (op.entityType === 'period') {

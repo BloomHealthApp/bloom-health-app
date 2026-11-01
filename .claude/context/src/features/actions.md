@@ -8,6 +8,7 @@ All owner writes: logs, habits, workouts, settings and periods. Each one writes 
 - `savePeriod` validates with `validatePeriod` first, because an offline write can't rely on the server.
 
 ## Why
+- Daily log writes only send `source` when it's `device`. The service stores an omitted source as `manual`, so other logs keep working against an older service.
 - Archiving a habit is an upsert with `isActive: false`. A delete op would tombstone the habit, whereas the service keeps habits and their logs.
 - `sundayRest` is only sent once known, because older services reject unknown fields. It's always repeated, because un-sent edits coalesce and the latest payload replaces the earlier one.
 

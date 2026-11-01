@@ -31,6 +31,7 @@ export default function SettingsScreen() {
           <SettingsRow icon="sparkles" title="Appearance" detail={`${theme.label} · ${theme.isDark ? 'Dark' : 'Light'}`} onPress={() => router.push('/settings/appearance')} />
           <SettingsRow icon="flame" title="Daily goal" detail={`${settings.dailyThreshold}%`} onPress={() => router.push('/settings/daily-goal')} />
           {isOwner ? <SettingsRow icon="bell" title="Reminders" detail={`${remindersOn} of ${settings.reminders.length} on`} onPress={() => router.push('/settings/reminders')} /> : null}
+          {isOwner ? <SettingsRow icon="footprints" title="Auto-track steps" onPress={() => router.push('/settings/steps')} /> : null}
         </Card>
       </SettingsGroup>
       <SettingsGroup title="Your data">

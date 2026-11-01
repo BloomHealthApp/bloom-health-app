@@ -11,7 +11,11 @@
       "bundleIdentifier": "com.bloomhealthapp.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSAlarmKitUsageDescription": "Bloom Health rings the Loud alarms you turn on in Settings, even when your phone is on silent."
+        "NSAlarmKitUsageDescription": "Bloom Health rings the Loud alarms you turn on in Settings, even when your phone is on silent.",
+        "NSHealthShareUsageDescription": "Bloom Health reads your daily step totals to fill in your Steps habit. Anyone with viewer access to your space can see them."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true
       }
     },
     "android": {
@@ -99,7 +103,8 @@
         "expo-build-properties",
         {
           "android": {
-            "enableMinifyInReleaseBuilds": false
+            "enableMinifyInReleaseBuilds": false,
+            "minSdkVersion": 26
           }
         }
       ]

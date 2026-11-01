@@ -56,12 +56,13 @@ export function useActions() {
     const now = () => new Date().toISOString();
     const done = () => scheduleSync();
 
-    async function setLog(habit: HabitRule & { id: string }, localDate: string, value: number | null, opts: { status?: LogStatus; note?: string | null } = {}) {
+    async function setLog(habit: HabitRule & { id: string }, localDate: string, value: number | null, opts: { status?: LogStatus; note?: string | null; source?: 'manual' | 'device' } = {}) {
       guard();
       const id = logId(habit.id, localDate);
       const existing = await store.get<DailyLog>('dailyLog', id);
       const status = opts.status ?? evaluateStatus(habit, value);
       const note = opts.note !== undefined ? opts.note : (existing?.note ?? null);
+      const source = opts.source ?? 'manual';
       const entity: DailyLog = {
         id,
         habitId: habit.id,
@@ -69,11 +70,19 @@ export function useActions() {
         value,
         status,
         note,
+        source,
         version: existing?.version ?? 0,
         updatedAt: now(),
         deletedAt: null,
       };
-      await engine.mutate({ entityType: 'dailyLog', entityId: id, op: 'upsert', payload: { value, status, note }, entity: entity as never });
+      await engine.mutate({
+        entityType: 'dailyLog',
+        entityId: id,
+        op: 'upsert',
+        // The service stores an omitted source as manual, so manual writes also keep working against older services
+        payload: { value, status, note, ...(source === 'device' ? { source } : {}) },
+        entity: entity as never,
+      });
       done();
     }
 
@@ -205,7 +214,7 @@ export function useActions() {
       setLog,
       toggleBoolean: (habit: HabitRule & { id: string }, date: string, on: boolean) => setLog(habit, date, on ? 1 : 0),
       addWater: (rule: HabitRule, date: string, ml: number) => addToLog(HABIT_IDS.water, rule, date, ml),
-      setSteps: (rule: HabitRule & { id: string }, date: string, steps: number) => setLog(rule, date, Math.max(0, Math.round(steps))),
+      setSteps: (rule: HabitRule & { id: string }, date: string, steps: number, source: 'manual' | 'device' = 'manual') => setLog(rule, date, Math.max(0, Math.round(steps)), { source }),
       saveHabit,
       archiveHabit,
       restoreHabit,

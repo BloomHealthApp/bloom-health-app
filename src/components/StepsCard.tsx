@@ -6,12 +6,14 @@ import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { AppText, Button, Card, Row } from './ui';
 
-export function StepsCard({ steps, goal, goalMax, readOnly, onSave }: { steps: number; goal: number; goalMax?: number | null; readOnly?: boolean; onSave?: (n: number) => void }) {
+export function StepsCard({ steps, goal, goalMax, readOnly, onSave, source, autoTracking, onUsePhoneCount }: { steps: number; goal: number; goalMax?: number | null; readOnly?: boolean; onSave?: (n: number) => void; source?: 'manual' | 'device'; autoTracking?: boolean; onUsePhoneCount?: () => void }) {
   const { theme } = useTheme();
   const [text, setText] = useState(steps ? String(steps) : '');
   useEffect(() => setText(steps ? String(steps) : ''), [steps]);
   const parsed = Number(text.replace(/,/g, ''));
   const valid = text.trim() !== '' && Number.isFinite(parsed) && parsed >= 0 && parsed <= 200000;
+  const fromPhone = source === 'device' && steps > 0;
+  const enteredByHand = !!autoTracking && !fromPhone && steps > 0;
   return (
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
@@ -21,6 +23,8 @@ export function StepsCard({ steps, goal, goalMax, readOnly, onSave }: { steps: n
           {goalMax ? `-${formatNumber(goalMax)}` : ''}
         </AppText>
       </Row>
+      {fromPhone ? <AppText variant="caption" muted style={{ marginTop: spacing.xs }}>From your phone</AppText> : null}
+      {enteredByHand ? <AppText variant="caption" muted style={{ marginTop: spacing.xs }}>Entered manually</AppText> : null}
       {!readOnly && onSave ? (
         <Row style={{ gap: spacing.sm, marginTop: spacing.md }}>
           <TextInput
@@ -35,6 +39,7 @@ export function StepsCard({ steps, goal, goalMax, readOnly, onSave }: { steps: n
           <Button title="Save" disabled={!valid} onPress={() => onSave(parsed)} accessibilityLabel="Save steps" />
         </Row>
       ) : null}
+      {!readOnly && enteredByHand && onUsePhoneCount ? <Button title="Use phone count" variant="secondary" onPress={onUsePhoneCount} accessibilityLabel="Use phone count" style={{ marginTop: spacing.sm }} /> : null}
     </Card>
   );
 }
