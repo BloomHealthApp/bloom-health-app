@@ -15,11 +15,11 @@ export function StreakCard({ current, longest, restNote }: { current: number; lo
   return (
     <Card tint accessible accessibilityLabel={`Current streak ${current} days. Longest streak ${longest} days.${next ? ` Next milestone ${next} days.` : ''}${restNote ? ` ${restNote}.` : ''}`}>
       <Row style={{ gap: spacing.lg }}>
-        {celebrating ? <Mascot mood="celebrating" size={72} /> : null}
+        {celebrating ? <Mascot mood="celebrating" size={60} /> : null}
         <View style={{ flex: 1 }}>
           {celebrating ? <AppText variant="label" accent>Milestone reached: {current} days!</AppText> : null}
           <Row style={{ alignItems: 'flex-end', gap: spacing.sm }}>
-            <AppIcon name="flame" size={40} />
+            <AppIcon name="flame" size={32} />
             <AppText variant="big" accent>{current}</AppText>
             <AppText variant="bodyStrong" style={{ marginBottom: 6 }}>day streak</AppText>
           </Row>

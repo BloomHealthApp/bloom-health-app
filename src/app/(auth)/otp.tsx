@@ -73,7 +73,7 @@ export default function OtpScreen() {
 
   return (
     <Screen>
-      <Mascot mood="thinking" size={110} />
+      <Mascot mood="thinking" size={88} />
       <AppText variant="title">Enter your code</AppText>
       <AppText muted>
         {isSignUp

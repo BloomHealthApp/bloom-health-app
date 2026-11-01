@@ -54,7 +54,7 @@ export default function SignUpScreen() {
 
   return (
     <Screen>
-      <Mascot mood="loved" size={110} />
+      <Mascot mood="loved" size={88} />
       <AppText variant="title">Create account</AppText>
       <AppText muted>Tell us a little about you. We will email a 6-digit code to confirm your email. No password needed.</AppText>
       <Field label="Your name" value={name} onChangeText={setName} maxLength={40} autoCapitalize="words" autoComplete="name" textContentType="name" placeholder="Anu" error={touched ? nameErr : null} />
@@ -74,7 +74,7 @@ export default function SignUpScreen() {
         error={touched ? emailErr : null}
       />
       <GenderPicker value={gender} onChange={setGender} />
-      <AppText variant="caption" muted>Optional. It unlocks features that fit you, and you can change or clear it any time in Settings.</AppText>
+      <AppText variant="caption" muted>Optional. It unlocks features that fit you, and you can change or clear it any time in your profile.</AppText>
       {error ? <ErrorBanner message={error} /> : null}
       {conflict ? (
         <Button title="Sign in instead" variant="secondary" onPress={() => router.replace({ pathname: '/(auth)/signin', params: { identifier: email.trim().toLowerCase() } })} />

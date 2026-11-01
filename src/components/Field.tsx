@@ -14,7 +14,7 @@ export function Field({ label, error, ...props }: TextInputProps & { label: stri
         placeholderTextColor={theme.colors.textMuted}
         {...props}
         style={[
-          { minHeight: MIN_TOUCH + 8, borderRadius: radius.md, borderWidth: 1, borderColor: error ? theme.colors.danger : theme.colors.border, backgroundColor: theme.glass, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text },
+          { minHeight: MIN_TOUCH, borderRadius: radius.md, borderWidth: 1, borderColor: error ? theme.colors.danger : theme.colors.border, backgroundColor: theme.glass, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 14, color: theme.colors.text },
           props.style,
         ]}
       />

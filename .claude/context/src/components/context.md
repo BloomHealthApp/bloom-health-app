@@ -8,7 +8,7 @@ Reusable UI. `ui.tsx` holds the basic primitives, and `periods/` holds the track
 - Touch targets are at least 44pt, status is never shown by color alone, and interactive elements have labels and roles.
 - Rest days are drawn as a soft cell without a reason (`CalendarDayCell`, `WeeklyProgressChart`).
 - `CalendarDayCell` and the period tracker's `DayCell` fill an explicit seven-cell row (`chunkWeeks`). Don't lay them out with percentage widths in a wrapping row: on some screens seven cells round to more than the row's width, so the seventh wraps and every date shifts a column.
-- `CycleCard` is never rendered for viewers.
+- `periods/PeriodsPanel` is the tracker, shown only from the Calendar tab and never rendered for viewers.
 
 ## Mascot
 - `mascotArt.tsx` draws the original "Bloom": a chubby mochi bunny-bear with two small rounded ears, a head sprout, stubby arms and tiny feet. It has a sticker look: thick brown outline, flat pastel fills, white die-cut border, soft drop shadow, in a 200x200 viewBox.

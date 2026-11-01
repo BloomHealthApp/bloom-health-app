@@ -4,7 +4,7 @@
   - `SyncEngine.mutate` throws for a non-owner `period` write.
   - `SyncEngine.pull` ignores `changes.periods` for non-owners, and deletes any `period` rows already cached (for example from an earlier role).
   - `usePeriods` returns `[]` for non-owners.
-  - `src/app/periods.tsx` redirects anyone for whom `isPeriodTrackerOn` is false.
+  - The Calendar tab mounts `PeriodsPanel` only when `isPeriodTrackerOn` is true. The tracker has no route or Home card of its own.
 - Viewers get streaks and day flags only from `GET /stats/summary`. `restDay` is generic, and the UI never says why a day is a rest day.
 - Notification text stays generic, because notifications show on the lock screen. The word "period" only appears inside the app.
 - The "period may start soon" opt-in is stored locally and never sent to the server.

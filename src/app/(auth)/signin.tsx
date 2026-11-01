@@ -34,7 +34,7 @@ export default function SignInScreen() {
 
   return (
     <Screen>
-      <Mascot mood="happy" size={110} />
+      <Mascot mood="happy" size={88} />
       <AppText variant="title">Sign in</AppText>
       <AppText muted>Enter your phone number or email. We will send a 6-digit code to the email on your account.</AppText>
       <Field

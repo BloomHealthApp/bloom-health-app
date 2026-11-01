@@ -1,34 +1,21 @@
-import { Redirect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { PeriodsView } from '@/components/periods/PeriodsView';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { AppText, Screen } from '@/components/ui';
+import { AppText } from '@/components/ui';
 import { useActions } from '@/features/actions';
 import { useToday } from '@/features/derived';
 import { applyPeriodReminder, getPeriodReminderPref, reminderNote, setPeriodReminderPref } from '@/features/periodReminder';
-import { useSyncOnFocus } from '@/features/useSyncOnFocus';
 import { predict } from '@/lib/cycle';
-import { isPeriodTrackerOn } from '@/lib/profile';
 import type { PeriodReminderResult } from '@/notifications/scheduler';
 import { useAuth } from '@/providers/AuthProvider';
-import { useData, usePeriods, useSyncStatus } from '@/providers/DataProvider';
+import { usePeriods, useSyncStatus } from '@/providers/DataProvider';
 
-/** Private period tracker. Owner-only and only while the tracker is enabled; anyone else is sent back (viewers never see it). */
-export default function PeriodsScreen() {
-  const { user, status } = useAuth();
-  const allowed = isPeriodTrackerOn(user);
-  if (status === 'signedIn' && !allowed) return <Redirect href="/(tabs)" />;
-  return <PeriodsRoute />;
-}
-
-function PeriodsRoute() {
+/** The private tracker. Only mount it for owners with the tracker on: `isPeriodTrackerOn` is the gate. */
+export function PeriodsPanel() {
   const { user } = useAuth();
   const { periods, loading } = usePeriods();
   const { today } = useToday();
   const actions = useActions();
-  const { syncNow } = useData();
   const sync = useSyncStatus();
-  useSyncOnFocus();
   const [remind, setRemind] = useState(false);
   const [result, setResult] = useState<PeriodReminderResult | null>(null);
   const userId = user?.id ?? '';
@@ -48,7 +35,7 @@ function PeriodsRoute() {
   );
 
   return (
-    <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'} header={<ScreenHeader title="Period tracker" />}>
+    <>
       {sync.state === 'offline' ? <AppText variant="caption" muted accessibilityRole="alert">You are offline. Entries are saved on this device and sync later.</AppText> : null}
       <PeriodsView
         periods={periods}
@@ -60,6 +47,6 @@ function PeriodsRoute() {
         onDelete={(p) => actions.deletePeriod(p)}
         reminder={{ enabled: remind, note: reminderNote(result, remind), onChange: (on) => void changeReminder(on) }}
       />
-    </Screen>
+    </>
   );
 }

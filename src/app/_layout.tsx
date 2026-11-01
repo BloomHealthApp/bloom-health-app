@@ -43,7 +43,7 @@ function Shell() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="choose-avatar" />
-      <Stack.Screen name="periods" />
+      <Stack.Screen name="settings" />
     </Stack>
   );
   // Data layer (SQLite + sync engine) only exists for a signed-in user.

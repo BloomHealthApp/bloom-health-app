@@ -7,7 +7,7 @@ import { FloatingTabBar, tabBarSpace } from '../FloatingTabBar';
 jest.mock('@react-native-async-storage/async-storage', () => ({ getItem: async () => null, setItem: async () => {} }));
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 20, left: 0, right: 0 }) }));
 
-const routes = ['index', 'progress', 'calendar', 'settings'].map((name) => ({ key: `${name}-k`, name }));
+const routes = ['index', 'progress', 'calendar', 'profile'].map((name) => ({ key: `${name}-k`, name }));
 const descriptors = Object.fromEntries(routes.map((r) => [r.key, { options: { title: r.name, tabBarAccessibilityLabel: `${r.name} tab` } }]));
 
 async function mount(index: number, prevented = false) {
@@ -25,7 +25,7 @@ async function mount(index: number, prevented = false) {
 describe('FloatingTabBar', () => {
   it('labels every tab and marks only the active one', async () => {
     const { tabs } = await mount(2);
-    expect(tabs.map((n) => n.props.accessibilityLabel)).toEqual(['index tab', 'progress tab', 'calendar tab', 'settings tab']);
+    expect(tabs.map((n) => n.props.accessibilityLabel)).toEqual(['index tab', 'progress tab', 'calendar tab', 'profile tab']);
     expect(tabs.map((n) => n.props.accessibilityState.selected)).toEqual([false, false, true, false]);
   });
   it('navigates to another tab but not to the current one', async () => {
@@ -41,8 +41,8 @@ describe('FloatingTabBar', () => {
     expect(navigateToTab).not.toHaveBeenCalled();
   });
   it('reserves the bar and the system inset', () => {
-    expect(tabBarSpace(20)).toBe(84);
-    expect(tabBarSpace(0)).toBe(72);
+    expect(tabBarSpace(20)).toBe(78);
+    expect(tabBarSpace(0)).toBe(64);
   });
   it('makes a tab screen leave room for the bar, and other screens not', async () => {
     const padding = async (space: number) => {
@@ -52,6 +52,6 @@ describe('FloatingTabBar', () => {
       });
       return t.root.findAll((n) => n.props.contentContainerStyle?.paddingBottom !== undefined)[0].props.contentContainerStyle.paddingBottom as number;
     };
-    expect((await padding(84)) - (await padding(0))).toBe(84);
+    expect((await padding(78)) - (await padding(0))).toBe(78);
   });
 });

@@ -16,15 +16,15 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 | `(tabs)/_layout.tsx` | signed in | `FloatingTabBar`; redirects to choose-avatar once after first sign-up |
 | `(tabs)/index.tsx` | signed in | Home; viewers poll every 30 seconds while focused |
 | `(tabs)/progress.tsx` | signed in | Charts |
-| `(tabs)/calendar.tsx` | signed in | Month view |
-| `(tabs)/settings.tsx` | signed in | Profile, settings, reminders, sign out |
+| `(tabs)/calendar.tsx` | signed in | Month view; also the private period tracker, for owners with it on |
+| `(tabs)/profile.tsx` | signed in | Your profile and private details; opens Settings from the gear |
+| `settings.tsx` | signed in | Appearance, goals, reminders and account; pushed from Profile |
 | `choose-avatar.tsx` | signed in | One-time, skippable avatar choice |
 | `day/[date].tsx` | signed in | One day's habits; read-only list |
 | `habit/[id].tsx` | signed in | Log a value; read-only for viewers and future dates |
 | `habit/form.tsx` | owner | Create or edit a habit |
 | `habits.tsx` | signed in | Habit list; edit controls for owners only |
 | `workout.tsx` | signed in | Timer and history; controls for owners only |
-| `periods.tsx` | owner, tracker on | Private tracker; anyone else is redirected |
 | `sync-issues.tsx` | signed in | Failed, conflicted and rejected sync operations |
 
 ## Rules

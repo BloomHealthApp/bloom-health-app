@@ -84,7 +84,7 @@ export function WorkoutTimer({
         {meta ? <AppIcon name={meta.icon} size={22} /> : null}
         <AppText variant="label" accent>{meta?.label} {paused ? '· paused' : '· in progress'}</AppText>
       </Row>
-      <AppText variant="big" style={{ fontSize: 56, lineHeight: 64, textAlign: 'center', marginVertical: spacing.md }} accessibilityLiveRegion="none" accessibilityLabel={`Elapsed ${Math.floor(secs / 60)} minutes ${secs % 60} seconds`}>
+      <AppText variant="big" style={{ fontSize: 46, lineHeight: 54, textAlign: 'center', marginVertical: spacing.md }} accessibilityLiveRegion="none" accessibilityLabel={`Elapsed ${Math.floor(secs / 60)} minutes ${secs % 60} seconds`}>
         {formatClock(secs)}
       </AppText>
       <Row style={{ gap: spacing.sm }}>

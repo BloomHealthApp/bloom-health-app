@@ -81,8 +81,8 @@ once too. Adding a tenth avatar needs an app release and an allowlist update in 
 ## Gender, period tracker and Sunday streaks
 
 - **Gender** is optional (`female`, `male`, `other`, `prefer_not_to_say`): a chip row on sign-up and in Settings > Profile (tap the selected chip to clear).
-- **Period tracker** (private). On by default for `female`; `other` / `prefer not to say` can switch it on in Settings > Profile; hidden for male,
-  unset gender and for viewers. The tracker screen (`src/app/periods.tsx`, reachable from a small Home card and Settings) has a month calendar with period
+- **Period tracker** (private). On by default for `female`; `other` / `prefer not to say` can switch it on in Profile; hidden for male,
+  unset gender and for viewers. The tracker (`src/components/periods/PeriodsPanel.tsx`, under Periods in the Calendar tab) has a month calendar with period
   days marked and the estimated window softly shaded, Start/End period, flow (light/medium/heavy), symptom and mood chips, a note, history with edit/delete
   and a stats card. Estimates only: next start = last start + the average of up to the last 6 start-to-start gaps, shown only with at least 2 cycles; a
   "may be late" note appears once today is past the +/-2 day window. It is **not medical advice**. An optional local "heads-up" notification two days before the

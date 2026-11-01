@@ -59,12 +59,12 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       style={({ pressed }) => [
-        { minHeight: MIN_TOUCH + 4, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, ...(variant === 'ghost' || off ? null : { boxShadow: glassShadow(theme.isDark) }), opacity: off ? 0.5 : pressed ? 0.88 : 1, transform: [{ scale: pressed && !off ? 0.985 : 1 }] },
+        { minHeight: MIN_TOUCH, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, ...(variant === 'ghost' || off ? null : { boxShadow: glassShadow(theme.isDark) }), opacity: off ? 0.5 : pressed ? 0.88 : 1, transform: [{ scale: pressed && !off ? 0.985 : 1 }] },
         style,
       ]}
     >
       {variant !== 'ghost' ? <GlassLayer radius={radius.pill} onFill /> : null}
-      {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 16 }}>{title}</AppText>}
+      {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 14 }}>{title}</AppText>}
     </Pressable>
   );
 }
@@ -135,7 +135,7 @@ export function Row({ children, style, ...rest }: ViewProps & { children: React.
 /** Standard page title for primary navigation screens. */
 export function PageHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
   return (
-    <View style={{ minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+    <View style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
       <View style={{ flex: 1, gap: spacing.xs }}>
         <AppText variant="title" accessibilityRole="header">{title}</AppText>
         {subtitle ? <AppText variant="caption" muted>{subtitle}</AppText> : null}

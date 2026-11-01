@@ -30,7 +30,7 @@ export function StepsCard({ steps, goal, goalMax, readOnly, onSave }: { steps: n
             placeholder="Enter today's steps"
             placeholderTextColor={theme.colors.textMuted}
             accessibilityLabel="Steps today"
-            style={{ flex: 1, minHeight: MIN_TOUCH + 4, borderRadius: radius.md, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: spacing.md, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text, backgroundColor: theme.colors.bg }}
+            style={{ flex: 1, minHeight: MIN_TOUCH, borderRadius: radius.md, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: spacing.md, fontFamily: fonts.semibold, fontSize: 14, color: theme.colors.text, backgroundColor: theme.colors.bg }}
           />
           <Button title="Save" disabled={!valid} onPress={() => onSave(parsed)} accessibilityLabel="Save steps" />
         </Row>

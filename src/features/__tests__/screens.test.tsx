@@ -1,9 +1,12 @@
+import { StyleSheet } from 'react-native';
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import SettingsTab from '@/app/(tabs)/settings';
+import ProfileTab from '@/app/(tabs)/profile';
+import SettingsTab from '@/app/settings';
+import { toPublicProfile } from '@/lib/publicProfile';
 import { ReminderRow, showsVolumeSlider } from '@/components/reminders/ReminderRow';
 import SignUpScreen from '@/app/(auth)/signup';
-import PeriodsScreen from '@/app/periods';
+import CalendarTab from '@/app/(tabs)/calendar';
 import { defaultSettings, REMINDER_LABELS } from '@/lib/defaults';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { Reminder, Settings, User } from '@/types/api';
@@ -22,6 +25,10 @@ jest.mock('expo-router', () => ({
   useFocusEffect: () => {},
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   Redirect: ({ href }: { href: string }) => require('react').createElement('Redirect', { href }),
+}));
+jest.mock('@/features/derived', () => ({
+  useDerived: () => ({ currentStreak: 3, longestStreak: 9, activeHabits: [], logs: [], today: '2026-11-01', timezone: 'UTC', threshold: 80, loading: false, scoreFor: () => ({ neutral: true, restDay: false, completionPercent: 0 }) }),
+  useToday: () => ({ today: '2026-11-01' }),
 }));
 jest.mock('expo-constants', () => ({ expoConfig: { version: '1.0.0' } }));
 
@@ -87,21 +94,50 @@ beforeEach(() => {
   mockData.settings = defaultSettings();
 });
 
-describe('Settings: gender, period tracker and Sunday switches', () => {
-  it('female owners see the tracker switch (on) and can open the tracker', async () => {
+describe('Profile: public view', () => {
+  it('only ever carries public fields', () => {
+    const p = toPublicProfile(user({ email: 'a@b.co', phone: '+911', gender: 'female', periodTrackerEnabled: true }), { currentStreak: 1, longestStreak: 2, habits: 3 });
+    expect(Object.keys(p).sort()).toEqual(['avatar', 'displayName', 'id', 'stats']);
+    expect(JSON.stringify(p)).not.toMatch(/a@b\.co|\+911|female|period/i);
+  });
+  it('shows stats to an owner and opens Settings from the gear', async () => {
+    const t = render(<ProfileTab />);
+    expect(text(t)).toContain('day streak');
+    await press(t, 'Settings');
+    expect(mockPush).toHaveBeenCalledWith('/settings');
+  });
+  it("doesn't show a viewer the owner's stats as their own", () => {
+    mockAuth.user = user({ role: 'viewer' });
+    mockAuth.isOwner = false;
+    expect(text(render(<ProfileTab />))).not.toContain('day streak');
+  });
+  it('edits the name only after tapping Edit profile', async () => {
+    const t = render(<ProfileTab />);
+    expect(text(t)).not.toContain('Display name');
+    await press(t, 'Edit profile');
+    expect(text(t)).toContain('Display name');
+  });
+  it('Settings no longer holds profile details', () => {
+    const json = text(render(<SettingsTab />));
+    expect(json).not.toContain('Display name');
+    expect(json).not.toContain('a@b.co');
+  });
+});
+
+describe('Profile: gender and period tracker', () => {
+  it('female owners see the tracker switch (on), which points to the Calendar tab', () => {
     mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
-    const t = render(<SettingsTab />);
+    const t = render(<ProfileTab />);
     expect(sw(t, 'Period tracker').props.value).toBe(true);
-    await press(t, 'Open period tracker');
-    expect(mockPush).toHaveBeenCalledWith('/periods');
+    expect(text(t)).toContain('Find it in the Calendar tab.');
   });
 
   it('other / prefer-not-to-say owners get an opt-in switch that starts off, and turning it on PATCHes periodTrackerEnabled', async () => {
     mockAuth.user = user({ gender: 'other', periodTrackerEnabled: false });
     mockAuth.api.patchMe.mockResolvedValue(user({ gender: 'other', periodTrackerEnabled: true }));
-    const t = render(<SettingsTab />);
+    const t = render(<ProfileTab />);
     expect(sw(t, 'Period tracker').props.value).toBe(false);
-    expect(text(t)).not.toContain('Open period tracker');
+    expect(text(t)).not.toContain('Find it in the Calendar tab.');
     await act(async () => { await sw(t, 'Period tracker').props.onValueChange(true); });
     expect(mockAuth.api.patchMe).toHaveBeenCalledWith({ periodTrackerEnabled: true });
     expect(mockAuth.updateUser).toHaveBeenCalledWith(expect.objectContaining({ periodTrackerEnabled: true }));
@@ -114,7 +150,7 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
   ] as [string, Partial<User>][])('hides the tracker switch for a %s', (_n, over) => {
     mockAuth.user = user(over);
     mockAuth.isOwner = over.role !== 'viewer';
-    const t = render(<SettingsTab />);
+    const t = render(<ProfileTab />);
     expect(sw(t, 'Period tracker')).toBeUndefined();
     expect(text(t)).not.toMatch(/period/i);
   });
@@ -122,7 +158,7 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
   it('gender picker saves via PATCH /me; choosing male also resets the tracker flag; tapping the selected one clears it', async () => {
     mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
     mockAuth.api.patchMe.mockResolvedValue(user({ gender: 'male' }));
-    const t = render(<SettingsTab />);
+    const t = render(<ProfileTab />);
     await press(t, 'Male');
     expect(mockAuth.api.patchMe).toHaveBeenLastCalledWith({ gender: 'male', periodTrackerEnabled: null });
     await press(t, 'Female');
@@ -134,11 +170,14 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
   it('a failed save shows an error banner', async () => {
     mockAuth.user = user({ gender: 'other' });
     mockAuth.api.patchMe.mockRejectedValue(new Error('No connection.'));
-    const t = render(<SettingsTab />);
+    const t = render(<ProfileTab />);
     await act(async () => { await sw(t, 'Period tracker').props.onValueChange(true); });
     expect(text(t)).toContain('No connection.');
   });
 
+  });
+
+describe('Settings: Sunday switch', () => {
   it("Sundays don't break my streak: on by default, absent means on, toggling saves sundayRest", async () => {
     mockData.settings = { ...defaultSettings(), sundayRest: undefined };
     const t = render(<SettingsTab />);
@@ -152,6 +191,20 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
     mockAuth.isOwner = false;
     const t = render(<SettingsTab />);
     expect(sw(t, "Sundays don't break my streak").props.disabled).toBe(true);
+  });
+});
+
+describe('Settings: daily goal row', () => {
+  it('keeps the steppers inside the card by letting the label wrap', () => {
+    mockAuth.user = user();
+    const t = render(<SettingsTab />);
+    const flat = (x: renderer.ReactTestInstance) => StyleSheet.flatten(x.props.style);
+    const label = t.root.findAll((x) => typeof x.type === 'string' && x.props.children === 'Count a day as successful at')[0];
+    expect(flat(label).flex).toBe(1);
+    for (const name of ['Decrease', 'Increase']) {
+      const b = t.root.findAll((x) => typeof x.type === 'string' && String(x.props.accessibilityLabel).startsWith(`${name} g`))[0];
+      expect(flat(b)).toMatchObject({ width: 44, paddingHorizontal: 0 });
+    }
   });
 });
 
@@ -245,11 +298,25 @@ describe('sign-up gender selector', () => {
   });
 });
 
-describe('period tracker route access', () => {
-  it('viewers and owners with the tracker off are redirected away', () => {
-    mockAuth.user = user({ role: 'viewer', gender: 'female' });
-    expect(render(<PeriodsScreen />).root.findAllByType('Redirect' as never).length).toBe(1);
-    mockAuth.user = user({ gender: 'male' });
-    expect(render(<PeriodsScreen />).root.findAllByType('Redirect' as never).length).toBe(1);
+describe('period tracker in the Calendar tab', () => {
+  const tab = (t: renderer.ReactTestRenderer) => t.root.findAll((x) => x.props.accessibilityLabel === 'Periods' && typeof x.props.onPress === 'function');
+
+  it.each([
+    ['viewer', { role: 'viewer' as const, gender: 'female' as const, periodTrackerEnabled: true }],
+    ['owner with the tracker off', { gender: 'male' as const }],
+  ] as [string, Partial<User>][])('never offers it to a %s', (_n, over) => {
+    mockAuth.user = user(over);
+    mockAuth.isOwner = over.role !== 'viewer';
+    const t = render(<CalendarTab />);
+    expect(tab(t)).toHaveLength(0);
+    expect(text(t)).not.toMatch(/period/i);
+  });
+  it('opens the tracker from the switch for an owner with it on', async () => {
+    mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
+    const t = render(<CalendarTab />);
+    expect(text(t)).not.toContain('Private to you');
+    await press(t, 'Periods');
+    expect(tab(t)).toHaveLength(1);
+    expect(text(t)).toMatch(/Start period/i);
   });
 });

@@ -8,22 +8,22 @@ import { GlassLayer, glassShadow } from './GlassLayer';
 import { radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
-const BAR_HEIGHT = 56;
-const BAR_WIDTH = 272;
+const BAR_HEIGHT = 52;
+const BAR_WIDTH = 248;
 const BAR_GAP = spacing.sm;
 
 /** How much of the bottom of a tab screen the floating bar covers. */
 export const tabBarSpace = (bottomInset: number) => BAR_HEIGHT + BAR_GAP + Math.max(bottomInset, BAR_GAP);
 
-type TabIconName = 'home' | 'chart' | 'calendar' | 'gear';
-const ROUTE_ICONS: Record<string, TabIconName> = { index: 'home', progress: 'chart', calendar: 'calendar', settings: 'gear' };
+type TabIconName = 'home' | 'chart' | 'calendar' | 'person';
+const ROUTE_ICONS: Record<string, TabIconName> = { index: 'home', progress: 'chart', calendar: 'calendar', profile: 'person' };
 
 type TabBarProps = Pick<BottomTabBarProps, 'state' | 'descriptors' | 'emitter' | 'navigateToTab'>;
 
 function TabIcon({ name, color, focused }: { name: TabIconName; color: string; focused: boolean }) {
   const common = { fill: 'none', stroke: color, strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   return (
-    <Svg width={23} height={23} viewBox="0 0 28 28" accessibilityElementsHidden importantForAccessibility="no">
+    <Svg width={21} height={21} viewBox="0 0 28 28" accessibilityElementsHidden importantForAccessibility="no">
       {name === 'home' ? (
         <>
           <Path d="M3.5 12.5 14 4l10.5 8.5" {...common} />
@@ -43,9 +43,8 @@ function TabIcon({ name, color, focused }: { name: TabIconName; color: string; f
         </>
       ) : (
         <>
-          <Circle cx="14" cy="14" r="3.1" {...common} />
-          <Path d="M14 3.5v3M14 21.5v3M3.5 14h3M21.5 14h3M6.6 6.6l2.1 2.1M19.3 19.3l2.1 2.1M21.4 6.6l-2.1 2.1M8.7 19.3l-2.1 2.1" {...common} />
-          <Circle cx="14" cy="14" r="8.3" {...common} />
+          <Circle cx="14" cy="9.5" r="5" {...common} />
+          <Path d="M4.5 24.5c.8-5.2 4.6-8 9.5-8s8.7 2.8 9.5 8" {...common} />
         </>
       )}
       {focused && name === 'home' ? <Circle cx="14" cy="14" r="1.2" fill={color} /> : null}

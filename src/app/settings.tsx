@@ -1,22 +1,18 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Linking, Modal, Pressable, Switch, View } from 'react-native';
-import { Avatar } from '@/avatars/Avatar';
-import { AvatarPicker } from '@/avatars/AvatarPicker';
-import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
+import { Linking, Pressable, Switch, View } from 'react-native';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
-import { Field } from '@/components/Field';
-import { GenderPicker } from '@/components/GenderPicker';
 import { ThemePicker } from '@/components/ThemePicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
 import { ReminderRow } from '@/components/reminders/ReminderRow';
-import { AppText, Button, Card, ErrorBanner, PageHeader, Row, Screen } from '@/components/ui';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { AppText, Button, Card, ErrorBanner, Row, Screen } from '@/components/ui';
 import { useActions } from '@/features/actions';
 import { getReminderModes, getReminderVolumes, setReminderModes, setReminderVolumes } from '@/features/reminderModes';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
 import { WEEKDAY_LABELS } from '@/lib/dates';
 import { DISCLAIMER } from '@/lib/messages';
-import { genderPatch, isPeriodTrackerOn, showTrackerSwitch, sundayRestOn } from '@/lib/profile';
+import { sundayRestOn } from '@/lib/profile';
 import { canShowFullScreenAlarm, nativeAlarmApi, openFullScreenAlarmSettings } from '@/notifications/alarmAdapter';
 import { cancelAllReminders, type ReminderMode, type ReminderModes, type ReminderVolumes } from '@/notifications/scheduler';
 import { expoNotifApi } from '@/notifications/expoAdapter';
@@ -25,9 +21,9 @@ import { useData, useSettings, useSyncStatus } from '@/providers/DataProvider';
 import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Gender, Reminder, ThemeName } from '@/types/api';
+import type { Reminder, ThemeName } from '@/types/api';
 
-export default function SettingsTab() {
+export default function SettingsScreen() {
   const router = useRouter();
   const { user, api, updateUser, signOut, isOwner } = useAuth();
   const { theme } = useTheme();
@@ -36,12 +32,8 @@ export default function SettingsTab() {
   const { syncNow, reminderStatus, refreshReminders } = useData();
   const sync = useSyncStatus();
   useSyncOnFocus();
-  const [name, setName] = useState(user?.displayName ?? '');
-  const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [confirmOut, setConfirmOut] = useState(false);
-  const [pickingAvatar, setPickingAvatar] = useState(false);
-  const [savingAvatar, setSavingAvatar] = useState(false);
   const [modes, setModes] = useState<ReminderModes>({});
   const [volumes, setVolumes] = useState<ReminderVolumes>({});
   const [previewing, setPreviewing] = useState<Reminder['key'] | null>(null);
@@ -49,8 +41,6 @@ export default function SettingsTab() {
   const userId = user?.id;
   const hasLoudAlarm = Object.values(modes).includes('loudAlarm');
   const loudAlarmFallback = reminderStatus?.status === 'scheduled' ? reminderStatus.loudAlarmFallback : undefined;
-
-  useEffect(() => setName(user?.displayName ?? ''), [user?.displayName]);
 
   useEffect(() => {
     if (!userId) return;
@@ -124,68 +114,21 @@ export default function SettingsTab() {
     });
 
   return (
-    <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
-      <PageHeader title="Settings" subtitle="Your profile and preferences" />
+    <Screen header={<ScreenHeader title="Settings" />} onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
       <ViewerBanner />
       {err ? <ErrorBanner message={err} /> : null}
-      {msg ? <AppText variant="caption" accent accessibilityLiveRegion="polite">{msg}</AppText> : null}
-
-      <Section title="Profile" detail={isOwner ? 'Personal details' : 'Read only'}>
-        <Row style={{ gap: spacing.md }}>
-          <Pressable
-            onPress={() => setPickingAvatar(true)}
-            accessibilityRole="button"
-            accessibilityLabel={`Change avatar. Current: ${isAvatarId(user?.avatar) ? avatarLabel(user?.avatar) : 'none chosen'}`}
-            style={{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Avatar id={user?.avatar} size={72} decorative />
-          </Pressable>
-          <View style={{ flex: 1, gap: spacing.xs }}>
-            <AppText variant="bodyStrong">{user?.displayName}</AppText>
-            {user?.email ? <AppText variant="caption" muted>{user.email}</AppText> : null}
-            {user?.phone ? <AppText variant="caption" muted>{user.phone}</AppText> : null}
-          </View>
-          <Button title="Change" variant="secondary" onPress={() => setPickingAvatar(true)} />
-        </Row>
-        <Field label="Display name" value={name} onChangeText={setName} maxLength={40} />
-        <Button
-          title="Save name"
-          variant="secondary"
-          disabled={!name.trim() || name.trim() === user?.displayName}
-          onPress={() => guarded(async () => { updateUser(await api.patchMe({ displayName: name.trim() })); setMsg('Name updated.'); })}
-        />
-        <GenderPicker value={user?.gender} onChange={(g: Gender | null) => guarded(async () => { updateUser(await api.patchMe(genderPatch(g))); setMsg('Profile updated.'); })} />
-        {showTrackerSwitch(user) ? (
-          <View style={{ gap: spacing.sm }}>
-            <Row style={{ gap: spacing.md }}>
-              <View style={{ flex: 1 }}>
-                <AppText variant="bodyStrong">Period tracker</AppText>
-                <AppText variant="caption" muted>Private to you. Period days also won&apos;t break your streak.</AppText>
-              </View>
-              <Switch
-                value={isPeriodTrackerOn(user)}
-                onValueChange={(v) => guarded(async () => { updateUser(await api.patchMe({ periodTrackerEnabled: v })); })}
-                accessibilityLabel="Period tracker"
-                trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-                style={{ minHeight: MIN_TOUCH }}
-              />
-            </Row>
-            {isPeriodTrackerOn(user) ? <Button title="Open period tracker" variant="secondary" onPress={() => router.push('/periods')} /> : null}
-          </View>
-        ) : null}
-      </Section>
 
       <Section title="Appearance" detail={`${theme.label} · ${theme.isDark ? 'Dark' : 'Light'}`}>
         <ThemePicker onPick={(n: ThemeName) => void api.patchMe({ theme: n }).then(updateUser).catch(() => {})} />
       </Section>
 
       <Section title="Daily goal" detail="Your streak, your pace">
-        <Row style={{ justifyContent: 'space-between' }}>
-          <AppText>Count a day as successful at</AppText>
-          <Row style={{ gap: spacing.sm }}>
-            <Button title="−" variant="secondary" disabled={!isOwner || settings.dailyThreshold <= 50} onPress={() => guarded(() => actions.saveSettings({ dailyThreshold: Math.max(50, settings.dailyThreshold - 5) }, settings))} accessibilityLabel="Decrease goal by 5 percent" style={{ paddingHorizontal: spacing.lg }} />
-            <AppText variant="heading" accent style={{ minWidth: 56, textAlign: 'center' }} accessibilityLabel={`${settings.dailyThreshold} percent`}>{settings.dailyThreshold}%</AppText>
-            <Button title="+" variant="secondary" disabled={!isOwner || settings.dailyThreshold >= 100} onPress={() => guarded(() => actions.saveSettings({ dailyThreshold: Math.min(100, settings.dailyThreshold + 5) }, settings))} accessibilityLabel="Increase goal by 5 percent" style={{ paddingHorizontal: spacing.lg }} />
+        <Row style={{ gap: spacing.md }}>
+          <AppText style={{ flex: 1 }}>Count a day as successful at</AppText>
+          <Row style={{ gap: spacing.xs }}>
+            <Button title="−" variant="secondary" disabled={!isOwner || settings.dailyThreshold <= 50} onPress={() => guarded(() => actions.saveSettings({ dailyThreshold: Math.max(50, settings.dailyThreshold - 5) }, settings))} accessibilityLabel="Decrease goal by 5 percent" style={STEPPER_BUTTON} />
+            <AppText variant="heading" accent style={{ minWidth: 52, textAlign: 'center' }} accessibilityLabel={`${settings.dailyThreshold} percent`}>{settings.dailyThreshold}%</AppText>
+            <Button title="+" variant="secondary" disabled={!isOwner || settings.dailyThreshold >= 100} onPress={() => guarded(() => actions.saveSettings({ dailyThreshold: Math.min(100, settings.dailyThreshold + 5) }, settings))} accessibilityLabel="Increase goal by 5 percent" style={STEPPER_BUTTON} />
           </Row>
         </Row>
         <Row style={{ gap: spacing.md }}>
@@ -281,29 +224,6 @@ export default function SettingsTab() {
 
       <AppText variant="caption" muted style={{ textAlign: 'center' }}>{DISCLAIMER}</AppText>
 
-      <Modal visible={pickingAvatar} animationType="slide" transparent onRequestClose={() => setPickingAvatar(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
-          <View accessibilityViewIsModal style={{ backgroundColor: theme.colors.bg, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, gap: spacing.md }}>
-            <AppText variant="heading" accessibilityRole="header">Choose your Bloom</AppText>
-            <AvatarPicker
-              value={user?.avatar}
-              disabled={savingAvatar}
-              onChange={(id) => {
-                if (id === user?.avatar) return setPickingAvatar(false);
-                setSavingAvatar(true);
-                guarded(async () => {
-                  updateUser(await api.patchMe({ avatar: id }));
-                  setMsg('Avatar updated.');
-                  setPickingAvatar(false);
-                }).finally(() => setSavingAvatar(false));
-              }}
-            />
-            {err ? <ErrorBanner message={err} /> : null}
-            <Button title="Close" variant="secondary" onPress={() => setPickingAvatar(false)} />
-          </View>
-        </View>
-      </Modal>
-
       <ConfirmationDialog
         visible={confirmOut}
         destructive
@@ -321,12 +241,15 @@ export default function SettingsTab() {
   );
 }
 
+// No side padding: the button's usual padding would push the row past the card on a phone.
+const STEPPER_BUTTON = { width: MIN_TOUCH, paddingHorizontal: 0 };
+
 function Section({ title, detail, children }: { title: string; detail?: string; children: React.ReactNode }) {
   return (
     <Card style={{ gap: spacing.md }}>
       <Row style={{ justifyContent: 'space-between', gap: spacing.md }}>
         <AppText variant="heading" accessibilityRole="header">{title}</AppText>
-        {detail ? <AppText variant="caption" muted numberOfLines={1}>{detail}</AppText> : null}
+        {detail ? <AppText variant="caption" muted numberOfLines={1} style={{ flex: 1, textAlign: 'right' }}>{detail}</AppText> : null}
       </Row>
       {children}
     </Card>
