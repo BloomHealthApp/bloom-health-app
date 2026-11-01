@@ -22,7 +22,7 @@ Each daily reminder has a mode: `notification` (default), `alarm` (bundled tone,
 `_shared/privacy-invariants.md`
 
 ## Alert types in Settings
-The picker offers `notification` and `loudAlarm`. `alarm` stays valid: it's the fallback when a loud alarm isn't available, and reminders may already be saved with it. Those show under the alarm icon and ring as saved until the user chooses again.
+Each reminder offers `notification`, `alarm` and `loudAlarm` on their own line under the name and time, because three options don't fit beside them on a phone. The first tap selects an option, and a second tap previews it.
 
 ## Notification sound
 `assets/sounds/notification.wav` (about 2 seconds) plays for every reminder in `notification` mode and for the period reminder, including while the app is open. Android uses the `reminders_sound` channel, which replaced the silent `reminders` channel. Renaming the signature keys makes existing installs reschedule once, because reminders already scheduled stay on the channel they were created with.

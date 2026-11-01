@@ -158,13 +158,13 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
 describe('Settings: reminder alert types', () => {
   const radios = (t: renderer.ReactTestRenderer) => t.root.findAll((x) => x.props.accessibilityRole === 'radio' && typeof x.props.onPress === 'function' && /: (Notification|Alarm|Loud alarm)$/.test(x.props.accessibilityLabel));
 
-  it('offers owners two alert types per reminder, defaulting to notification', () => {
+  it('offers owners three alert types per reminder, defaulting to notification', () => {
     mockAuth.user = user();
     const t = render(<SettingsTab />);
-    expect(radios(t)).toHaveLength(10);
+    expect(radios(t)).toHaveLength(15);
     const wake = radios(t).filter((x) => x.props.accessibilityLabel.startsWith('Good morning:'));
-    expect(wake.map((x) => x.props.accessibilityLabel)).toEqual(['Good morning: Notification', 'Good morning: Loud alarm']);
-    expect(wake.map((x) => x.props.accessibilityState.checked)).toEqual([true, false]);
+    expect(wake.map((x) => x.props.accessibilityLabel)).toEqual(['Good morning: Notification', 'Good morning: Alarm', 'Good morning: Loud alarm']);
+    expect(wake.map((x) => x.props.accessibilityState.checked)).toEqual([true, false, false]);
   });
   it('tapping an option shows its preview, and tapping it again hides it', async () => {
     mockAuth.user = user();
@@ -177,14 +177,14 @@ describe('Settings: reminder alert types', () => {
     await press(t, 'Good morning: Notification');
     expect(previews()).toHaveLength(0);
   });
-  it('choosing another option closes the preview, and tapping it again previews Loud alarm with a play button', async () => {
+  it('choosing another option closes the preview, and tapping it again previews Alarm with a play button', async () => {
     mockAuth.user = user();
     const t = render(<SettingsTab />);
     await press(t, 'Good morning: Notification');
     expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview')).toHaveLength(1);
-    await press(t, 'Hydration check: Loud alarm');
+    await press(t, 'Hydration check: Alarm');
     expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview')).toHaveLength(0);
-    await press(t, 'Hydration check: Loud alarm');
+    await press(t, 'Hydration check: Alarm');
     expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview')).toHaveLength(1);
     expect(t.root.findAll((x) => x.props.accessibilityLabel === 'Play alarm sound').length).toBeGreaterThan(0);
   });
@@ -193,10 +193,10 @@ describe('Settings: reminder alert types', () => {
     mockAuth.isOwner = false;
     expect(radios(render(<SettingsTab />))).toHaveLength(0);
   });
-  it('shows a reminder saved in the older alarm mode under the alarm icon', () => {
+  it('marks a reminder saved as a plain alarm', () => {
     const reminder = { key: Object.keys(REMINDER_LABELS)[0], enabled: true, time: '07:00' } as unknown as Reminder;
     const t = render(<ReminderRow reminder={reminder} mode="alarm" volume={1} previewing={false} onChange={() => {}} onChooseMode={() => {}} onVolumeChange={() => {}} />);
-    expect(radios(t).map((x) => x.props.accessibilityState.checked)).toEqual([false, true]);
+    expect(radios(t).map((x) => x.props.accessibilityState.checked)).toEqual([false, true, false]);
   });
 });
 
