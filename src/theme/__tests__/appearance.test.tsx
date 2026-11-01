@@ -89,16 +89,17 @@ describe('theme picker', () => {
     await act(async () => {
       t = renderer.create(<ThemeProvider><ThemePicker /></ThemeProvider>);
     });
-    expect(radios(t).map((n) => n.props.accessibilityLabel)).toEqual(['Forest Trail theme', 'Midnight Navy theme', 'Cotton Candy theme', 'Lavender Dream theme', 'Sunset Ember theme']);
-    expect(radios(t).map((n) => n.props.accessibilityState.selected)).toEqual([true, false, false, false, false]);
+    expect(radios(t).map((n) => n.props.accessibilityLabel)).toEqual(['Forest Trail theme', 'Midnight Navy theme', 'Cotton Candy theme', 'Lavender Dream theme', 'Sunset Ember theme', 'Graphite Grey theme']);
+    expect(radios(t).map((n) => n.props.accessibilityState.selected)).toEqual([true, false, false, false, false, false]);
+    for (const square of radios(t)) expect(square.findAll((n) => typeof n.type === 'string' && n.props.testID === 'theme-color')).toHaveLength(4);
   });
   it('still shows Mint Peach for an account already using it', async () => {
     mockStore.set('bubu.theme', 'mintPeach');
     await mount();
     expect(ctx.theme.name).toBe('mintPeach');
   });
-  it('keeps Sunset Ember readable in light mode', () => {
-    const c = THEMES.sunsetEmber.colors;
+  it.each(['sunsetEmber', 'graphiteGrey'] as const)('keeps %s readable in light mode', (name) => {
+    const c = THEMES[name].colors;
     expect(contrast(c.text, c.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.textMuted, c.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.onPrimary, c.primary)).toBeGreaterThanOrEqual(4.5);

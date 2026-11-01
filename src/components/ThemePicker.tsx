@@ -40,7 +40,7 @@ export function ThemePicker({ onPick }: { onPick?: (n: ThemeName) => void }) {
   return (
     <View style={{ gap: spacing.sm }}>
       <AppearancePicker />
-      <Row accessibilityRole="radiogroup" accessibilityLabel="Theme" style={{ gap: spacing.sm }}>
+      <Row accessibilityRole="radiogroup" accessibilityLabel="Theme" style={{ gap: spacing.xs }}>
         {THEME_LIST.map((t) => {
           const selected = t.name === theme.name;
           const swatch = theme.isDark ? t.darkColors : t.colors;
@@ -54,9 +54,15 @@ export function ThemePicker({ onPick }: { onPick?: (n: ThemeName) => void }) {
               accessibilityRole="radio"
               accessibilityState={{ selected }}
               accessibilityLabel={`${t.label} theme`}
-              style={{ flex: 1, minHeight: MIN_TOUCH, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, backgroundColor: swatch.primary, borderWidth: 3, borderColor: selected ? theme.colors.text : 'transparent' }}
+              style={{ flex: 1, minHeight: MIN_TOUCH, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', gap: 3, borderRadius: radius.sm, backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: selected ? theme.colors.accent : theme.colors.border }}
             >
-              {selected ? <AppText variant="bodyStrong" style={{ color: swatch.onPrimary }}>✓</AppText> : null}
+              {[[swatch.tint, swatch.primary], [swatch.secondary, swatch.bg]].map((pair, r) => (
+                <Row key={r} style={{ gap: 3 }}>
+                  {pair.map((col, i) => (
+                    <View key={i} testID="theme-color" style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: col, borderWidth: 1, borderColor: swatch.border }} />
+                  ))}
+                </Row>
+              ))}
             </Pressable>
           );
         })}

@@ -4,7 +4,7 @@ Bloom is an **original character** drawn entirely in code (react-native-svg): a 
 small rounded ears (soft peach inside), a little sprout on the head, stubby arms and tiny feet. The look is a flat
 pastel sticker: thick dark-brown outline, a white die-cut border and a soft drop shadow, big blush cheeks, tiny dot
 eyes and a tiny mouth. The body stays cream-white; cheeks, props and accents follow the active theme
-(Forest Trail, Midnight Navy, Cotton Candy, Lavender Dream, Sunset Ember). All props (popsicle, flower, bottle, dumbbell, notebook, confetti) are
+(Forest Trail, Midnight Navy, Cotton Candy, Lavender Dream, Sunset Ember, Graphite Grey). All props (popsicle, flower, bottle, dumbbell, notebook, confetti) are
 simple shapes made for this app. No third-party artwork is included.
 
 ## Where it lives
