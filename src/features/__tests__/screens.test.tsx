@@ -40,7 +40,7 @@ jest.mock('@/features/derived', () => ({
 }));
 jest.mock('expo-constants', () => ({ expoConfig: { version: '1.0.0' } }));
 
-const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { patchMe: jest.Mock }; updateUser: jest.Mock; signOut: jest.Mock; requestSignUp: jest.Mock; requestSignIn: jest.Mock; verifyOtp: jest.Mock } = {
+const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { patchMe: jest.Mock; requestPhoneChange?: jest.Mock; verifyPhoneChange?: jest.Mock }; updateUser: jest.Mock; signOut: jest.Mock; requestSignUp: jest.Mock; requestSignIn: jest.Mock; verifyOtp: jest.Mock } = {
   status: 'signedIn',
   user: null,
   isOwner: true,
@@ -359,24 +359,61 @@ describe('phone or email sign-in', () => {
 });
 
 describe('Profile: phone number', () => {
-  const enter = (t: renderer.ReactTestRenderer, v: string) => act(() => t.root.findByProps({ accessibilityLabel: 'Phone' }).props.onChangeText(v));
-  it('prompts an account with no phone, and saves a new one', async () => {
-    mockAuth.user = user({ phone: null });
-    mockAuth.api.patchMe.mockResolvedValue(user({ phone: '+919876543210' }));
+  const enter = (t: renderer.ReactTestRenderer, label: string, v: string) => act(() => t.root.findAll((x) => x.props.accessibilityLabel === label && typeof x.props.onChangeText === 'function')[0].props.onChangeText(v));
+  beforeEach(() => {
+    mockAuth.api.requestPhoneChange = jest.fn().mockResolvedValue({ status: 'sent', challengeId: 'c1' });
+    mockAuth.api.verifyPhoneChange = jest.fn().mockResolvedValue(user({ phone: '+919876543210' }));
+  });
+
+  it('shows the saved number in private details only', () => {
+    mockAuth.user = user({ phone: '+919876543210' });
     const t = render(<ProfileTab />);
-    expect(text(t)).toContain('Add your phone number');
-    enter(t, '9876543210');
-    await press(t, 'Save phone');
-    expect(mockAuth.api.patchMe).toHaveBeenCalledWith({ phone: '+919876543210' });
+    expect(text(t)).toContain('+919876543210');
+    expect(text(t)).toContain('Only you can see this.');
+    expect(JSON.stringify(toPublicProfile(mockAuth.user))).not.toContain('9876543210');
+  });
+  it('prompts an account with no phone', () => {
+    mockAuth.user = user({ phone: null });
+    const t = render(<ProfileTab />);
+    expect(text(t)).toContain('Not added');
+    expect(text(t)).toContain('Add your number');
+  });
+  it('saves only after the emailed code is confirmed', async () => {
+    mockAuth.user = user({ phone: null });
+    const t = render(<ProfileTab />);
+    await press(t, 'Add');
+    enter(t, 'New phone number', '9876543210');
+    await press(t, 'Send code');
+    expect(mockAuth.api.requestPhoneChange).toHaveBeenCalledWith('+919876543210');
+    expect(mockAuth.updateUser).not.toHaveBeenCalled();
+    enter(t, '6-digit code', '123456');
+    await press(t, 'Confirm phone number');
+    expect(mockAuth.api.verifyPhoneChange).toHaveBeenCalledWith('c1', '123456');
     expect(mockAuth.updateUser).toHaveBeenCalled();
+    expect(text(t)).toContain('Phone number updated.');
   });
   it('shows a clear message when the number is on another account', async () => {
     mockAuth.user = user({ phone: null });
-    mockAuth.api.patchMe.mockRejectedValue(new ApiError(409, 'already_registered', 'taken'));
+    mockAuth.api.requestPhoneChange = jest.fn().mockRejectedValue(new ApiError(409, 'already_registered', 'taken'));
     const t = render(<ProfileTab />);
-    enter(t, '9876543210');
-    await press(t, 'Save phone');
+    await press(t, 'Add');
+    enter(t, 'New phone number', '9876543210');
+    await press(t, 'Send code');
     expect(text(t)).toContain('already exists');
+    expect(mockAuth.updateUser).not.toHaveBeenCalled();
+  });
+  it('keeps the old number on a wrong code, and stays signed in', async () => {
+    mockAuth.user = user({ phone: '+919000000000' });
+    mockAuth.api.verifyPhoneChange = jest.fn().mockRejectedValue(new ApiError(400, 'validation_failed', 'that code is not valid or has expired'));
+    const t = render(<ProfileTab />);
+    await press(t, 'Change');
+    enter(t, 'New phone number', '9876543210');
+    await press(t, 'Send code');
+    enter(t, '6-digit code', '000000');
+    await press(t, 'Confirm phone number');
+    expect(text(t)).toContain('not valid');
+    expect(mockAuth.updateUser).not.toHaveBeenCalled();
+    expect(mockAuth.signOut).not.toHaveBeenCalled();
   });
 });
 

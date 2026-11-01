@@ -37,6 +37,10 @@ export default function ProfileTab() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const savedPhone = splitPhone(user?.phone);
+  const [phoneStep, setPhoneStep] = useState<'idle' | 'number' | 'code'>('idle');
+  const [phoneChallenge, setPhoneChallenge] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [phoneBusy, setPhoneBusy] = useState(false);
   const [countryCode, setCountryCode] = useState(savedPhone.countryCode);
   const [phoneNumber, setPhoneNumber] = useState(savedPhone.number);
   const [phoneTouched, setPhoneTouched] = useState(false);
@@ -56,15 +60,45 @@ export default function ProfileTab() {
     }
   };
 
-  const savePhone = async () => {
-    setPhoneTouched(true);
-    if (phoneErr) return;
+  const startPhone = () => {
     setErr(null);
+    setMsg(null);
+    setPhoneStep('number');
+  };
+  const cancelPhone = () => {
+    setPhoneStep('idle');
+    setPhoneCode('');
+    setPhoneTouched(false);
+    setErr(null);
+  };
+  const sendPhoneCode = async () => {
+    setPhoneTouched(true);
+    if (phoneErr || phoneBusy) return;
+    setErr(null);
+    setPhoneBusy(true);
     try {
-      updateUser(await api.patchMe({ phone: newPhone }));
-      setMsg('Phone number updated.');
+      const { challengeId } = await api.requestPhoneChange(newPhone);
+      setPhoneChallenge(challengeId);
+      setPhoneStep('code');
     } catch (e) {
-      setErr(authErrorMessage(e, 'Could not save your phone number.'));
+      setErr(authErrorMessage(e, 'Could not send the code. Please try again.'));
+    } finally {
+      setPhoneBusy(false);
+    }
+  };
+  const confirmPhone = async () => {
+    if (phoneBusy) return;
+    setErr(null);
+    setPhoneBusy(true);
+    try {
+      updateUser(await api.verifyPhoneChange(phoneChallenge, phoneCode));
+      setMsg('Phone number updated.');
+      cancelPhone();
+    } catch (e) {
+      setPhoneCode('');
+      setErr(authErrorMessage(e, 'Could not confirm your phone number.'));
+    } finally {
+      setPhoneBusy(false);
     }
   };
 
@@ -109,15 +143,30 @@ export default function ProfileTab() {
           <AppText variant="caption" muted>Only you can see this.</AppText>
         </View>
         {user.email ? <AppText>{user.email}</AppText> : null}
-        {user.phone ? null : <AppText variant="caption" muted>Add your phone number so you can sign in with it.</AppText>}
-        <PhoneField
-          countryCode={countryCode}
-          number={phoneNumber}
-          onChangeCountryCode={setCountryCode}
-          onChangeNumber={setPhoneNumber}
-          error={phoneTouched ? phoneErr : null}
-        />
-        <Button title="Save phone" variant="secondary" disabled={!!phoneErr || newPhone === user.phone} onPress={savePhone} />
+        <Row style={{ gap: spacing.md }}>
+          <View style={{ flex: 1 }}>
+            <AppText variant="caption" muted>Phone</AppText>
+            <AppText>{user.phone ?? 'Not added'}</AppText>
+            {user.phone ? null : <AppText variant="caption" muted>Add your number so you can sign in with it.</AppText>}
+          </View>
+          {phoneStep === 'idle' ? <Button title={user.phone ? 'Change' : 'Add'} variant="secondary" onPress={startPhone} /> : null}
+        </Row>
+        {phoneStep === 'number' ? (
+          <>
+            <PhoneField label="New phone number" countryCode={countryCode} number={phoneNumber} onChangeCountryCode={setCountryCode} onChangeNumber={setPhoneNumber} error={phoneTouched ? phoneErr : null} />
+            <AppText variant="caption" muted>We&apos;ll email a code to {user.email} to confirm it&apos;s you.</AppText>
+            <Button title="Send code" variant="secondary" loading={phoneBusy} onPress={sendPhoneCode} />
+            <Button title="Cancel" variant="ghost" onPress={cancelPhone} />
+          </>
+        ) : null}
+        {phoneStep === 'code' ? (
+          <>
+            <Field label="6-digit code" value={phoneCode} onChangeText={(t) => setPhoneCode(t.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="one-time-code" maxLength={6} />
+            <AppText variant="caption" muted>We emailed a code to {user.email}. Your number changes once you confirm it.</AppText>
+            <Button title="Confirm phone number" variant="secondary" disabled={phoneCode.length !== 6} loading={phoneBusy} onPress={confirmPhone} />
+            <Button title="Cancel" variant="ghost" onPress={cancelPhone} />
+          </>
+        ) : null}
         <GenderPicker value={user.gender} onChange={(g: Gender | null) => guarded(async () => { updateUser(await api.patchMe(genderPatch(g))); setMsg('Profile updated.'); })} />
         {showTrackerSwitch(user) ? (
           <View style={{ gap: spacing.sm }}>
