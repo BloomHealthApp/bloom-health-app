@@ -7,7 +7,7 @@ Reusable UI. `ui.tsx` holds the basic primitives, and `periods/` holds the track
 - `reminders/ReminderRow.tsx` previews mirror what actually appears: the Android loud alarm mock copies `AlarmActivity`, so change them together.
 - Touch targets are at least 44pt, status is never shown by color alone, and interactive elements have labels and roles.
 - Rest days are drawn as a soft cell without a reason (`CalendarDayCell`, `WeeklyProgressChart`).
-- `CalendarDayCell` fills an explicit seven-cell row. Don't lay it out with percentage widths in a wrapping row: on some screens seven cells round to more than the row's width, so the seventh wraps and every date shifts a column.
+- `CalendarDayCell` and the period tracker's `DayCell` fill an explicit seven-cell row (`chunkWeeks`). Don't lay them out with percentage widths in a wrapping row: on some screens seven cells round to more than the row's width, so the seventh wraps and every date shifts a column.
 - `CycleCard` is never rendered for viewers.
 
 ## Mascot

@@ -8,7 +8,7 @@ import { EmptyState } from '../EmptyState';
 import { AppText, Button, Card, ErrorBanner, Loading, Row } from '../ui';
 import { ChipRow } from './Chips';
 import { ongoingPeriod, predict } from '@/lib/cycle';
-import { addDays, monthName, WEEKDAY_SHORT, shortDate } from '@/lib/dates';
+import { addDays, chunkWeeks, monthName, WEEKDAY_SHORT, shortDate } from '@/lib/dates';
 import {
   DISCLAIMER_PERIODS,
   FLOW_LABELS,
@@ -136,14 +136,16 @@ export function PeriodsView({ periods, today, loading, error, onStart, onEnd, on
         </Row>
         <Row>
           {WEEKDAY_SHORT.map((w, i) => (
-            <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingBottom: 6 }} accessibilityElementsHidden importantForAccessibility="no">
+            <View key={i} style={{ flex: 1, alignItems: 'center', paddingBottom: 6 }} accessibilityElementsHidden importantForAccessibility="no">
               <AppText variant="caption" muted>{w}</AppText>
             </View>
           ))}
         </Row>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          {cells.map((c, i) => (c ? <DayCell key={c.date} cell={c} onPress={() => openDay(c)} /> : <View key={`e${i}`} style={{ width: `${100 / 7}%` }} />))}
-        </View>
+        {chunkWeeks(cells).map((week, w) => (
+          <Row key={w}>
+            {week.map((c, i) => (c ? <DayCell key={c.date} cell={c} onPress={() => openDay(c)} /> : <View key={`e${i}`} style={{ flex: 1 }} />))}
+          </Row>
+        ))}
         <Row style={{ gap: spacing.lg, marginTop: spacing.md, justifyContent: 'center' }} accessible accessibilityLabel="Legend: filled days are period days, dashed days are the estimated window">
           <Legend swatch={{ backgroundColor: theme.colors.primary }} label="Period" />
           <Legend swatch={{ backgroundColor: theme.colors.secondary, borderWidth: 1, borderStyle: 'dashed', borderColor: theme.colors.accent }} label="Estimated window" />
@@ -235,7 +237,7 @@ function DayCell({ cell, onPress }: { cell: CalendarCell; onPress: () => void })
   const period = cell.kind === 'period';
   const predicted = cell.kind === 'predicted';
   return (
-    <View style={{ width: `${100 / 7}%`, padding: 2 }}>
+    <View style={{ flex: 1, padding: 2 }}>
       <Pressable
         onPress={onPress}
         disabled={cell.isFuture && !predicted && !period}
