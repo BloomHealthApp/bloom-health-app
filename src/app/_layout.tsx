@@ -1,10 +1,12 @@
 import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, useFonts } from '@expo-google-fonts/nunito';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NavigationBar } from 'expo-navigation-bar';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { isTablet } from '@/lib/device';
 import { configureNotifications } from '@/notifications/expoAdapter';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { PeriodReminderSync } from '@/features/PeriodReminderSync';
@@ -12,7 +14,7 @@ import { DataProvider } from '@/providers/DataProvider';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { useWidgetSignedOut, WidgetSync } from '@/widgets/WidgetSync';
 import { Loading } from '@/components/ui';
-import { View } from 'react-native';
+import { Platform, useWindowDimensions, View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 configureNotifications();
@@ -21,7 +23,7 @@ function Shell() {
   const { status, user } = useAuth();
   const { theme, setThemeName } = useTheme();
 
-  useWidgetSignedOut(status, theme.name);
+  useWidgetSignedOut(status, theme.name, theme.isDark);
 
   // Server profile theme is the cross-device preference once signed in.
   useEffect(() => {
@@ -66,7 +68,7 @@ export default function RootLayout() {
       <QueryClientProvider client={qc}>
         <ThemeProvider>
           <AuthProvider onSignedOut={() => qc.clear()}>
-            <ThemedStatusBar />
+            <SystemBars />
             <Shell />
           </AuthProvider>
         </ThemeProvider>
@@ -75,7 +77,14 @@ export default function RootLayout() {
   );
 }
 
-function ThemedStatusBar() {
+function SystemBars() {
   const { theme } = useTheme();
-  return <StatusBar style={theme.isDark ? 'light' : 'dark'} />;
+  const { width, height } = useWindowDimensions();
+  const fullScreen = isTablet(width, height);
+  return (
+    <>
+      <StatusBar style={theme.isDark ? 'light' : 'dark'} hidden={fullScreen} />
+      {Platform.OS === 'android' ? <NavigationBar hidden={fullScreen} /> : null}
+    </>
+  );
 }

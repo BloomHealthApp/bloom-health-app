@@ -4,7 +4,7 @@ import React from 'react';
 import { FlexWidget, OverlapWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import { flameSvg, mascotSvg, ringSvg } from './svg';
 import type { WidgetSnapshot } from './widgetData';
-import { widgetPalette } from './widgetTheme';
+import { widgetGlass, widgetPalette } from './widgetTheme';
 
 export const WIDGET_SMALL = 'BubuSmall';
 export const WIDGET_MEDIUM = 'BubuMedium';
@@ -19,14 +19,14 @@ const isLive = (s: WidgetSnapshot) => s.state === 'ready' || s.state === 'noHabi
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 export function SmallWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnapshot; size?: WidgetSize }) {
-  const p = widgetPalette(s.theme);
+  const p = widgetPalette(s.theme, s.dark);
   const box = Math.min(size.width || 110, size.height || 110);
   const mascot = Math.max(40, Math.round(box * (isLive(s) ? 0.5 : 0.55)));
   return (
     <FlexWidget
       clickAction="OPEN_APP"
       accessibilityLabel={isLive(s) ? `Bloom Health. ${plural(s.currentStreak, 'day')} streak. Tap to open.` : `Bloom Health. ${s.message}`}
-      style={{ height: 'match_parent', width: 'match_parent', backgroundColor: p.background, borderRadius: 24, padding: 8, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+      style={{ height: 'match_parent', width: 'match_parent', ...widgetGlass(p), padding: 8, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
     >
       <SvgWidget svg={mascotSvg(s.mood, s.theme)} style={{ width: mascot, height: mascot }} />
       {isLive(s) ? (
@@ -43,7 +43,7 @@ export function SmallWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnapsh
 }
 
 export function MediumWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnapshot; size?: WidgetSize }) {
-  const p = widgetPalette(s.theme);
+  const p = widgetPalette(s.theme, s.dark);
   // Sized from the height so the text column keeps most of the width on a 4x2 widget.
   const h = size.height || 110;
   const mascot = Math.max(48, Math.min(72, h - 30));
@@ -53,7 +53,7 @@ export function MediumWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnaps
       <FlexWidget
         clickAction="OPEN_APP"
         accessibilityLabel={`Bloom Health. ${s.message}`}
-        style={{ height: 'match_parent', width: 'match_parent', backgroundColor: p.background, borderRadius: 24, padding: 10, flexDirection: 'row', alignItems: 'center' }}
+        style={{ height: 'match_parent', width: 'match_parent', ...widgetGlass(p), padding: 10, flexDirection: 'row', alignItems: 'center' }}
       >
         <SvgWidget svg={mascotSvg(s.mood, s.theme)} style={{ width: mascot, height: mascot }} />
         <FlexWidget style={{ flex: 1, marginLeft: 12, flexDirection: 'column', justifyContent: 'center' }}>
@@ -68,7 +68,7 @@ export function MediumWidget({ snapshot: s, size = {} }: { snapshot: WidgetSnaps
     <FlexWidget
       clickAction="OPEN_APP"
       accessibilityLabel={`Bloom Health. ${plural(s.currentStreak, 'day')} streak, ${s.percent} percent done today. Tap to open.`}
-      style={{ height: 'match_parent', width: 'match_parent', backgroundColor: p.background, borderRadius: 24, padding: 10, flexDirection: 'row', alignItems: 'center' }}
+      style={{ height: 'match_parent', width: 'match_parent', ...widgetGlass(p), padding: 10, flexDirection: 'row', alignItems: 'center' }}
     >
       <SvgWidget svg={mascotSvg(s.mood, s.theme)} style={{ width: mascot, height: mascot }} />
       <FlexWidget style={{ flex: 1, marginLeft: 8, flexDirection: 'column', justifyContent: 'center' }}>

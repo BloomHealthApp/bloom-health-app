@@ -1,7 +1,7 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
 import { ThemePicker } from '@/components/ThemePicker';
-import { resolveTheme, THEME_LIST, THEMES } from '../themes';
+import { GLASS_ALPHA, GLOW_OPACITY, resolveTheme, THEME_LIST, THEMES, type ThemeColors } from '../themes';
 import { ThemeProvider, useTheme } from '../ThemeProvider';
 
 const mockStore = new Map<string, string>();
@@ -104,5 +104,19 @@ describe('theme picker', () => {
     expect(contrast(c.textMuted, c.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.onPrimary, c.primary)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(c.accent, c.surface)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('glass surfaces', () => {
+  const blend = (top: string, under: string, alpha: number) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(top.slice(i, i + 2), 16) * alpha + parseInt(under.slice(i, i + 2), 16) * (1 - alpha)).toString(16).padStart(2, '0')).join('');
+  const cases = Object.values(THEMES).flatMap((t) => [[`${t.label} light`, t.colors, false], [`${t.label} dark`, t.darkColors, true]] as [string, ThemeColors, boolean][]);
+  it.each(cases)('%s text stays readable on a panel over the strongest glow', (_label, c, dark) => {
+    const glow = blend(c.primary, c.bg, dark ? GLOW_OPACITY.dark : GLOW_OPACITY.light);
+    const panel = blend(c.surface, glow, dark ? GLASS_ALPHA.dark : GLASS_ALPHA.light);
+    expect(contrast(c.text, panel)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.textMuted, panel)).toBeGreaterThanOrEqual(4.5);
+  });
+  it('makes the surface see-through', () => {
+    expect(resolveTheme('midnightNavy', true).glass).toMatch(/^#15213A[0-9A-F]{2}$/);
   });
 });

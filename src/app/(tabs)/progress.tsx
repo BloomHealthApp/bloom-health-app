@@ -7,7 +7,7 @@ import { StreakCard } from '@/components/StreakCard';
 import { SyncStatusChip } from '@/components/SyncStatusChip';
 import { ViewerBanner } from '@/components/ViewerBanner';
 import { WeeklyProgressChart, type BarDatum } from '@/components/WeeklyProgressChart';
-import { AppText, Button, Card, Loading, Row, Screen } from '@/components/ui';
+import { AppText, Button, Card, Loading, PageHeader, Row, Screen, SectionTitle } from '@/components/ui';
 import { useDerived } from '@/features/derived';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
 import { addDays, dateRange, monthBounds, monthName, prettyDate, startOfWeek, WEEKDAY_SHORT, weekdayOf } from '@/lib/dates';
@@ -76,10 +76,7 @@ export default function Progress() {
 
   return (
     <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
-      <Row style={{ justifyContent: 'space-between' }}>
-        <AppText variant="title" accessibilityRole="header">Progress</AppText>
-        <SyncStatusChip onPress={() => router.push('/sync-issues')} />
-      </Row>
+      <PageHeader title="Progress" subtitle="A steady look at your daily rhythm" right={<SyncStatusChip onPress={() => router.push('/sync-issues')} />} />
       <ViewerBanner />
       {d.loading ? (
         <Loading />
@@ -104,7 +101,7 @@ export default function Progress() {
             </Row>
           </Card>
           <StreakCard current={d.currentStreak} longest={d.longestStreak} restNote={streakRestNote({ sundayRest: sundayRestOn(settings), periodTracker: isPeriodTrackerOn(user) })} />
-          <AppText variant="heading" accessibilityRole="header">By habit</AppText>
+          <SectionTitle>By habit</SectionTitle>
           <Card style={{ gap: spacing.md }}>
             {perHabit.map(({ h, pct }) => (
               <View key={h.id} accessible accessibilityLabel={`${h.title}: ${pct === null ? 'no data' : pct + ' percent'}`}>

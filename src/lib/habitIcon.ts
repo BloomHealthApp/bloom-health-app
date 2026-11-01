@@ -19,7 +19,7 @@ const EMOJI_ICONS: Record<string, IconName> = {
 };
 
 export const ICON_LABELS: Record<IconName, string> = {
-  home: 'Home', chart: 'Chart', calendar: 'Calendar', gear: 'Gear', sunrise: 'Sunrise', dumbbell: 'Dumbbell', 'candy-off': 'No candy', salad: 'Salad', utensils: 'Meal', droplet: 'Water', footprints: 'Shoe', moon: 'Moon', sparkles: 'Sparkles', flame: 'Flame', lock: 'Lock', eyes: 'Eyes', run: 'Running', walk: 'Walking', yoga: 'Yoga', badminton: 'Badminton', book: 'Book', heart: 'Heart', apple: 'Apple', coffee: 'Coffee', bed: 'Bed', pencil: 'Pencil', bike: 'Bike', leaf: 'Leaf', sun: 'Sun', pill: 'Medicine', music: 'Music', smile: 'Smile',
+  home: 'Home', chart: 'Chart', calendar: 'Calendar', gear: 'Gear', sunrise: 'Sunrise', dumbbell: 'Dumbbell', 'candy-off': 'No candy', salad: 'Salad', utensils: 'Meal', droplet: 'Water', footprints: 'Shoe', moon: 'Moon', sparkles: 'Sparkles', bell: 'Notification bell', 'bell-off': 'Notifications off', volume: 'Loud alarm', 'alarm-clock': 'Alarm clock', notification: 'Notification', check: 'Enabled', close: 'Disabled', flame: 'Flame', lock: 'Lock', eyes: 'Eyes', run: 'Running', walk: 'Walking', yoga: 'Yoga', badminton: 'Badminton', book: 'Book', heart: 'Heart', apple: 'Apple', coffee: 'Coffee', bed: 'Bed', pencil: 'Pencil', bike: 'Bike', leaf: 'Leaf', sun: 'Sun', pill: 'Medicine', music: 'Music', smile: 'Smile',
 };
 
 export const HABIT_ICON_CHOICES: readonly IconName[] = ['sparkles', 'sunrise', 'moon', 'sun', 'bed', 'dumbbell', 'run', 'walk', 'footprints', 'yoga', 'badminton', 'bike', 'droplet', 'salad', 'apple', 'utensils', 'candy-off', 'coffee', 'pill', 'book', 'pencil', 'music', 'leaf', 'heart', 'smile', 'flame', 'calendar', 'chart'];

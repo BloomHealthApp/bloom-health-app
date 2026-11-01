@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Linking, Modal, Pressable, Switch, View } from 'react-native';
@@ -8,12 +7,10 @@ import { avatarLabel, isAvatarId } from '@/avatars/avatarCatalog';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { Field } from '@/components/Field';
 import { GenderPicker } from '@/components/GenderPicker';
-import { SyncStatusChip } from '@/components/SyncStatusChip';
 import { ThemePicker } from '@/components/ThemePicker';
 import { ViewerBanner } from '@/components/ViewerBanner';
 import { ReminderRow } from '@/components/reminders/ReminderRow';
-import { AppText, Button, Card, ErrorBanner, Row, Screen } from '@/components/ui';
-import { USE_MOCK_API, API_BASE_URL } from '@/config';
+import { AppText, Button, Card, ErrorBanner, PageHeader, Row, Screen } from '@/components/ui';
 import { useActions } from '@/features/actions';
 import { getReminderModes, getReminderVolumes, setReminderModes, setReminderVolumes } from '@/features/reminderModes';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
@@ -25,7 +22,7 @@ import { cancelAllReminders, type ReminderMode, type ReminderModes, type Reminde
 import { expoNotifApi } from '@/notifications/expoAdapter';
 import { useAuth } from '@/providers/AuthProvider';
 import { useData, useSettings, useSyncStatus } from '@/providers/DataProvider';
-import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
+import { MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Gender, Reminder, ThemeName } from '@/types/api';
@@ -100,8 +97,11 @@ export default function SettingsTab() {
 
   const chooseMode = (key: Reminder['key'], mode: ReminderMode) => {
     const unchanged = (modes[key] ?? 'notification') === mode;
-    setPreviewing(unchanged && previewing === key ? null : key);
-    if (unchanged) return;
+    if (unchanged) {
+      setPreviewing(previewing === key ? null : key);
+      return;
+    }
+    setPreviewing(null);
     void setReminderMode(key, mode);
   };
 
@@ -125,27 +125,28 @@ export default function SettingsTab() {
 
   return (
     <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
-      <Row style={{ justifyContent: 'space-between' }}>
-        <AppText variant="title" accessibilityRole="header">Settings</AppText>
-        <SyncStatusChip onPress={() => router.push('/sync-issues')} />
-      </Row>
+      <PageHeader title="Settings" subtitle="Your profile and preferences" />
       <ViewerBanner />
       {err ? <ErrorBanner message={err} /> : null}
       {msg ? <AppText variant="caption" accent accessibilityLiveRegion="polite">{msg}</AppText> : null}
 
-      <Section title="Profile">
-        <View style={{ alignItems: 'center', gap: spacing.xs }}>
+      <Section title="Profile" detail={isOwner ? 'Personal details' : 'Read only'}>
+        <Row style={{ gap: spacing.md }}>
           <Pressable
             onPress={() => setPickingAvatar(true)}
             accessibilityRole="button"
             accessibilityLabel={`Change avatar. Current: ${isAvatarId(user?.avatar) ? avatarLabel(user?.avatar) : 'none chosen'}`}
             style={{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, alignItems: 'center', justifyContent: 'center' }}
           >
-            <Avatar id={user?.avatar} size={96} decorative />
+            <Avatar id={user?.avatar} size={72} decorative />
           </Pressable>
-          <Button title="Change avatar" variant="ghost" onPress={() => setPickingAvatar(true)} />
-        </View>
-        <AppText muted>{user?.email}{user?.phone ? ` · ${user.phone}` : ''} · {isOwner ? 'Owner' : `Viewer of ${user?.ownerDisplayName}`}</AppText>
+          <View style={{ flex: 1, gap: spacing.xs }}>
+            <AppText variant="bodyStrong">{user?.displayName}</AppText>
+            {user?.email ? <AppText variant="caption" muted>{user.email}</AppText> : null}
+            {user?.phone ? <AppText variant="caption" muted>{user.phone}</AppText> : null}
+          </View>
+          <Button title="Change" variant="secondary" onPress={() => setPickingAvatar(true)} />
+        </Row>
         <Field label="Display name" value={name} onChangeText={setName} maxLength={40} />
         <Button
           title="Save name"
@@ -174,11 +175,11 @@ export default function SettingsTab() {
         ) : null}
       </Section>
 
-      <Section title="Appearance">
+      <Section title="Appearance" detail={`${theme.label} · ${theme.isDark ? 'Dark' : 'Light'}`}>
         <ThemePicker onPick={(n: ThemeName) => void api.patchMe({ theme: n }).then(updateUser).catch(() => {})} />
       </Section>
 
-      <Section title="Daily goal">
+      <Section title="Daily goal" detail="Your streak, your pace">
         <Row style={{ justifyContent: 'space-between' }}>
           <AppText>Count a day as successful at</AppText>
           <Row style={{ gap: spacing.sm }}>
@@ -201,7 +202,7 @@ export default function SettingsTab() {
             style={{ minHeight: MIN_TOUCH }}
           />
         </Row>
-        <AppText variant="label" muted>Other rest days (do not break your streak)</AppText>
+        <AppText variant="label" muted>Choose your rest days</AppText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
           {WEEKDAY_LABELS.map((w, i) => {
             const on = settings.restDays.includes(i);
@@ -223,7 +224,7 @@ export default function SettingsTab() {
       </Section>
 
       {isOwner ? (
-        <Section title="Reminders">
+        <Section title="Reminders" detail={`${settings.reminders.filter((reminder) => reminder.enabled).length} of ${settings.reminders.length} on`}>
           {reminderStatus?.status === 'denied' ? (
             <View accessibilityRole="alert" style={{ gap: spacing.sm }}>
               <AppText style={{ color: theme.colors.danger }} variant="bodyStrong">Notifications are turned off for Bloom Health.</AppText>
@@ -268,10 +269,10 @@ export default function SettingsTab() {
         </Section>
       ) : null}
 
-      <Section title="Habits & data">
+      <Section title="More">
         <Button title={isOwner ? 'Manage habits' : 'View habits'} variant="secondary" onPress={() => router.push('/habits')} />
         <Button title="Sync now" variant="secondary" onPress={() => void syncNow()} loading={sync.state === 'syncing'} />
-        <Button title={`Sync issues${sync.failed ? ` (${sync.failed})` : ''}`} variant="ghost" onPress={() => router.push('/sync-issues')} />
+        <Button title="Sync issues" variant="ghost" onPress={() => router.push('/sync-issues')} />
       </Section>
 
       <Section title="Account">
@@ -279,9 +280,6 @@ export default function SettingsTab() {
       </Section>
 
       <AppText variant="caption" muted style={{ textAlign: 'center' }}>{DISCLAIMER}</AppText>
-      <AppText variant="caption" muted style={{ textAlign: 'center' }}>
-        v{Constants.expoConfig?.version ?? '1.0.0'} · {USE_MOCK_API ? 'Demo mode (mock API)' : API_BASE_URL}
-      </AppText>
 
       <Modal visible={pickingAvatar} animationType="slide" transparent onRequestClose={() => setPickingAvatar(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
@@ -323,10 +321,13 @@ export default function SettingsTab() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, detail, children }: { title: string; detail?: string; children: React.ReactNode }) {
   return (
     <Card style={{ gap: spacing.md }}>
-      <AppText variant="heading" accessibilityRole="header">{title}</AppText>
+      <Row style={{ justifyContent: 'space-between', gap: spacing.md }}>
+        <AppText variant="heading" accessibilityRole="header">{title}</AppText>
+        {detail ? <AppText variant="caption" muted numberOfLines={1}>{detail}</AppText> : null}
+      </Row>
       {children}
     </Card>
   );

@@ -1,3 +1,5 @@
+import { GlassBackdrop } from './GlassBackdrop';
+import { GlassLayer, glassShadow } from './GlassLayer';
 import React from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, type StyleProp, type TextProps, type ViewProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,15 +19,15 @@ export function Card({ children, style, tint, ...rest }: ViewProps & { children:
       {...rest}
       style={[
         {
-          backgroundColor: tint ? theme.colors.tint : theme.colors.surface,
+          backgroundColor: tint ? theme.colors.tint : theme.glass,
           borderRadius: radius.lg,
           padding: spacing.lg,
-          borderWidth: tint ? 0 : 1,
-          borderColor: theme.colors.border,
+          boxShadow: glassShadow(theme.isDark),
         },
         style,
       ]}
     >
+      <GlassLayer radius={StyleSheet.flatten(style)?.borderRadius as number | undefined ?? radius.lg} onFill={tint} />
       {children}
     </View>
   );
@@ -57,10 +59,11 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       style={({ pressed }) => [
-        { minHeight: MIN_TOUCH + 4, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, opacity: off ? 0.5 : pressed ? 0.85 : 1 },
+        { minHeight: MIN_TOUCH + 4, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, ...(variant === 'ghost' || off ? null : { boxShadow: glassShadow(theme.isDark) }), opacity: off ? 0.5 : pressed ? 0.88 : 1, transform: [{ scale: pressed && !off ? 0.985 : 1 }] },
         style,
       ]}
     >
+      {variant !== 'ghost' ? <GlassLayer radius={radius.pill} onFill /> : null}
       {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 16 }}>{title}</AppText>}
     </Pressable>
   );
@@ -84,6 +87,9 @@ export function IconButton({ label, onPress, children, disabled, style }: { labe
   );
 }
 
+/** Extra bottom space a screen leaves for a bar floating over it. */
+export const TabBarSpaceContext = React.createContext(0);
+
 export function Screen({
   children,
   scroll = true,
@@ -101,9 +107,11 @@ export function Screen({
 }) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const body = { padding: padded ? spacing.lg : 0, paddingBottom: spacing.xxl, gap: spacing.lg };
+  const tabBarSpace = React.useContext(TabBarSpaceContext);
+  const body = { padding: padded ? spacing.lg : 0, paddingBottom: spacing.xxxl + tabBarSpace, gap: spacing.lg };
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg, paddingTop: insets.top }}>
+      <GlassBackdrop />
       {header}
       {scroll ? (
         <ScrollView
@@ -122,6 +130,29 @@ export function Screen({
 
 export function Row({ children, style, ...rest }: ViewProps & { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View {...rest} style={[styles.row, style]}>{children}</View>;
+}
+
+/** Standard page title for primary navigation screens. */
+export function PageHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
+  return (
+    <View style={{ minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+      <View style={{ flex: 1, gap: spacing.xs }}>
+        <AppText variant="title" accessibilityRole="header">{title}</AppText>
+        {subtitle ? <AppText variant="caption" muted>{subtitle}</AppText> : null}
+      </View>
+      {right}
+    </View>
+  );
+}
+
+/** Standard section title keeps hierarchy and spacing consistent across routes. */
+export function SectionTitle({ children, detail, style }: { children: React.ReactNode; detail?: string; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.xs }, style]}>
+      <AppText variant="heading" accessibilityRole="header">{children}</AppText>
+      {detail ? <AppText variant="caption" muted>{detail}</AppText> : null}
+    </View>
+  );
 }
 
 export function Loading({ label = 'Loading' }: { label?: string }) {

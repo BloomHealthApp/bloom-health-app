@@ -20,6 +20,12 @@ Forest Trail and Midnight Navy set `blush`, so the mascot's cheeks aren't mixed 
 
 Signup has no theme field, so `AuthProvider.verifyOtp` sends the theme picked on the welcome screen with `PATCH /me` for a new account. Otherwise the server default would overwrite it. If that call fails, signup still succeeds on the default.
 
+## Glass
+Panels use `theme.glass`, the surface colour made see-through, over the `GlassBackdrop` glows in `Screen`. Modals and dialogs stay solid. A test checks text contrast on a panel over the strongest glow for every theme, so re-run it when changing `GLASS_ALPHA`, `GLOW_OPACITY` or a palette. The bottom bar has real blur on iOS only: on Android, `expo-blur` needs `BlurTargetView` wrapping the content behind it, so the bar uses a more solid tint.
+
+## Glass glow
+`glassGlow` colours the soft inner glow in `GlassLayer`.
+
 ## Picker
 `THEME_LIST` is what the picker offers, as one row of squares, each showing four of the theme's colours as small circles (tint, primary, secondary, background) for the current appearance. `THEMES` also holds Mint Peach, removed from the picker because it looked like Forest Trail. Keep it there and in the service enum: accounts may still have it saved, and an unknown theme fails `ThemeNameSchema`.
 

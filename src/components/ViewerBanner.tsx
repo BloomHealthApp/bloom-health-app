@@ -12,7 +12,7 @@ export function ViewerBanner() {
   const { theme } = useTheme();
   if (user?.role !== 'viewer') return null;
   return (
-    <View accessible accessibilityRole="header" accessibilityLabel={`Viewing ${user.ownerDisplayName}'s progress. Read only.`} style={{ backgroundColor: theme.colors.secondary, borderRadius: radius.md, padding: spacing.md, flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+    <View accessible accessibilityRole="header" accessibilityLabel={`Viewing ${user.ownerDisplayName}'s progress. Read only.`} style={{ backgroundColor: theme.colors.tint, borderRadius: radius.md, padding: spacing.md, flexDirection: 'row', gap: spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border }}>
       {user.ownerAvatar ? <Avatar id={user.ownerAvatar} size={36} decorative /> : <AppIcon name="eyes" size={32} />}
       <AppText variant="bodyStrong" style={{ flex: 1 }}>Viewing {user.ownerDisplayName}&apos;s progress</AppText>
       <AppText variant="caption" muted>Read only</AppText>

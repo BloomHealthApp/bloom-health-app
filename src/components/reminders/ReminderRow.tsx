@@ -1,7 +1,9 @@
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useState } from 'react';
-import { Image, Platform, Pressable, Switch, TextInput, View } from 'react-native';
+import { Image, Platform, Pressable, TextInput, View } from 'react-native';
+import { GlassLayer } from '@/components/GlassLayer';
 import { AppText, Button, Row } from '@/components/ui';
+import { AppIcon } from '@/icons/AppIcon';
 import { useAlarmPreview } from '@/features/useAlarmPreview';
 import { parseHHmm } from '@/lib/dates';
 import { REMINDER_LABELS } from '@/lib/defaults';
@@ -10,10 +12,9 @@ import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Reminder } from '@/types/api';
 
-const MODES: { mode: ReminderMode; label: string }[] = [
-  { mode: 'notification', label: 'Notification' },
-  { mode: 'alarm', label: 'Alarm' },
-  { mode: 'loudAlarm', label: 'Loud alarm' },
+const MODES: { mode: ReminderMode; label: string; icon: 'notification' | 'alarm-clock' }[] = [
+  { mode: 'notification', label: 'Notification', icon: 'notification' },
+  { mode: 'loudAlarm', label: 'Loud alarm', icon: 'alarm-clock' },
 ];
 
 // Fixed colours: they copy the native ringing screen, which does not follow the app theme.
@@ -39,9 +40,9 @@ export function ReminderRow(props: {
   const valid = !!parseHHmm(time);
   const label = REMINDER_LABELS[reminder.key].title;
   return (
-    <View style={{ gap: spacing.sm, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: theme.colors.border }}>
-      <Row style={{ gap: spacing.md }}>
-        <View style={{ flex: 1 }}>
+    <View style={{ gap: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: theme.colors.border }}>
+      <Row style={{ gap: spacing.sm }}>
+        <View style={{ flex: 1, minHeight: MIN_TOUCH, justifyContent: 'center' }}>
           <AppText variant="bodyStrong">{label}</AppText>
           {!valid ? <AppText variant="caption" style={{ color: theme.colors.danger }}>Use HH:mm, e.g. 21:30</AppText> : null}
         </View>
@@ -56,38 +57,42 @@ export function ReminderRow(props: {
           accessibilityLabel={`${label} time`}
           keyboardType="numbers-and-punctuation"
           maxLength={5}
-          style={{ width: 76, minHeight: MIN_TOUCH, textAlign: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: valid ? theme.colors.border : theme.colors.danger, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text, backgroundColor: theme.colors.bg }}
+          style={{ width: 68, minHeight: MIN_TOUCH, textAlign: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: valid ? theme.colors.border : theme.colors.danger, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text, backgroundColor: theme.colors.bg }}
         />
-        <Switch
-          value={reminder.enabled}
-          onValueChange={(v) => onChange({ enabled: v })}
+        <Pressable
+          onPress={() => onChange({ enabled: !reminder.enabled })}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: reminder.enabled }}
           accessibilityLabel={`${label} reminder`}
-          trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-          style={{ minHeight: MIN_TOUCH }}
-        />
+          style={({ pressed }) => ({ width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', borderWidth: reminder.enabled ? 2 : 1, borderColor: reminder.enabled ? theme.colors.accent : theme.colors.border, backgroundColor: reminder.enabled ? theme.colors.tint : theme.colors.surface, opacity: pressed ? 0.75 : 1 })}
+        >
+          <AppIcon name={reminder.enabled ? 'check' : 'close'} size={24} />
+        </Pressable>
+        <View
+          accessibilityRole="radiogroup"
+          accessibilityLabel={`${label} alert type`}
+          style={{ flexDirection: 'row', gap: spacing.xs, opacity: reminder.enabled ? 1 : 0.55 }}
+        >
+          {MODES.map((m) => {
+            // A reminder saved in the older plain `alarm` mode shows under the alarm icon and still rings as saved.
+            const on = m.mode === mode || (mode === 'alarm' && m.mode === 'loudAlarm');
+            return (
+              <Pressable
+                key={m.mode}
+                onPress={() => onChooseMode(m.mode)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: on, expanded: on && previewing }}
+                accessibilityLabel={`${label}: ${m.label}`}
+                accessibilityHint={on ? 'Tap again to show or hide the preview' : 'Select this alert type'}
+                style={{ width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? theme.colors.accent : 'transparent', backgroundColor: on ? theme.colors.tint : theme.glass }}
+              >
+                <GlassLayer radius={radius.pill} />
+                <AppIcon name={m.icon} size={24} />
+              </Pressable>
+            );
+          })}
+        </View>
       </Row>
-      <View
-        accessibilityRole="radiogroup"
-        accessibilityLabel={`${label} alert type`}
-        style={{ flexDirection: 'row', padding: spacing.xs, gap: spacing.xs, borderRadius: radius.md, backgroundColor: theme.colors.tint, opacity: reminder.enabled ? 1 : 0.55 }}
-      >
-        {MODES.map((m) => {
-          const on = m.mode === mode;
-          return (
-            <Pressable
-              key={m.mode}
-              onPress={() => onChooseMode(m.mode)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on, expanded: on && previewing }}
-              accessibilityLabel={`${label}: ${m.label}`}
-              accessibilityHint="Selects this alert type and shows a preview"
-              style={{ flex: 1, minHeight: MIN_TOUCH - spacing.xs, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? theme.colors.primary : 'transparent' }}
-            >
-              <AppText variant="label" numberOfLines={1} adjustsFontSizeToFit style={{ color: on ? theme.colors.onPrimary : theme.colors.text }}>{m.label}</AppText>
-            </Pressable>
-          );
-        })}
-      </View>
       {previewing ? <ModePreview reminder={reminder} mode={mode} volume={volume} onVolumeChange={onVolumeChange} /> : null}
     </View>
   );

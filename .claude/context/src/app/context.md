@@ -13,7 +13,7 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 | `(auth)/signup.tsx` | signed out | Sign-up form |
 | `(auth)/signin.tsx` | signed out | Sign in with email or phone |
 | `(auth)/otp.tsx` | signed out | Enter code; redirects to welcome with no `challengeId` |
-| `(tabs)/_layout.tsx` | signed in | Tab bar; redirects to choose-avatar once after first sign-up |
+| `(tabs)/_layout.tsx` | signed in | `FloatingTabBar`; redirects to choose-avatar once after first sign-up |
 | `(tabs)/index.tsx` | signed in | Home; viewers poll every 30 seconds while focused |
 | `(tabs)/progress.tsx` | signed in | Charts |
 | `(tabs)/calendar.tsx` | signed in | Month view |
@@ -35,3 +35,6 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 - The data layer only exists for a signed-in user, so `SyncEngine` and SQLite don't run on auth screens.
 - Signing in swaps the root tree, and the layouts' redirects then move to the tabs. So `otp.tsx` doesn't navigate after success.
 - A resend returns a new `challengeId`, which replaces the one from the route params.
+
+## System bars
+On tablets (`lib/device.ts`, 600dp or more on the shorter side), `_layout.tsx` hides the status and navigation bars; a swipe from the edge brings them back. Phones keep both. The tab bar is `FloatingTabBar`, which floats over the tab screens with a transparent surround. `(tabs)/_layout.tsx` provides `TabBarSpaceContext`, so `Screen` adds room for it. A tab screen that doesn't use `Screen` must add `tabBarSpace` itself. `expo-navigation-bar` is native, so a new build is needed.

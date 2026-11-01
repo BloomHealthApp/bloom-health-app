@@ -8,7 +8,7 @@ import { buildSnapshot, signedOutSnapshot, unopenedSnapshot, type WidgetSnapshot
 jest.mock('react-native-android-widget/lib/commonjs/NativeAndroidWidget', () => ({ __esModule: true, default: {} }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ getItem: async () => null, setItem: async () => {} }));
 
-type El = ReactElement<{ children?: ReactNode; text?: string; svg?: string; clickAction?: string }>;
+type El = ReactElement<{ children?: ReactNode; text?: string; svg?: string; clickAction?: string; style?: unknown }>;
 function walk(node: ReactNode, out: El[] = []): El[] {
   if (Array.isArray(node)) node.forEach((n) => walk(n, out));
   else if (node && typeof node === 'object') {
@@ -32,6 +32,18 @@ const ready = (theme: ThemeName = 'cottonCandy'): WidgetSnapshot =>
   });
 
 describe('widget layouts', () => {
+  it('draws a glass panel that follows the saved appearance', () => {
+    const root = (dark: boolean) => (SmallWidget({ snapshot: { ...ready('midnightNavy'), dark } }) as unknown as El).props.style as { backgroundGradient: { from: string } };
+    expect(root(false).backgroundGradient.from).toBe('rgba(255, 255, 255, 0.88)');
+    expect(root(true).backgroundGradient.from).toBe('rgba(21, 33, 58, 0.88)');
+  });
+  it('has no border on the panel', () => {
+    expect((SmallWidget({ snapshot: ready() }) as unknown as El).props.style).not.toHaveProperty('borderWidth');
+  });
+  it('shows an older snapshot with no appearance as light', () => {
+    const { dark: _dark, ...old } = ready('midnightNavy');
+    expect(((SmallWidget({ snapshot: old }) as unknown as El).props.style as { backgroundGradient: { from: string } }).backgroundGradient.from).toBe('rgba(255, 255, 255, 0.88)');
+  });
   it('small shows mascot + current streak and opens the app on tap', () => {
     const el = SmallWidget({ snapshot: ready() });
     expect(el.props.clickAction).toBe('OPEN_APP');
