@@ -58,6 +58,7 @@ class MockDb {
   ops = new Map<string, unknown>();
   refreshTokens = new Set<string>();
   challenges = new Map<string, Challenge>();
+  phoneChallenges = new Map<string, { userId: string; phone: string }>();
 
   constructor() {
     this.space = SPACE;
@@ -421,6 +422,23 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
   db.space = user.sharedSpaceId;
 
   if (path === '/me' && method === 'GET') return json(200, view(user));
+  if (path === '/me/phone/request' && method === 'POST') {
+    const phone = typeof body.phone === 'string' ? normalizeMockPhone(body.phone) : null;
+    if (!phone) return err(400, 'validation_failed', 'phone must have 8-15 digits');
+    if (phone === user.phone) return err(400, 'validation_failed', 'this is already your phone number');
+    if (db.users.some((u) => u.id !== user.id && u.phone === phone)) return err(409, 'already_registered', 'an account with this phone already exists');
+    const challengeId = uuid();
+    db.phoneChallenges.set(challengeId, { userId: user.id, phone });
+    return json(202, { status: 'sent', challengeId });
+  }
+  if (path === '/me/phone/verify' && method === 'POST') {
+    const challengeId = String(body.challengeId ?? '');
+    const ch = db.phoneChallenges.get(challengeId);
+    if (!ch || ch.userId !== user.id || body.code !== MOCK_OTP) return err(400, 'validation_failed', 'that code is not valid or has expired');
+    db.phoneChallenges.delete(challengeId);
+    user.phone = ch.phone;
+    return json(200, view(user));
+  }
   if (path === '/me' && method === 'PATCH') {
     const bad = Object.keys(body).filter((k) => !['displayName', 'avatar', 'timezone', 'theme', 'gender', 'periodTrackerEnabled'].includes(k));
     if (bad.length) return err(400, 'validation_failed', `unknown fields: ${bad.join(',')}`);

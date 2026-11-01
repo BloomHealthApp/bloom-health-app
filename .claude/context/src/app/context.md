@@ -16,15 +16,22 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 | `(tabs)/_layout.tsx` | signed in | `FloatingTabBar`; redirects to choose-avatar once after first sign-up |
 | `(tabs)/index.tsx` | signed in | Home; viewers poll every 30 seconds while focused |
 | `(tabs)/progress.tsx` | signed in | Charts |
-| `(tabs)/calendar.tsx` | signed in | Month view |
-| `(tabs)/settings.tsx` | signed in | Profile, settings, reminders, sign out |
+| `(tabs)/calendar.tsx` | signed in | Month view; also the private period tracker, for owners with it on |
+| `(tabs)/profile.tsx` | signed in | Your profile and private details on glass cards; edits on its own page; opens Settings from the menu icon |
+| `edit-profile/index.tsx` | signed in | Name, gender and tracker switch; Done saves the name |
+| `edit-profile/avatar.tsx` | signed in | Choose an avatar |
+| `edit-profile/phone.tsx` | signed in | Add or change the phone, with a code emailed to the account |
+| `settings/index.tsx` | signed in | List of settings, opened from Profile's menu icon; sign out |
+| `settings/appearance.tsx` | signed in | Light, dark and theme |
+| `settings/daily-goal.tsx` | signed in | Goal and rest days; read-only for viewers |
+| `settings/reminders.tsx` | owner | Reminder times and alert types; viewers are redirected |
+| `settings/sync.tsx` | signed in | Sync now and sync issues |
 | `choose-avatar.tsx` | signed in | One-time, skippable avatar choice |
 | `day/[date].tsx` | signed in | One day's habits; read-only list |
 | `habit/[id].tsx` | signed in | Log a value; read-only for viewers and future dates |
 | `habit/form.tsx` | owner | Create or edit a habit |
 | `habits.tsx` | signed in | Habit list; edit controls for owners only |
 | `workout.tsx` | signed in | Timer and history; controls for owners only |
-| `periods.tsx` | owner, tracker on | Private tracker; anyone else is redirected |
 | `sync-issues.tsx` | signed in | Failed, conflicted and rejected sync operations |
 
 ## Rules
@@ -38,3 +45,12 @@ Expo Router routes. Every file is a screen and `_layout.tsx` files define naviga
 
 ## System bars
 On tablets (`lib/device.ts`, 600dp or more on the shorter side), `_layout.tsx` hides the status and navigation bars; a swipe from the edge brings them back. Phones keep both. The tab bar is `FloatingTabBar`, which floats over the tab screens with a transparent surround. `(tabs)/_layout.tsx` provides `TabBarSpaceContext`, so `Screen` adds room for it. A tab screen that doesn't use `Screen` must add `tabBarSpace` itself. `expo-navigation-bar` is native, so a new build is needed.
+
+## Transitions
+The root `Stack` uses `slide_from_right`, so every pushed page, including each setting, slides in from the right on iOS and Android. Add settings as a page under `settings/` plus a `SettingsRow` in the list, rather than as a section on the list.
+
+## Sign-in
+Sign-in offers Phone (default, with a separate country code defaulting to +91) or Email. The code always goes to the account's email; there's no SMS. A phone with no matching account gets the same "sent" answer and no email, so the code screen words this as "If this number is on an account" and offers "Use email instead". Profile shows the phone in its details, and adding or changing it on `edit-profile/phone` needs a code emailed to the account (`/me/phone/request` then `/me/phone/verify`). Never show it in `ProfileHeader`. Numbers are built with `composePhone`, so don't send what the user typed.
+
+## Protected routes
+Every screen outside `(auth)` and `index` needs the data layer, which `_layout.tsx` removes when signed out. `Stack.Protected` guards them using `lib/protectedRoutes.ts`, so a screen open at sign-out or session expiry goes to `index` rather than crashing. Add new routes to that list; a test fails if one is missing.

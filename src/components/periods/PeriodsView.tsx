@@ -108,7 +108,7 @@ export function PeriodsView({ periods, today, loading, error, onStart, onEnd, on
 
       <Card tint>
         <Row style={{ gap: spacing.md }}>
-          <Mascot mood={summary.mood} size={84} />
+          <Mascot mood={summary.mood} size={68} />
           <View style={{ flex: 1, gap: 2 }} accessible accessibilityLabel={`${summary.title}. ${summary.subtitle}`}>
             <AppText variant="heading">{summary.title}</AppText>
             <AppText variant="caption" muted>{summary.subtitle}</AppText>
@@ -326,7 +326,7 @@ function Editor({ editing, periods, today, busy, onChange, onCancel, onSave, onD
           placeholderTextColor={theme.colors.textMuted}
           multiline
           maxLength={PERIOD_MAX_NOTE}
-          style={{ minHeight: 88, textAlignVertical: 'top', borderRadius: radius.md, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, padding: spacing.md, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text }}
+          style={{ minHeight: 72, textAlignVertical: 'top', borderRadius: radius.md, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, padding: spacing.md, fontFamily: fonts.semibold, fontSize: 13, color: theme.colors.text }}
         />
       </View>
       {error ? <AppText variant="caption" style={{ color: theme.colors.danger }} accessibilityRole="alert">{error}</AppText> : null}

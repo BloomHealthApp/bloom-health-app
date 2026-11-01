@@ -1,6 +1,5 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { CycleCard } from '@/components/CycleCard';
 import { GenderPicker } from '@/components/GenderPicker';
 import { StreakCard } from '@/components/StreakCard';
 import { predict } from '@/lib/cycle';
@@ -198,17 +197,7 @@ describe('PeriodsView', () => {
   });
 });
 
-describe('CycleCard, StreakCard, GenderPicker', () => {
-  it('cycle card summarises the state and opens the tracker', async () => {
-    const onPress = jest.fn();
-    const t = render(<CycleCard prediction={predict(regular, TODAY)} hasPeriods onPress={onPress} />);
-    expect(text(t)).toContain('Next period ~Oct 21');
-    await press(t, 'Period tracker. Next period ~Oct 21. In about 4 days');
-    expect(onPress).toHaveBeenCalled();
-    const ongoing = render(<CycleCard prediction={predict([...regular.slice(0, 3), per('o', '2026-10-15', null)], TODAY)} hasPeriods onPress={onPress} />);
-    expect(text(ongoing)).toContain('Day 3 of period');
-  });
-
+describe('StreakCard, GenderPicker', () => {
   it('streak card shows the rest-day note and includes it in its accessible label', () => {
     const t = render(<StreakCard current={3} longest={5} restNote="Sundays don't break your streak" />);
     expect(text(t)).toContain("Sundays don't break your streak");

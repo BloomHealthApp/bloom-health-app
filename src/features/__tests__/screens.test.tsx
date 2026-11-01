@@ -1,9 +1,23 @@
+import * as Clipboard from 'expo-clipboard';
+import { StyleSheet } from 'react-native';
 import React from 'react';
+import { Rect } from 'react-native-svg';
 import renderer, { act } from 'react-test-renderer';
-import SettingsTab from '@/app/(tabs)/settings';
+import { ApiError } from '@/api/errors';
+import ProfileTab from '@/app/(tabs)/profile';
+import EditAvatarScreen from '@/app/edit-profile/avatar';
+import EditProfileScreen from '@/app/edit-profile';
+import EditPhoneScreen from '@/app/edit-profile/phone';
+import DailyGoalScreen from '@/app/settings/daily-goal';
+import SettingsScreen from '@/app/settings';
+import RemindersScreen from '@/app/settings/reminders';
+import { toPublicProfile } from '@/lib/publicProfile';
+import { Card } from '@/components/ui';
 import { ReminderRow, showsVolumeSlider } from '@/components/reminders/ReminderRow';
 import SignUpScreen from '@/app/(auth)/signup';
-import PeriodsScreen from '@/app/periods';
+import CalendarTab from '@/app/(tabs)/calendar';
+import OtpScreen from '@/app/(auth)/otp';
+import SignInScreen from '@/app/(auth)/signin';
 import { defaultSettings, REMINDER_LABELS } from '@/lib/defaults';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { Reminder, Settings, User } from '@/types/api';
@@ -17,15 +31,25 @@ jest.mock('react-native-reanimated', () => {
 });
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
+const mockBack = jest.fn();
+let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), canGoBack: () => true }),
+  useLocalSearchParams: () => mockParams,
+  useRouter: () => ({ push: mockPush, replace: mockReplace, navigate: mockPush, back: mockBack, canGoBack: () => true }),
   useFocusEffect: () => {},
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   Redirect: ({ href }: { href: string }) => require('react').createElement('Redirect', { href }),
 }));
+let mockHabits: unknown[] = [];
+jest.mock('@/features/derived', () => ({
+  useDerived: () => ({ currentStreak: 3, longestStreak: 9, activeHabits: mockHabits, logIndex: new Map(), logs: [], today: '2026-11-01', timezone: 'UTC', threshold: 80, loading: false, scoreFor: () => ({ neutral: true, restDay: false, completionPercent: 0 }) }),
+  useToday: () => ({ today: '2026-11-01' }),
+}));
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 jest.mock('expo-constants', () => ({ expoConfig: { version: '1.0.0' } }));
 
-const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { patchMe: jest.Mock }; updateUser: jest.Mock; signOut: jest.Mock; requestSignUp: jest.Mock } = {
+const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { patchMe: jest.Mock; requestPhoneChange?: jest.Mock; verifyPhoneChange?: jest.Mock }; updateUser: jest.Mock; signOut: jest.Mock; requestSignUp: jest.Mock; requestSignIn: jest.Mock; verifyOtp: jest.Mock } = {
   status: 'signedIn',
   user: null,
   isOwner: true,
@@ -33,6 +57,8 @@ const mockAuth: { status: string; user: User | null; isOwner: boolean; api: { pa
   updateUser: jest.fn(),
   signOut: jest.fn(),
   requestSignUp: jest.fn(),
+  requestSignIn: jest.fn(),
+  verifyOtp: jest.fn(),
 };
 jest.mock('@/providers/AuthProvider', () => ({ useAuth: () => mockAuth }));
 
@@ -77,31 +103,111 @@ const text = (t: renderer.ReactTestRenderer) => {
 
 beforeEach(() => {
   mockPush.mockReset();
+  mockBack.mockReset();
   mockAuth.status = 'signedIn';
   mockAuth.isOwner = true;
   mockAuth.user = user();
   mockAuth.api.patchMe.mockReset();
   mockAuth.updateUser.mockReset();
   mockAuth.requestSignUp.mockReset();
+  mockAuth.requestSignIn.mockReset();
+  mockParams = {};
+  mockHabits = [];
   mockActions.saveSettings.mockClear();
   mockData.settings = defaultSettings();
 });
 
-describe('Settings: gender, period tracker and Sunday switches', () => {
-  it('female owners see the tracker switch (on) and can open the tracker', async () => {
+describe('Profile: public view', () => {
+  it('only ever carries public fields', () => {
+    const p = toPublicProfile(user({ email: 'a@b.co', phone: '+911', gender: 'female', periodTrackerEnabled: true }), { currentStreak: 1, longestStreak: 2, habits: 3 });
+    expect(Object.keys(p).sort()).toEqual(['avatar', 'displayName', 'id', 'stats']);
+    expect(JSON.stringify(p)).not.toMatch(/a@b\.co|\+911|female|period/i);
+  });
+  it('shows stats to an owner and opens Settings from the gear', async () => {
+    const t = render(<ProfileTab />);
+    expect(text(t)).toContain('day streak');
+    await press(t, 'Settings');
+    expect(mockPush).toHaveBeenCalledWith('/settings');
+  });
+  it("doesn't show a viewer the owner's stats as their own", () => {
+    mockAuth.user = user({ role: 'viewer' });
+    mockAuth.isOwner = false;
+    expect(text(render(<ProfileTab />))).not.toContain('day streak');
+  });
+  it('opens Edit profile as its own page, with no editing on Profile', async () => {
+    const t = render(<ProfileTab />);
+    expect(text(t)).not.toContain('Display name');
+    await press(t, 'Edit profile');
+    expect(mockPush).toHaveBeenLastCalledWith('/edit-profile');
+  });
+  it('puts its sections on glass cards, with the name above the stats', () => {
+    const t = render(<ProfileTab />);
+    expect(text(t).indexOf('Mia')).toBeLessThan(text(t).indexOf('day streak'));
+    expect(t.root.findAllByType(Card)).toHaveLength(6);
+    expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'glass-layer').length).toBeGreaterThanOrEqual(6);
+  });
+  it('opens the avatar page from the avatar', async () => {
+    await press(render(<ProfileTab />), 'Change avatar. Current: none chosen');
+    expect(mockPush).toHaveBeenLastCalledWith('/edit-profile/avatar');
+  });
+  it('Settings no longer holds profile details', () => {
+    const json = text(render(<SettingsScreen />));
+    expect(json).not.toContain('Display name');
+    expect(json).not.toContain('a@b.co');
+  });
+});
+
+describe('Profile: section cards', () => {
+  const graph = 'Your daily progress over the last year. Darker days had more habits done.';
+  beforeEach(() => {
+    mockHabits = [{ id: 'h1', title: 'Read', icon: 'book', isActive: true, trackingType: 'boolean', target: 1 }];
+  });
+  it('shows each section inside its card, with no buttons or tabs', () => {
+    const t = render(<ProfileTab />);
+    const json = text(t);
+    expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'profile-card')).toHaveLength(4);
+    for (const s of ['Achievements', '2 of 5 earned', "Today's habits", '0 of 1 done', 'Next milestone', '4 days to go', '7-day badge', 'Discover people', 'Coming soon']) expect(json).toContain(s);
+    expect(json).not.toContain('Showing');
+    expect(t.root.findAll((x) => x.props.accessibilityRole === 'tab')).toHaveLength(0);
+  });
+  it('marks achievements from the best streak', () => {
+    const t = render(<ProfileTab />);
+    expect(t.root.findAll((x) => x.props.accessibilityLabel === '7 day streak, earned').length).toBeGreaterThan(0);
+    expect(t.root.findAll((x) => x.props.accessibilityLabel === '14 day streak, not earned yet').length).toBeGreaterThan(0);
+  });
+  it('opens a habit from its card', async () => {
+    const t = render(<ProfileTab />);
+    await press(t, 'Read, not done yet');
+    expect(mockPush).toHaveBeenCalledWith('/habit/h1');
+  });
+  it('always shows a year of activity', () => {
+    const t = render(<ProfileTab />);
+    expect(t.root.findAll((x) => x.props.accessibilityLabel === graph).length).toBeGreaterThan(0);
+    expect(t.root.findAllByType(Rect).length).toBeGreaterThan(360);
+  });
+  it("hides the graph and cards from viewers, whose data is the owner's", () => {
+    mockAuth.user = user({ role: 'viewer' });
+    mockAuth.isOwner = false;
+    const t = render(<ProfileTab />);
+    expect(t.root.findAll((x) => x.props.accessibilityLabel === graph)).toHaveLength(0);
+    expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'profile-card')).toHaveLength(0);
+  });
+});
+
+describe('Edit profile: gender and period tracker', () => {
+  it('female owners see the tracker switch (on), which points to the Calendar tab', async () => {
     mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
-    const t = render(<SettingsTab />);
+    const t = render(<EditProfileScreen />);
     expect(sw(t, 'Period tracker').props.value).toBe(true);
-    await press(t, 'Open period tracker');
-    expect(mockPush).toHaveBeenCalledWith('/periods');
+    expect(text(render(<ProfileTab />))).toContain('find it in the Calendar tab');
   });
 
   it('other / prefer-not-to-say owners get an opt-in switch that starts off, and turning it on PATCHes periodTrackerEnabled', async () => {
     mockAuth.user = user({ gender: 'other', periodTrackerEnabled: false });
     mockAuth.api.patchMe.mockResolvedValue(user({ gender: 'other', periodTrackerEnabled: true }));
-    const t = render(<SettingsTab />);
+    const t = render(<EditProfileScreen />);
     expect(sw(t, 'Period tracker').props.value).toBe(false);
-    expect(text(t)).not.toContain('Open period tracker');
+    expect(text(render(<ProfileTab />))).not.toContain('find it in the Calendar tab');
     await act(async () => { await sw(t, 'Period tracker').props.onValueChange(true); });
     expect(mockAuth.api.patchMe).toHaveBeenCalledWith({ periodTrackerEnabled: true });
     expect(mockAuth.updateUser).toHaveBeenCalledWith(expect.objectContaining({ periodTrackerEnabled: true }));
@@ -111,10 +217,10 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
     ['male owner', { gender: 'male' as const }],
     ['owner without a gender', { gender: null }],
     ['viewer, even if female', { gender: 'female' as const, role: 'viewer' as const, periodTrackerEnabled: false }],
-  ] as [string, Partial<User>][])('hides the tracker switch for a %s', (_n, over) => {
+  ] as [string, Partial<User>][])('hides the tracker switch for a %s', async (_n, over) => {
     mockAuth.user = user(over);
     mockAuth.isOwner = over.role !== 'viewer';
-    const t = render(<SettingsTab />);
+    const t = render(<EditProfileScreen />);
     expect(sw(t, 'Period tracker')).toBeUndefined();
     expect(text(t)).not.toMatch(/period/i);
   });
@@ -122,7 +228,7 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
   it('gender picker saves via PATCH /me; choosing male also resets the tracker flag; tapping the selected one clears it', async () => {
     mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
     mockAuth.api.patchMe.mockResolvedValue(user({ gender: 'male' }));
-    const t = render(<SettingsTab />);
+    const t = render(<EditProfileScreen />);
     await press(t, 'Male');
     expect(mockAuth.api.patchMe).toHaveBeenLastCalledWith({ gender: 'male', periodTrackerEnabled: null });
     await press(t, 'Female');
@@ -134,14 +240,17 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
   it('a failed save shows an error banner', async () => {
     mockAuth.user = user({ gender: 'other' });
     mockAuth.api.patchMe.mockRejectedValue(new Error('No connection.'));
-    const t = render(<SettingsTab />);
+    const t = render(<EditProfileScreen />);
     await act(async () => { await sw(t, 'Period tracker').props.onValueChange(true); });
     expect(text(t)).toContain('No connection.');
   });
 
+  });
+
+describe('Settings: Sunday switch', () => {
   it("Sundays don't break my streak: on by default, absent means on, toggling saves sundayRest", async () => {
     mockData.settings = { ...defaultSettings(), sundayRest: undefined };
-    const t = render(<SettingsTab />);
+    const t = render(<DailyGoalScreen />);
     expect(sw(t, "Sundays don't break my streak").props.value).toBe(true);
     await act(async () => { await sw(t, "Sundays don't break my streak").props.onValueChange(false); });
     expect(mockActions.saveSettings).toHaveBeenCalledWith({ sundayRest: false }, mockData.settings);
@@ -150,8 +259,47 @@ describe('Settings: gender, period tracker and Sunday switches', () => {
   it('viewers cannot change the Sunday switch', () => {
     mockAuth.user = user({ role: 'viewer', gender: 'male' });
     mockAuth.isOwner = false;
-    const t = render(<SettingsTab />);
+    const t = render(<DailyGoalScreen />);
     expect(sw(t, "Sundays don't break my streak").props.disabled).toBe(true);
+  });
+});
+
+describe('Settings list', () => {
+  const rows = (t: renderer.ReactTestRenderer) => t.root.findAll((x) => typeof x.type === 'string' && x.props.accessibilityRole === 'button' && typeof x.props.accessibilityLabel === 'string').map((x) => x.props.accessibilityLabel as string);
+  it('lists each setting and opens its own page', async () => {
+    const t = render(<SettingsScreen />);
+    expect(text(t)).not.toContain('Count a day as successful at');
+    expect(text(t)).not.toContain('Choose your rest days');
+    await press(t, 'Daily goal, 80%');
+    expect(mockPush).toHaveBeenLastCalledWith('/settings/daily-goal');
+    expect(rows(t).some((l) => l.startsWith('Appearance'))).toBe(true);
+    expect(rows(t).some((l) => l.startsWith('Reminders'))).toBe(true);
+  });
+  it('hides Reminders from viewers and keeps them off its page', () => {
+    mockAuth.user = user({ role: 'viewer' });
+    mockAuth.isOwner = false;
+    expect(rows(render(<SettingsScreen />)).some((l) => l.startsWith('Reminders'))).toBe(false);
+    expect(render(<RemindersScreen />).root.findAllByType('Redirect' as never)).toHaveLength(1);
+  });
+  it('asks before signing out', async () => {
+    const t = render(<SettingsScreen />);
+    await press(t, 'Sign out');
+    expect(mockAuth.signOut).not.toHaveBeenCalled();
+    expect(text(t)).toContain('Sign out?');
+  });
+});
+
+describe('Settings: daily goal row', () => {
+  it('keeps the steppers inside the card by letting the label wrap', () => {
+    mockAuth.user = user();
+    const t = render(<DailyGoalScreen />);
+    const flat = (x: renderer.ReactTestInstance) => StyleSheet.flatten(x.props.style);
+    const label = t.root.findAll((x) => typeof x.type === 'string' && x.props.children === 'Count a day as successful at')[0];
+    expect(flat(label).flex).toBe(1);
+    for (const name of ['Decrease', 'Increase']) {
+      const b = t.root.findAll((x) => typeof x.type === 'string' && String(x.props.accessibilityLabel).startsWith(`${name} g`))[0];
+      expect(flat(b)).toMatchObject({ width: 44, paddingHorizontal: 0 });
+    }
   });
 });
 
@@ -160,7 +308,7 @@ describe('Settings: reminder alert types', () => {
 
   it('offers owners two alert types per reminder, defaulting to notification', () => {
     mockAuth.user = user();
-    const t = render(<SettingsTab />);
+    const t = render(<RemindersScreen />);
     expect(radios(t)).toHaveLength(10);
     const wake = radios(t).filter((x) => x.props.accessibilityLabel.startsWith('Good morning:'));
     expect(wake.map((x) => x.props.accessibilityLabel)).toEqual(['Good morning: Notification', 'Good morning: Loud alarm']);
@@ -168,7 +316,7 @@ describe('Settings: reminder alert types', () => {
   });
   it('tapping an option shows its preview, and tapping it again hides it', async () => {
     mockAuth.user = user();
-    const t = render(<SettingsTab />);
+    const t = render(<RemindersScreen />);
     const previews = () => t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview');
     expect(previews()).toHaveLength(0);
     await press(t, 'Good morning: Notification');
@@ -179,7 +327,7 @@ describe('Settings: reminder alert types', () => {
   });
   it('choosing another option closes the preview, and tapping it again previews Loud alarm with a play button', async () => {
     mockAuth.user = user();
-    const t = render(<SettingsTab />);
+    const t = render(<RemindersScreen />);
     await press(t, 'Good morning: Notification');
     expect(t.root.findAll((x) => typeof x.type === 'string' && x.props.testID === 'reminder-preview')).toHaveLength(1);
     await press(t, 'Hydration check: Loud alarm');
@@ -191,7 +339,7 @@ describe('Settings: reminder alert types', () => {
   it('is hidden from viewers', () => {
     mockAuth.user = user({ role: 'viewer' });
     mockAuth.isOwner = false;
-    expect(radios(render(<SettingsTab />))).toHaveLength(0);
+    expect(radios(render(<RemindersScreen />))).toHaveLength(0);
   });
   it('shows the alert options as named icons, after the on/off button', () => {
     const reminder = { key: Object.keys(REMINDER_LABELS)[0], enabled: true, time: '07:00' } as unknown as Reminder;
@@ -214,6 +362,162 @@ describe('volume slider availability', () => {
     expect(showsVolumeSlider('loudAlarm', 'ios')).toBe(false);
     expect(showsVolumeSlider('alarm', 'android')).toBe(false);
     expect(showsVolumeSlider('notification', 'android')).toBe(false);
+  });
+});
+
+describe('phone or email sign-in', () => {
+  const enter = (t: renderer.ReactTestRenderer, label: string, v: string) => act(() => t.root.findAll((x) => x.props.accessibilityLabel === label && typeof x.props.onChangeText === 'function')[0].props.onChangeText(v));
+  beforeEach(() => mockAuth.requestSignIn.mockResolvedValue({ status: 'sent', challengeId: 'c' }));
+
+  it('defaults to phone with India, and sends the full number', async () => {
+    const t = render(<SignInScreen />);
+    expect(text(t)).toContain('+91');
+    enter(t, 'Phone', '098765 43210');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).toHaveBeenCalledWith('+919876543210');
+    expect(mockPush).toHaveBeenCalledWith(expect.objectContaining({ params: expect.objectContaining({ identifier: '+919876543210' }) }));
+  });
+  it('lets you pick another country code', async () => {
+    const t = render(<SignInScreen />);
+    await press(t, 'Country code +91. Tap to change.');
+    await press(t, 'USA and Canada +1');
+    enter(t, 'Phone', '4155550100');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).toHaveBeenCalledWith('+14155550100');
+  });
+  it('sends an email in Email mode', async () => {
+    const t = render(<SignInScreen />);
+    await press(t, 'Email');
+    enter(t, 'Email', 'mia@example.com');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).toHaveBeenCalledWith('mia@example.com');
+  });
+  it("doesn't send a short number", async () => {
+    const t = render(<SignInScreen />);
+    enter(t, 'Phone', '98765');
+    await press(t, 'Send code');
+    expect(mockAuth.requestSignIn).not.toHaveBeenCalled();
+    expect(text(t)).toContain('10-digit');
+  });
+  it('opens on Email when asked to', () => {
+    mockParams = { mode: 'email' };
+    expect(render(<SignInScreen />).root.findAllByProps({ accessibilityLabel: 'Phone' }).filter((x) => x.props.onChangeText)).toHaveLength(0);
+  });
+  it('gives phone sign-in a way out on the code screen, without confirming the account', async () => {
+    mockParams = { challengeId: 'c', purpose: 'signin', identifier: '+919876543210' };
+    const t = render(<OtpScreen />);
+    expect(text(t)).toContain('If this number is on an account');
+    await press(t, 'Use email instead');
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/(auth)/signin', params: { mode: 'email' } });
+  });
+  it('has no such option after an email sign-in', () => {
+    mockParams = { challengeId: 'c', purpose: 'signin', identifier: 'mia@example.com' };
+    expect(text(render(<OtpScreen />))).not.toContain('Use email instead');
+  });
+});
+
+describe('Profile: phone number', () => {
+  const enter = (t: renderer.ReactTestRenderer, label: string, v: string) => act(() => t.root.findAll((x) => x.props.accessibilityLabel === label && typeof x.props.onChangeText === 'function')[0].props.onChangeText(v));
+  beforeEach(() => {
+    mockAuth.api.requestPhoneChange = jest.fn().mockResolvedValue({ status: 'sent', challengeId: 'c1' });
+    mockAuth.api.verifyPhoneChange = jest.fn().mockResolvedValue(user({ phone: '+919876543210' }));
+  });
+
+  it('shows the saved number in private details only', () => {
+    mockAuth.user = user({ phone: '+919876543210' });
+    const t = render(<ProfileTab />);
+    expect(text(t)).toContain('+919876543210');
+    expect(JSON.stringify(toPublicProfile(mockAuth.user))).not.toContain('9876543210');
+  });
+  it('copies the email and phone', async () => {
+    mockAuth.user = user({ email: 'mia@example.com', phone: '+919876543210' });
+    const t = render(<ProfileTab />);
+    await press(t, 'Copy phone number');
+    expect(Clipboard.setStringAsync).toHaveBeenLastCalledWith('+919876543210');
+    await press(t, 'Copy email');
+    expect(Clipboard.setStringAsync).toHaveBeenLastCalledWith('mia@example.com');
+    expect(text(t)).toContain('Email copied.');
+  });
+  it('opens the Calendar tab from the tracker row', async () => {
+    mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
+    await press(render(<ProfileTab />), 'Find it in the Calendar tab.');
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/calendar');
+  });
+  it('prompts an account with no phone', () => {
+    mockAuth.user = user({ phone: null });
+    const t = render(<ProfileTab />);
+    expect(text(t)).toContain('Not added');
+    expect(text(t)).toContain('Add your number');
+  });
+  it('saves only after the emailed code is confirmed', async () => {
+    mockAuth.user = user({ phone: null });
+    const t = render(<EditPhoneScreen />);
+    enter(t, 'Phone number', '9876543210');
+    await press(t, 'Send code');
+    expect(mockAuth.api.requestPhoneChange).toHaveBeenCalledWith('+919876543210');
+    expect(mockAuth.updateUser).not.toHaveBeenCalled();
+    enter(t, '6-digit code', '123456');
+    await press(t, 'Confirm phone number');
+    expect(mockAuth.api.verifyPhoneChange).toHaveBeenCalledWith('c1', '123456');
+    expect(mockAuth.updateUser).toHaveBeenCalled();
+    expect(mockBack).toHaveBeenCalled();
+  });
+  it('shows a clear message when the number is on another account', async () => {
+    mockAuth.user = user({ phone: null });
+    mockAuth.api.requestPhoneChange = jest.fn().mockRejectedValue(new ApiError(409, 'already_registered', 'taken'));
+    const t = render(<EditPhoneScreen />);
+    enter(t, 'Phone number', '9876543210');
+    await press(t, 'Send code');
+    expect(text(t)).toContain('already exists');
+    expect(mockAuth.updateUser).not.toHaveBeenCalled();
+  });
+  it('keeps the old number on a wrong code, and stays on the page', async () => {
+    mockAuth.user = user({ phone: '+919000000000' });
+    mockAuth.api.verifyPhoneChange = jest.fn().mockRejectedValue(new ApiError(400, 'validation_failed', 'that code is not valid or has expired'));
+    const t = render(<EditPhoneScreen />);
+    enter(t, 'Phone number', '9876543210');
+    await press(t, 'Send code');
+    enter(t, '6-digit code', '000000');
+    await press(t, 'Confirm phone number');
+    expect(text(t)).toContain('not valid');
+    expect(mockAuth.updateUser).not.toHaveBeenCalled();
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockAuth.signOut).not.toHaveBeenCalled();
+  });
+  it('opens from Edit profile', async () => {
+    mockAuth.user = user({ phone: '+919000000000' });
+    await press(render(<EditProfileScreen />), 'Change phone');
+    expect(mockPush).toHaveBeenLastCalledWith('/edit-profile/phone');
+  });
+});
+
+describe('Edit profile: name and avatar', () => {
+  it('saves a changed name on Done, and goes back', async () => {
+    mockAuth.api.patchMe.mockResolvedValue(user({ displayName: 'Mia K' }));
+    const t = render(<EditProfileScreen />);
+    act(() => t.root.findByProps({ accessibilityLabel: 'Display name' }).props.onChangeText(' Mia K '));
+    await press(t, 'Done');
+    expect(mockAuth.api.patchMe).toHaveBeenCalledWith({ displayName: 'Mia K' });
+    expect(mockBack).toHaveBeenCalled();
+  });
+  it('stays on the page when saving fails', async () => {
+    mockAuth.api.patchMe.mockRejectedValue(new Error('No connection.'));
+    const t = render(<EditProfileScreen />);
+    act(() => t.root.findByProps({ accessibilityLabel: 'Display name' }).props.onChangeText('Mia K'));
+    await press(t, 'Done');
+    expect(text(t)).toContain('No connection.');
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+  it('goes straight back on Done with no change', async () => {
+    await press(render(<EditProfileScreen />), 'Done');
+    expect(mockAuth.api.patchMe).not.toHaveBeenCalled();
+    expect(mockBack).toHaveBeenCalled();
+  });
+  it('saves a chosen avatar and goes back', async () => {
+    mockAuth.api.patchMe.mockResolvedValue(user({ avatar: 'bubu-10' }));
+    await press(render(<EditAvatarScreen />), 'Ball Cap avatar');
+    expect(mockAuth.api.patchMe).toHaveBeenCalledWith({ avatar: 'bubu-10' });
+    expect(mockBack).toHaveBeenCalled();
   });
 });
 
@@ -245,11 +549,25 @@ describe('sign-up gender selector', () => {
   });
 });
 
-describe('period tracker route access', () => {
-  it('viewers and owners with the tracker off are redirected away', () => {
-    mockAuth.user = user({ role: 'viewer', gender: 'female' });
-    expect(render(<PeriodsScreen />).root.findAllByType('Redirect' as never).length).toBe(1);
-    mockAuth.user = user({ gender: 'male' });
-    expect(render(<PeriodsScreen />).root.findAllByType('Redirect' as never).length).toBe(1);
+describe('period tracker in the Calendar tab', () => {
+  const tab = (t: renderer.ReactTestRenderer) => t.root.findAll((x) => x.props.accessibilityLabel === 'Periods' && typeof x.props.onPress === 'function');
+
+  it.each([
+    ['viewer', { role: 'viewer' as const, gender: 'female' as const, periodTrackerEnabled: true }],
+    ['owner with the tracker off', { gender: 'male' as const }],
+  ] as [string, Partial<User>][])('never offers it to a %s', (_n, over) => {
+    mockAuth.user = user(over);
+    mockAuth.isOwner = over.role !== 'viewer';
+    const t = render(<CalendarTab />);
+    expect(tab(t)).toHaveLength(0);
+    expect(text(t)).not.toMatch(/period/i);
+  });
+  it('opens the tracker from the switch for an owner with it on', async () => {
+    mockAuth.user = user({ gender: 'female', periodTrackerEnabled: true });
+    const t = render(<CalendarTab />);
+    expect(text(t)).not.toContain('Private to you');
+    await press(t, 'Periods');
+    expect(tab(t)).toHaveLength(1);
+    expect(text(t)).toMatch(/Start period/i);
   });
 });

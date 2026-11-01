@@ -4,7 +4,6 @@ import React from 'react';
 import { View } from 'react-native';
 import { Mascot } from '@/components/Mascot';
 import { Avatar } from '@/avatars/Avatar';
-import { CycleCard } from '@/components/CycleCard';
 import { EmptyState } from '@/components/EmptyState';
 import { HabitCard } from '@/components/HabitCard';
 import { ProgressRing } from '@/components/ProgressRing';
@@ -17,7 +16,6 @@ import { AppText, Button, Card, ErrorBanner, Loading, Row, Screen } from '@/comp
 import { useActions } from '@/features/actions';
 import { useDerived, useWorkoutsByDate } from '@/features/derived';
 import { useSyncOnFocus } from '@/features/useSyncOnFocus';
-import { predict } from '@/lib/cycle';
 import { prettyDate } from '@/lib/dates';
 import { HABIT_IDS } from '@/lib/defaults';
 import { formatDuration } from '@/lib/format';
@@ -25,7 +23,7 @@ import { dailyMessage } from '@/lib/messages';
 import { isPeriodTrackerOn, streakRestNote, sundayRestOn } from '@/lib/profile';
 import { effectiveStatus } from '@/lib/scoring';
 import { useAuth } from '@/providers/AuthProvider';
-import { useData, usePeriods, useSettings, useSyncStatus } from '@/providers/DataProvider';
+import { useData, useSettings, useSyncStatus } from '@/providers/DataProvider';
 import { spacing } from '@/theme/tokens';
 
 export default function Home() {
@@ -37,9 +35,7 @@ export default function Home() {
   const { syncNow } = useData();
   const byDate = useWorkoutsByDate();
   const { settings } = useSettings();
-  const { periods } = usePeriods();
   const trackerOn = isPeriodTrackerOn(user);
-  const prediction = React.useMemo(() => predict(periods, d.today), [periods, d.today]);
   useSyncOnFocus(isOwner ? undefined : 30_000); // viewer freshness: poll every 30 s while Home is focused
   const [err, setErr] = React.useState<string | null>(null);
 
@@ -65,7 +61,7 @@ export default function Home() {
   return (
     <Screen onRefresh={() => void syncNow()} refreshing={sync.state === 'syncing'}>
       <Row style={{ justifyContent: 'space-between', gap: spacing.md }}>
-        <Avatar id={isOwner ? user?.avatar : user?.ownerAvatar} size={48} name={name} />
+        <Avatar id={isOwner ? user?.avatar : user?.ownerAvatar} size={40} name={name} />
         <View style={{ flex: 1 }}>
           <AppText variant="caption" muted>{prettyDate(d.today)}</AppText>
           <AppText variant="title" accessibilityRole="header">{isOwner ? `Hi, ${name}` : `${name}'s day`}</AppText>
@@ -93,7 +89,7 @@ export default function Home() {
               <ProgressRing percent={d.todayScore.completionPercent} size={120} stroke={12} sublabel="today" />
               <View style={{ flex: 1, gap: spacing.sm }}>
                 <Row style={{ gap: spacing.sm }}>
-                  <Mascot mood={msg.mood} size={72} />
+                  <Mascot mood={msg.mood} size={60} />
                   <AppText variant="bodyStrong" style={{ flex: 1 }}>{msg.text}</AppText>
                 </Row>
                 <AppText variant="caption" muted>
@@ -105,7 +101,6 @@ export default function Home() {
 
           <StreakCard current={d.currentStreak} longest={d.longestStreak} restNote={streakRestNote({ sundayRest: sundayRestOn(settings), periodTracker: trackerOn })} />
 
-          {trackerOn ? <CycleCard prediction={prediction} hasPeriods={periods.length > 0} onPress={() => router.push('/periods')} /> : null}
 
           {water ? <WaterTracker ml={valueOf(water.id) ?? 0} goal={water.target} readOnly={!isOwner} onAdd={(ml) => run(() => actions.addWater(water, d.today, ml))} /> : null}
           {steps ? <StepsCard steps={valueOf(steps.id) ?? 0} goal={steps.target} goalMax={steps.targetMax} readOnly={!isOwner} onSave={(n) => run(() => actions.setSteps(steps, d.today, n))} /> : null}

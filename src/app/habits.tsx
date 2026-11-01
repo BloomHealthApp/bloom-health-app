@@ -27,10 +27,10 @@ export default function ManageHabits() {
               accessibilityRole="button"
               accessibilityLabel={`${h.title}, ${describeTarget(h)}${h.isActive ? '' : ', archived'}`}
               accessibilityHint={isOwner ? 'Edit habit' : undefined}
-              style={{ minHeight: MIN_TOUCH + 12, padding: spacing.md }}
+              style={{ minHeight: MIN_TOUCH + 4, padding: spacing.md }}
             >
               <Row style={{ gap: spacing.md }}>
-                <HabitIcon icon={h.icon} size={36} />
+                <HabitIcon icon={h.icon} size={30} />
                 <View style={{ flex: 1 }}>
                   <AppText variant="bodyStrong">{h.title}</AppText>
                   <AppText variant="caption" muted>{describeTarget(h)}{h.isActive ? '' : ' · archived'}{h.isDefault ? ' · default' : ''}</AppText>

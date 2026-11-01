@@ -6,7 +6,8 @@ import { Field } from '@/components/Field';
 import { GenderPicker } from '@/components/GenderPicker';
 import { AppText, Button, ErrorBanner, Screen } from '@/components/ui';
 import { USE_MOCK_API } from '@/config';
-import { authErrorMessage, isAlreadyRegistered, validateEmail, validateName, validatePhone } from '@/lib/authForm';
+import { PhoneField } from '@/components/PhoneField';
+import { authErrorMessage, composePhone, DEFAULT_COUNTRY_CODE, isAlreadyRegistered, validateEmail, validateName, validatePhoneParts } from '@/lib/authForm';
 import { useAuth } from '@/providers/AuthProvider';
 import { spacing } from '@/theme/tokens';
 import type { Gender } from '@/types/api';
@@ -15,7 +16,8 @@ export default function SignUpScreen() {
   const router = useRouter();
   const { requestSignUp } = useAuth();
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [number, setNumber] = useState('');
   const [email, setEmail] = useState('');
   const [gender, setGender] = useState<Gender | null>(null);
   const [touched, setTouched] = useState(false);
@@ -24,7 +26,8 @@ export default function SignUpScreen() {
   const [conflict, setConflict] = useState(false);
 
   const nameErr = validateName(name);
-  const phoneErr = validatePhone(phone);
+  const phoneErr = validatePhoneParts(countryCode, number);
+  const phone = composePhone(countryCode, number);
   const emailErr = validateEmail(email);
   const valid = !nameErr && !phoneErr && !emailErr;
 
@@ -54,11 +57,11 @@ export default function SignUpScreen() {
 
   return (
     <Screen>
-      <Mascot mood="loved" size={110} />
+      <Mascot mood="loved" size={88} />
       <AppText variant="title">Create account</AppText>
       <AppText muted>Tell us a little about you. We will email a 6-digit code to confirm your email. No password needed.</AppText>
       <Field label="Your name" value={name} onChangeText={setName} maxLength={40} autoCapitalize="words" autoComplete="name" textContentType="name" placeholder="Anu" error={touched ? nameErr : null} />
-      <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" placeholder="+91 98765 43210" error={touched ? phoneErr : null} />
+      <PhoneField countryCode={countryCode} number={number} onChangeCountryCode={setCountryCode} onChangeNumber={setNumber} error={touched ? phoneErr : null} />
       <Field
         label="Email"
         value={email}
@@ -74,7 +77,7 @@ export default function SignUpScreen() {
         error={touched ? emailErr : null}
       />
       <GenderPicker value={gender} onChange={setGender} />
-      <AppText variant="caption" muted>Optional. It unlocks features that fit you, and you can change or clear it any time in Settings.</AppText>
+      <AppText variant="caption" muted>Optional. It unlocks features that fit you, and you can change or clear it any time in your profile.</AppText>
       {error ? <ErrorBanner message={error} /> : null}
       {conflict ? (
         <Button title="Sign in instead" variant="secondary" onPress={() => router.replace({ pathname: '/(auth)/signin', params: { identifier: email.trim().toLowerCase() } })} />

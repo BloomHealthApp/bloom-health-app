@@ -12,7 +12,7 @@ export default function Welcome() {
   return (
     <Screen>
       <View style={{ alignItems: 'center', gap: spacing.md, paddingTop: spacing.xl }}>
-        <Mascot mood="cheer" size={180} />
+        <Mascot mood="cheer" size={140} />
         <AppText variant="title" accent style={{ textAlign: 'center' }}>Bloom Health</AppText>
         <AppText muted style={{ textAlign: 'center' }}>
           A gentle little habit and wellness tracker for two. Small steps, kind streaks, and a bear who is proud of you.

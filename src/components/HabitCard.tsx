@@ -52,10 +52,10 @@ export function HabitCard({ habit, value, status, readOnly, onToggle, onPress }:
         accessibilityRole="button"
         accessibilityLabel={summary}
         accessibilityHint={readOnly ? 'Opens details' : 'Opens details to log a value'}
-        style={{ flex: 1, minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md }}
+        style={{ flex: 1, minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md }}
       >
-        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.tint, alignItems: 'center', justifyContent: 'center' }}>
-          <HabitIcon icon={habit.icon} size={32} />
+        <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: c.tint, alignItems: 'center', justifyContent: 'center' }}>
+          <HabitIcon icon={habit.icon} size={26} />
         </View>
         <View style={{ flex: 1 }}>
           <AppText variant="bodyStrong" numberOfLines={2}>{habit.title}</AppText>

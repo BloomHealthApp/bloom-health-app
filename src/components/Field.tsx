@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 import { fonts, MIN_TOUCH, radius, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
+import { GlassLayer } from './GlassLayer';
 import { AppText } from './ui';
 
 export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string | null }) {
@@ -14,7 +15,7 @@ export function Field({ label, error, ...props }: TextInputProps & { label: stri
         placeholderTextColor={theme.colors.textMuted}
         {...props}
         style={[
-          { minHeight: MIN_TOUCH + 8, borderRadius: radius.md, borderWidth: 1, borderColor: error ? theme.colors.danger : theme.colors.border, backgroundColor: theme.glass, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text },
+          { minHeight: MIN_TOUCH, borderRadius: radius.md, borderWidth: 1, borderColor: error ? theme.colors.danger : theme.colors.border, backgroundColor: theme.glass, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 13, color: theme.colors.text },
           props.style,
         ]}
       />
@@ -40,6 +41,7 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
               accessibilityLabel={o.label}
               style={{ minHeight: MIN_TOUCH, paddingHorizontal: spacing.lg, borderRadius: radius.pill, justifyContent: 'center', backgroundColor: sel ? theme.colors.primary : theme.colors.tint }}
             >
+              <GlassLayer radius={radius.pill} onFill />
               <AppText variant="label" style={{ color: sel ? theme.colors.onPrimary : theme.colors.text }}>{o.label}</AppText>
             </Pressable>
           );

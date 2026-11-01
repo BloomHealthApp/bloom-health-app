@@ -1,4 +1,4 @@
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
 import { ApiError, NetworkError } from '@/api/errors';
@@ -18,6 +18,7 @@ type Params = { challengeId?: string; purpose?: string; name?: string; phone?: s
 
 export default function OtpScreen() {
   const p = useLocalSearchParams<Params>();
+  const router = useRouter();
   const { verifyOtp, requestSignUp, requestSignIn } = useAuth();
   const { theme } = useTheme();
   const [code, setCode] = useState('');
@@ -30,6 +31,7 @@ export default function OtpScreen() {
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   const isSignUp = p.purpose === 'signup';
+  const isPhone = !isSignUp && !!p.identifier && !p.identifier.includes('@');
   const challengeId = freshChallenge ?? p.challengeId;
 
   const submit = async (c = code) => {
@@ -73,12 +75,14 @@ export default function OtpScreen() {
 
   return (
     <Screen>
-      <Mascot mood="thinking" size={110} />
+      <Mascot mood="thinking" size={88} />
       <AppText variant="title">Enter your code</AppText>
       <AppText muted>
         {isSignUp
           ? `We sent a 6-digit code to ${p.email}. It expires in 10 minutes.`
-          : 'If an account exists, we sent a code to the email on file. It expires in 10 minutes.'}
+          : isPhone
+            ? "If this number is on an account, we've emailed a code to its address. It expires in 10 minutes."
+            : 'If an account exists, we sent a code to the email on file. It expires in 10 minutes.'}
       </AppText>
       <TextInput
         value={code}
@@ -99,6 +103,7 @@ export default function OtpScreen() {
       {error ? <ErrorBanner message={error} /> : null}
       <Button title="Verify" onPress={() => submit()} disabled={code.length !== 6} loading={busy} />
       {canResend ? <Button title={resent ? 'New code sent' : 'Send a new code'} variant="ghost" disabled={resent} onPress={resend} /> : null}
+      {isPhone ? <Button title="Use email instead" variant="ghost" onPress={() => router.replace({ pathname: '/(auth)/signin', params: { mode: 'email' } })} /> : null}
       {USE_MOCK_API ? <AppText variant="caption" muted>Demo mode: the code is 123456.</AppText> : null}
     </Screen>
   );

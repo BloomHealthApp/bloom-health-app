@@ -57,7 +57,7 @@ export function ReminderRow(props: {
           accessibilityLabel={`${label} time`}
           keyboardType="numbers-and-punctuation"
           maxLength={5}
-          style={{ width: 68, minHeight: MIN_TOUCH, textAlign: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: valid ? theme.colors.border : theme.colors.danger, fontFamily: fonts.semibold, fontSize: 16, color: theme.colors.text, backgroundColor: theme.colors.bg }}
+          style={{ width: 60, minHeight: MIN_TOUCH, textAlign: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: valid ? theme.colors.border : theme.colors.danger, fontFamily: fonts.semibold, fontSize: 13, color: theme.colors.text, backgroundColor: theme.colors.bg }}
         />
         <Pressable
           onPress={() => onChange({ enabled: !reminder.enabled })}

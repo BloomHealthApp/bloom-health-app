@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { isTablet } from '@/lib/device';
+import { SIGNED_IN_ROUTES } from '@/lib/protectedRoutes';
 import { configureNotifications } from '@/notifications/expoAdapter';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { PeriodReminderSync } from '@/features/PeriodReminderSync';
@@ -39,11 +40,13 @@ function Shell() {
     );
   }
   const stack = (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg } }}>
+    <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: theme.colors.bg } }}>
+      <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="choose-avatar" />
-      <Stack.Screen name="periods" />
+      {/* Sends the user to `index` if a screen here is open when they stop being signed in. */}
+      <Stack.Protected guard={status === 'signedIn'}>
+        {SIGNED_IN_ROUTES.map((name) => <Stack.Screen key={name} name={name} />)}
+      </Stack.Protected>
     </Stack>
   );
   // Data layer (SQLite + sync engine) only exists for a signed-in user.

@@ -221,6 +221,13 @@ export class ApiClient {
   patchMe(body: { displayName?: string; avatar?: string | null; timezone?: string; theme?: ThemeName; gender?: Gender | null; periodTrackerEnabled?: boolean | null }): Promise<User> {
     return this.request('PATCH', '/me', { body, schema: UserSchema });
   }
+  /** Emails a code to the caller's own address to confirm saving `phone`. Nothing is saved yet. */
+  requestPhoneChange(phone: string): Promise<OtpChallenge> {
+    return this.request('POST', '/me/phone/request', { body: { phone }, schema: OtpChallengeSchema });
+  }
+  verifyPhoneChange(challengeId: string, code: string): Promise<User> {
+    return this.request('POST', '/me/phone/verify', { body: { challengeId, code }, schema: UserSchema });
+  }
   getSettings(): Promise<Settings> {
     return this.request('GET', '/settings', { schema: SettingsSchema });
   }

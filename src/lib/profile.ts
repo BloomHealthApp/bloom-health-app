@@ -14,7 +14,7 @@ export function isPeriodTrackerOn(user: UserLike | null | undefined): boolean {
   return !!user && user.role === 'owner' && trackerFlag(user);
 }
 
-/** Settings switch visibility: female (on by default), other / prefer not to say (opt-in); hidden for male, unset and viewers. */
+/** Profile switch visibility: female (on by default), other / prefer not to say (opt-in); hidden for male, unset and viewers. */
 export function showTrackerSwitch(user: UserLike | null | undefined): boolean {
   if (!user || user.role !== 'owner') return false;
   return user.gender === 'female' || user.gender === 'other' || user.gender === 'prefer_not_to_say';

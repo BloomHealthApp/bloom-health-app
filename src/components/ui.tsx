@@ -59,12 +59,12 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       style={({ pressed }) => [
-        { minHeight: MIN_TOUCH + 4, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, ...(variant === 'ghost' || off ? null : { boxShadow: glassShadow(theme.isDark) }), opacity: off ? 0.5 : pressed ? 0.88 : 1, transform: [{ scale: pressed && !off ? 0.985 : 1 }] },
+        { minHeight: MIN_TOUCH, minWidth: MIN_TOUCH, borderRadius: radius.pill, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, ...(variant === 'ghost' || off ? null : { boxShadow: glassShadow(theme.isDark) }), opacity: off ? 0.5 : pressed ? 0.88 : 1, transform: [{ scale: pressed && !off ? 0.985 : 1 }] },
         style,
       ]}
     >
       {variant !== 'ghost' ? <GlassLayer radius={radius.pill} onFill /> : null}
-      {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 16 }}>{title}</AppText>}
+      {loading ? <ActivityIndicator color={fg} /> : <AppText variant="label" style={{ color: fg, fontSize: 13 }}>{title}</AppText>}
     </Pressable>
   );
 }
@@ -80,8 +80,9 @@ export function IconButton({ label, onPress, children, disabled, style }: { labe
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
       hitSlop={4}
-      style={({ pressed }) => [{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.tint, paddingHorizontal: spacing.md, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 }, style]}
+      style={({ pressed }) => [{ minWidth: MIN_TOUCH, minHeight: MIN_TOUCH, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.tint, paddingHorizontal: spacing.md, boxShadow: glassShadow(theme.isDark), opacity: disabled ? 0.4 : pressed ? 0.8 : 1 }, style]}
     >
+      <GlassLayer radius={radius.pill} onFill />
       {children}
     </Pressable>
   );
@@ -135,7 +136,7 @@ export function Row({ children, style, ...rest }: ViewProps & { children: React.
 /** Standard page title for primary navigation screens. */
 export function PageHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
   return (
-    <View style={{ minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+    <View style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
       <View style={{ flex: 1, gap: spacing.xs }}>
         <AppText variant="title" accessibilityRole="header">{title}</AppText>
         {subtitle ? <AppText variant="caption" muted>{subtitle}</AppText> : null}
