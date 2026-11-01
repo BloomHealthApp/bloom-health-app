@@ -52,6 +52,7 @@ export default function Home() {
   const water = d.activeHabits.find((h) => h.id === HABIT_IDS.water);
   const steps = d.activeHabits.find((h) => h.id === HABIT_IDS.steps);
   const autoSteps = useAutoSteps(steps);
+  const [stepModeNote, setStepModeNote] = React.useState<string | null>(null);
   const rest = d.activeHabits.filter((h) => h.id !== HABIT_IDS.water && h.id !== HABIT_IDS.steps);
   const valueOf = (id: string) => d.logIndex.get(`${id}:${d.today}`)?.value ?? null;
   const msg = dailyMessage(d.today, d.todayScore.completionPercent, d.currentStreak);
@@ -108,7 +109,25 @@ export default function Home() {
 
 
           {water ? <WaterTracker ml={valueOf(water.id) ?? 0} goal={water.target} readOnly={!isOwner} onAdd={(ml) => run(() => actions.addWater(water, d.today, ml))} /> : null}
-          {steps ? <StepsCard steps={valueOf(steps.id) ?? 0} goal={steps.target} goalMax={steps.targetMax} readOnly={!isOwner} onSave={(n) => run(() => actions.setSteps(steps, d.today, n))} source={d.logIndex.get(`${steps.id}:${d.today}`)?.source} autoTracking={autoSteps.enabled} onUsePhoneCount={() => run(autoSteps.applyPhoneCount)} /> : null}
+          {steps ? (
+            <StepsCard
+              steps={valueOf(steps.id) ?? 0}
+              goal={steps.target}
+              goalMax={steps.targetMax}
+              readOnly={!isOwner}
+              source={d.logIndex.get(`${steps.id}:${d.today}`)?.source}
+              mode={autoSteps.enabled ? 'auto' : 'manual'}
+              autoAvailable={autoSteps.available}
+              modeNote={stepModeNote}
+              onModeChange={(mode) =>
+                run(async () => {
+                  setStepModeNote(null);
+                  if (!(await autoSteps.setMode(mode))) setStepModeNote('Bloom Health needs permission to read steps. You can still add them by hand.');
+                })
+              }
+              onAdd={(n) => run(() => actions.addSteps(steps, d.today, n))}
+            />
+          ) : null}
 
           <AppText variant="heading" accessibilityRole="header">Today&apos;s habits</AppText>
           <View style={{ gap: spacing.sm }}>

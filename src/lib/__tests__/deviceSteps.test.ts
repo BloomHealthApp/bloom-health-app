@@ -1,4 +1,4 @@
-import { deviceStepDates, shouldWriteDeviceSteps } from '../deviceSteps';
+import { deviceStepDates, MAX_DAILY_STEPS, nextStepTotal, shouldWriteDeviceSteps } from '../deviceSteps';
 
 describe('deviceStepDates', () => {
   it('returns the last 7 days, oldest first', () => {
@@ -43,5 +43,16 @@ describe('shouldWriteDeviceSteps', () => {
   it('ignores an unchanged or lower device value', () => {
     expect(shouldWriteDeviceSteps(log(5000, 'device'), 5000)).toBe(false);
     expect(shouldWriteDeviceSteps(log(5000, 'device'), 4000)).toBe(false);
+  });
+});
+
+describe('nextStepTotal', () => {
+  it('adds to the total and starts from an empty day', () => {
+    expect(nextStepTotal(1000, 50)).toBe(1050);
+    expect(nextStepTotal(null, 200)).toBe(200);
+  });
+  it('stays within the limits', () => {
+    expect(nextStepTotal(100, -200)).toBe(0);
+    expect(nextStepTotal(MAX_DAILY_STEPS, 50)).toBe(MAX_DAILY_STEPS);
   });
 });

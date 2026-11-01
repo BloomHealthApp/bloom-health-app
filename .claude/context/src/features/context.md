@@ -14,5 +14,5 @@ Hooks and small mounted components joining the store, sync and pure logic.
 | `PeriodReminderSync.tsx` | Keeps that reminder in step with the estimate; renders nothing | |
 | `useActiveWorkout.ts` | Running workout state, persisted in SQLite `meta` | |
 | `autoSteps.ts` | Auto-track opt-in, stored per user on this device, and safe wrappers around `modules/bloom-steps` | |
-| `useAutoSteps.ts` | Fills the Steps habit on Home focus, foreground and pull-to-refresh; rules are in `lib/deviceSteps.ts` | |
+| `useAutoSteps.ts` | Fills the Steps habit on Home focus, foreground and pull-to-refresh, and switches between Auto and Manual. Choosing Auto hands today to the phone: its total replaces a manual one, and with no phone total the number is kept and marked `device`, so the phone takes over once it passes it. Other rules are in `lib/deviceSteps.ts` | |
 | `useSyncOnFocus.ts` | Sync on focus, with optional polling | |

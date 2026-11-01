@@ -9,7 +9,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useData } from '@/providers/DataProvider';
 import type { DailyLog } from '@/types/api';
 import { useActions } from './actions';
-import { getAutoStepsPref, readDeviceSteps } from './autoSteps';
+import { deviceStepsAvailable, getAutoStepsPref, readDeviceSteps, requestDeviceSteps, setAutoStepsPref } from './autoSteps';
 import { useToday } from './derived';
 
 /** Owner only: fills the Steps habit from the phone while auto-tracking is on. Never throws from a sync. */
@@ -19,6 +19,7 @@ export function useAutoSteps(habit: (HabitRule & { id: string }) | undefined) {
   const actions = useActions();
   const { today } = useToday();
   const [enabled, setEnabled] = useState(false);
+  const [available, setAvailable] = useState(false);
   const running = useRef(false);
   const userId = user?.id;
   const userTimezone = user?.timezone;
@@ -56,13 +57,34 @@ export function useAutoSteps(habit: (HabitRule & { id: string }) | undefined) {
     return () => sub.remove();
   }, [refresh]);
 
-  /** Replaces today's log with the phone's total, returning control of the day to auto-tracking. */
-  const applyPhoneCount = useCallback(async () => {
-    if (!habit) return;
-    const [total] = await readDeviceSteps([today]);
-    if (!total || total.steps <= 0) throw new Error('Your phone has no steps for today yet.');
-    await actions.setSteps(habit, today, total.steps, 'device');
-  }, [habit, today, actions]);
+  useEffect(() => {
+    if (isOwner) void deviceStepsAvailable().then(setAvailable);
+  }, [isOwner]);
 
-  return { enabled, refresh, applyPhoneCount };
+  /** Returns false when permission was refused. Choosing Auto hands today back to the phone. */
+  const setMode = useCallback(
+    async (mode: 'auto' | 'manual'): Promise<boolean> => {
+      if (!userId) return false;
+      if (mode === 'manual') {
+        setEnabled(false);
+        await setAutoStepsPref(userId, false);
+        return true;
+      }
+      if (!(await requestDeviceSteps())) return false;
+      await setAutoStepsPref(userId, true);
+      setEnabled(true);
+      if (habit) {
+        const [total] = await readDeviceSteps([today]);
+        const log = await store.get<DailyLog>('dailyLog', logId(habit.id, today));
+        // With no phone total yet, keep the number but mark it so the phone can take over once it passes it.
+        const steps = total && total.steps > 0 ? total.steps : (log?.value ?? 0);
+        if (steps > 0 && log?.status !== 'skipped') await actions.setSteps(habit, today, steps, 'device');
+      }
+      await refresh();
+      return true;
+    },
+    [userId, habit, today, store, actions, refresh],
+  );
+
+  return { enabled, available, refresh, setMode };
 }

@@ -13,6 +13,7 @@ All owner writes: logs, habits, workouts, settings and periods. Each one writes 
 - `sundayRest` is only sent once known, because older services reject unknown fields. It's always repeated, because un-sent edits coalesce and the latest payload replaces the earlier one.
 
 ## Gotchas
+- `addSteps` runs adds one at a time, because each reads the total before writing. `addToLog` has no such queue, so quick water taps can still race.
 `restDayMode` isn't in the settings payload, so the app can't change it.
 
 ## Related

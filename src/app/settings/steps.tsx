@@ -1,36 +1,27 @@
 import { Redirect } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Switch } from 'react-native';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { AppText, Card, Row, Screen } from '@/components/ui';
-import { deviceStepsAvailable, getAutoStepsPref, requestDeviceSteps, setAutoStepsPref } from '@/features/autoSteps';
+import { useDerived } from '@/features/derived';
+import { useAutoSteps } from '@/features/useAutoSteps';
+import { HABIT_IDS } from '@/lib/defaults';
 import { useAuth } from '@/providers/AuthProvider';
 import { MIN_TOUCH, spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export default function StepsSettings() {
-  const { user, isOwner } = useAuth();
+  const { isOwner } = useAuth();
   const { theme } = useTheme();
-  const [enabled, setEnabled] = useState(false);
-  const [available, setAvailable] = useState(false);
+  const d = useDerived();
+  const { enabled, available, setMode } = useAutoSteps(d.activeHabits.find((h) => h.id === HABIT_IDS.steps));
   const [note, setNote] = useState<string | null>(null);
-  const userId = user?.id;
-
-  useEffect(() => {
-    if (!userId) return;
-    void getAutoStepsPref(userId).then(setEnabled);
-    void deviceStepsAvailable().then(setAvailable);
-  }, [userId]);
 
   if (!isOwner) return <Redirect href="/settings" />;
 
   const toggle = async (on: boolean) => {
-    if (!userId) return;
     setNote(null);
-    const allowed = on ? await requestDeviceSteps() : false;
-    if (on && !allowed) setNote('Bloom Health needs permission to read steps. You can still enter them by hand.');
-    setEnabled(allowed);
-    await setAutoStepsPref(userId, allowed);
+    if (!(await setMode(on ? 'auto' : 'manual'))) setNote('Bloom Health needs permission to read steps. You can still add them by hand.');
   };
 
   return (
@@ -48,7 +39,7 @@ export default function StepsSettings() {
           />
         </Row>
         <AppText variant="caption" muted style={{ marginTop: spacing.sm }}>
-          Reads your daily totals when you open the app, including the past 7 days. A number you enter yourself is kept for that day. Anyone with viewer access can see your steps.
+          Reads your daily totals when you open the app, including the past 7 days. Days you added by hand keep their number, except today, which switches to your phone&apos;s total. Anyone with viewer access can see your steps.
         </AppText>
         {!available ? <AppText variant="caption" muted style={{ marginTop: spacing.sm }}>Step data isn&apos;t available on this device or in this version of the app.</AppText> : null}
         {note ? <AppText variant="caption" style={{ marginTop: spacing.sm }}>{note}</AppText> : null}
