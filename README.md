@@ -113,6 +113,7 @@ src/components/     HabitCard, ProgressRing, WaterTracker, StepsCard, WorkoutTim
                     CalendarDayCell, ThemePicker, Mascot(+Static), EmptyState, ConfirmationDialog, SyncStatusChip ...
 src/lib/cycle.ts       pure cycle math (averages, next-start estimate, neutral dates); periodRules/periodsView/profile: tracker rules
 src/avatars/        fifteen Bloom profile avatars: catalog (ids/labels), AvatarArt (react-native-svg), Avatar, AvatarPicker,
+src/icons/          custom sticker icons (AppIcon, HabitIcon, IconPicker)
                     avatarPrompt (one-time "Choose your Bloom" flag)
 src/theme/          tokens, five themes each with light and dark palettes, ThemeProvider (theme persisted locally + saved to profile; appearance local only)
 assets/mascot/      README: how to swap in your own mascot art

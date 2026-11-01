@@ -20,4 +20,4 @@ Pure logic with no React or React Native imports, so it's unit-testable under pl
 ## Rules
 - A `localDate` is `YYYY-MM-DD` in the user's IANA timezone.
 - `periodRules.ts` is shared by the tracker screen, the offline write path and the mock server, so all three enforce the same contract.
-- Always render habit icons through `habitGlyph()`. The service seeds slugs such as `sunrise` while custom habits use emoji, and a raw slug shows as clipped text.
+- Always render habit icons through `resolveHabitIcon()`. The service seeds slugs such as `sunrise` while custom habits use emoji, and a raw slug shows as clipped text.

@@ -1,5 +1,6 @@
 // Presentational period tracker (owner only). All data/actions come in as props so the route stays thin and this view
 // can be rendered in tests and previews without providers.
+import { AppIcon } from '@/icons/AppIcon';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Switch, TextInput, View } from 'react-native';
 import { Mascot } from '../Mascot';
@@ -100,7 +101,7 @@ export function PeriodsView({ periods, today, loading, error, onStart, onEnd, on
   return (
     <View style={{ gap: spacing.lg }}>
       <View accessible accessibilityLabel={`Private. ${PRIVACY_NOTE}`} style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', backgroundColor: theme.colors.secondary, borderRadius: radius.md, padding: spacing.md }}>
-        <AppText accessibilityElementsHidden importantForAccessibility="no">🔒</AppText>
+        <AppIcon name="lock" size={22} />
         <AppText variant="caption" style={{ flex: 1 }}>{PRIVACY_NOTE}</AppText>
       </View>
       {err ? <ErrorBanner message={err} /> : null}

@@ -1,3 +1,5 @@
+import { IconPicker } from '@/icons/IconPicker';
+import { FALLBACK_ICON } from '@/lib/habitIcon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Field, Segmented } from '@/components/Field';
@@ -24,7 +26,7 @@ export default function HabitForm() {
   const existing = habits.find((h) => h.id === id);
 
   const [title, setTitle] = useState(existing?.title ?? '');
-  const [icon, setIcon] = useState(existing?.icon ?? '🌸');
+  const [icon, setIcon] = useState(existing?.icon ?? FALLBACK_ICON);
   const [type, setType] = useState<TrackingType>(existing?.trackingType ?? 'boolean');
   const [target, setTarget] = useState(existing ? (existing.trackingType === 'timeOfDay' ? minutesToHHmm(existing.target) : String(existing.target)) : '');
   const [targetMax, setTargetMax] = useState(existing?.targetMax ? String(existing.targetMax) : '');
@@ -63,7 +65,7 @@ export default function HabitForm() {
       await actions.saveHabit(
         {
           title: title.trim(),
-          icon: icon.trim() || '🌸',
+          icon: icon.trim() || FALLBACK_ICON,
           category: existing?.category ?? 'custom',
           trackingType: type,
           target: targetNum ?? 1,
@@ -83,7 +85,7 @@ export default function HabitForm() {
     <Screen header={<ScreenHeader title={existing ? 'Edit habit' : 'New habit'} />}>
       {err ? <ErrorBanner message={err} /> : null}
       <Field label="Name" value={title} onChangeText={setTitle} maxLength={60} placeholder="e.g. Read 10 pages" />
-      <Field label="Icon (one emoji)" value={icon} onChangeText={(t) => setIcon(Array.from(t).slice(0, 2).join(''))} />
+      <IconPicker value={icon} onChange={setIcon} />
       <Segmented label="How do you track it?" options={TYPES} value={type} onChange={setType} />
       {type === 'quantity' || type === 'duration' ? (
         <>

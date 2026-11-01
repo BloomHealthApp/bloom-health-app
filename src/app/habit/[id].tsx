@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { habitGlyph } from '@/lib/habitIcon';
+import { HabitIcon } from '@/icons/HabitIcon';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
@@ -66,7 +66,7 @@ export default function HabitDetail() {
   const history = Array.from({ length: 7 }, (_, i) => addDays(d.today, -i));
 
   return (
-    <Screen header={<ScreenHeader title={`${habitGlyph(habit.icon)} ${habit.title}`} />}>
+    <Screen header={<ScreenHeader title={habit.title} icon={<HabitIcon icon={habit.icon} size={28} />} />}>
       <ViewerBanner />
       <Card tint>
         <AppText variant="caption" muted>{prettyDate(localDate)}{future ? ' · upcoming' : ''}</AppText>

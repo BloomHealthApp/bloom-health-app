@@ -23,14 +23,14 @@ type DefaultHabit = Pick<
 
 /** Mirrors the service's seeded habits (ids are stable slugs). Used by mock mode only. */
 export const DEFAULT_HABIT_DEFS: DefaultHabit[] = [
-  { id: 'default-wakeup', title: 'Wake up by 5:00 AM', icon: '🌅', category: 'morning', trackingType: 'timeOfDay', target: 300, targetMax: null, targetComparison: 'by', unit: null },
-  { id: 'default-exercise', title: 'Exercise 90-120 min', icon: '🏋️', category: 'fitness', trackingType: 'duration', target: 90, targetMax: 120, targetComparison: 'between', unit: 'min' },
-  { id: 'default-no-sugar', title: 'No added sugar', icon: '🍬', category: 'nutrition', trackingType: 'boolean', target: 1, targetMax: null, targetComparison: 'atLeast', unit: null },
-  { id: 'default-no-junk', title: 'No junk food', icon: '🍟', category: 'nutrition', trackingType: 'boolean', target: 1, targetMax: null, targetComparison: 'atLeast', unit: null },
-  { id: 'default-dinner', title: 'Dinner by 6:00 PM', icon: '🍽️', category: 'nutrition', trackingType: 'timeOfDay', target: 1080, targetMax: null, targetComparison: 'by', unit: null },
-  { id: 'default-water', title: 'Water 2000 ml', icon: '💧', category: 'hydration', trackingType: 'quantity', target: 2000, targetMax: null, targetComparison: 'atLeast', unit: 'ml' },
-  { id: 'default-steps', title: 'Steps 7,000-10,000', icon: '👟', category: 'fitness', trackingType: 'quantity', target: 7000, targetMax: 10000, targetComparison: 'atLeast', unit: 'steps' },
-  { id: 'default-bedtime', title: 'Bedtime by 10:00 PM', icon: '🌙', category: 'sleep', trackingType: 'timeOfDay', target: 1320, targetMax: null, targetComparison: 'by', unit: null },
+  { id: 'default-wakeup', title: 'Wake up by 5:00 AM', icon: 'sunrise', category: 'morning', trackingType: 'timeOfDay', target: 300, targetMax: null, targetComparison: 'by', unit: null },
+  { id: 'default-exercise', title: 'Exercise 90-120 min', icon: 'dumbbell', category: 'fitness', trackingType: 'duration', target: 90, targetMax: 120, targetComparison: 'between', unit: 'min' },
+  { id: 'default-no-sugar', title: 'No added sugar', icon: 'candy-off', category: 'nutrition', trackingType: 'boolean', target: 1, targetMax: null, targetComparison: 'atLeast', unit: null },
+  { id: 'default-no-junk', title: 'No junk food', icon: 'salad', category: 'nutrition', trackingType: 'boolean', target: 1, targetMax: null, targetComparison: 'atLeast', unit: null },
+  { id: 'default-dinner', title: 'Dinner by 6:00 PM', icon: 'utensils', category: 'nutrition', trackingType: 'timeOfDay', target: 1080, targetMax: null, targetComparison: 'by', unit: null },
+  { id: 'default-water', title: 'Water 2000 ml', icon: 'droplet', category: 'hydration', trackingType: 'quantity', target: 2000, targetMax: null, targetComparison: 'atLeast', unit: 'ml' },
+  { id: 'default-steps', title: 'Steps 7,000-10,000', icon: 'footprints', category: 'fitness', trackingType: 'quantity', target: 7000, targetMax: 10000, targetComparison: 'atLeast', unit: 'steps' },
+  { id: 'default-bedtime', title: 'Bedtime by 10:00 PM', icon: 'moon', category: 'sleep', trackingType: 'timeOfDay', target: 1320, targetMax: null, targetComparison: 'by', unit: null },
 ];
 
 export const HABIT_IDS = {

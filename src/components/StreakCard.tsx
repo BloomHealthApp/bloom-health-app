@@ -1,3 +1,4 @@
+import { AppIcon } from '@/icons/AppIcon';
 import React from 'react';
 import { View } from 'react-native';
 import { MILESTONES, isMilestone, nextMilestone } from '@/lib/scoring';
@@ -18,7 +19,8 @@ export function StreakCard({ current, longest, restNote }: { current: number; lo
         <View style={{ flex: 1 }}>
           {celebrating ? <AppText variant="label" accent>Milestone reached: {current} days!</AppText> : null}
           <Row style={{ alignItems: 'flex-end', gap: spacing.sm }}>
-            <AppText variant="big" accent>🔥 {current}</AppText>
+            <AppIcon name="flame" size={40} />
+            <AppText variant="big" accent>{current}</AppText>
             <AppText variant="bodyStrong" style={{ marginBottom: 6 }}>day streak</AppText>
           </Row>
           <AppText variant="caption" muted>Longest: {longest} days{next ? ` · next milestone ${next}` : ' · every milestone reached'}</AppText>

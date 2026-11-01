@@ -1,3 +1,4 @@
+import { AppIcon } from '@/icons/AppIcon';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { cycleSummary } from '@/lib/periodsView';
@@ -22,7 +23,7 @@ export function CycleCard({ prediction, hasPeriods, onPress }: { prediction: Pre
       <Row style={{ gap: spacing.md }}>
         <Mascot mood={s.mood} size={56} />
         <View style={{ flex: 1 }}>
-          <AppText variant="caption" muted>🔒 Private cycle</AppText>
+          <Row style={{ gap: spacing.xs }}><AppIcon name="lock" size={16} /><AppText variant="caption" muted>Private cycle</AppText></Row>
           <AppText variant="bodyStrong">{s.title}</AppText>
           <AppText variant="caption" muted numberOfLines={2}>{s.subtitle}</AppText>
         </View>

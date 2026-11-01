@@ -1,3 +1,4 @@
+import { AppIcon } from '@/icons/AppIcon';
 import React, { useEffect, useState } from 'react';
 import { TextInput } from 'react-native';
 import { formatNumber } from '@/lib/format';
@@ -14,7 +15,7 @@ export function StepsCard({ steps, goal, goalMax, readOnly, onSave }: { steps: n
   return (
     <Card>
       <Row style={{ justifyContent: 'space-between' }}>
-        <AppText variant="heading">👟 Steps</AppText>
+        <Row style={{ gap: spacing.sm }}><AppIcon name="footprints" size={28} /><AppText variant="heading">Steps</AppText></Row>
         <AppText variant="bodyStrong" accent>
           {formatNumber(steps)} / {formatNumber(goal)}
           {goalMax ? `-${formatNumber(goalMax)}` : ''}

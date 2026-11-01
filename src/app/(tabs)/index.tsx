@@ -1,3 +1,4 @@
+import { AppIcon } from '@/icons/AppIcon';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
@@ -127,7 +128,7 @@ export default function Home() {
           <Card>
             <Row style={{ justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
-                <AppText variant="heading">🏋️ Workout</AppText>
+                <Row style={{ gap: spacing.sm }}><AppIcon name="dumbbell" size={28} /><AppText variant="heading">Workout</AppText></Row>
                 <AppText variant="caption" muted>
                   {todaysWorkouts.length ? `${todaysWorkouts.length} session${todaysWorkouts.length > 1 ? 's' : ''} today · ${formatDuration(workoutSecs)}` : 'No sessions logged today'}
                 </AppText>
