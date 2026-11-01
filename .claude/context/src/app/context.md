@@ -48,3 +48,6 @@ The root `Stack` uses `slide_from_right`, so every pushed page, including each s
 
 ## Sign-in
 Sign-in offers Phone (default, with a separate country code defaulting to +91) or Email. The code always goes to the account's email; there's no SMS. A phone with no matching account gets the same "sent" answer and no email, so the code screen words this as "If this number is on an account" and offers "Use email instead". Profile shows the phone under private details, and adding or changing it needs a code emailed to the account (`/me/phone/request` then `/me/phone/verify`). Never show it in `ProfileHeader`. Numbers are built with `composePhone`, so don't send what the user typed.
+
+## Protected routes
+Every screen outside `(auth)` and `index` needs the data layer, which `_layout.tsx` removes when signed out. `Stack.Protected` guards them using `lib/protectedRoutes.ts`, so a screen open at sign-out or session expiry goes to `index` rather than crashing. Add new routes to that list; a test fails if one is missing.
